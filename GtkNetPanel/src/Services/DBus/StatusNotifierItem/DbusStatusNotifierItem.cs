@@ -1,6 +1,8 @@
-namespace GtkNetPanel.Tray;
+using GtkNetPanel.DBus.Introspection;
 
-public record StatusNotifierItem
+namespace GtkNetPanel.DBus.StatusNotifierItem;
+
+public record DbusStatusNotifierItem
 {
 	public StatusNotifierItemProperties Properties { get; set; }
 	public DbusObject Object { get; set; }

@@ -3,7 +3,7 @@ using Cairo;
 using Gdk;
 using Gtk;
 
-namespace GtkNetPanel;
+namespace GtkNetPanel.Components.ApplicationMenuButton;
 
 public class AppMenu : EventBox
 {

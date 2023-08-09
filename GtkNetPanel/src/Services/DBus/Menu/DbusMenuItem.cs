@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace GtkNetPanel.Tray;
+namespace GtkNetPanel.DBus.Menu;
 
 public class DbusMenuItem
 {

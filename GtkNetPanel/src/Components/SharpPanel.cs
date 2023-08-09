@@ -1,9 +1,11 @@
 using Cairo;
 using Gdk;
 using Gtk;
+using GtkNetPanel.Components.ApplicationMenuButton;
+using GtkNetPanel.Components.Tray;
 using Window = Gtk.Window;
 
-namespace GtkNetPanel;
+namespace GtkNetPanel.Components;
 
 public class SharpPanel : Window
 {
@@ -65,7 +67,7 @@ public class SharpPanel : Window
 
 	private Widget CreateClock()
 	{
-		var clockFormat = "HH:mm:ss\ndddd\nM/d/yyyy";
+		var clockFormat = "h:mm tt\ndddd\nM/d/yyyy";
 		var clock = new Label(DateTime.Now.ToString(clockFormat));
 		clock.StyleContext.AddProvider(_cssProvider, uint.MaxValue);
 		clock.Justify = Justification.Center;

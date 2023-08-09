@@ -1,6 +1,6 @@
 using Tmds.DBus;
 
-namespace GtkNetPanel.Tray;
+namespace GtkNetPanel.DBus.Menu;
 
 [DBusInterface(DbusInterfaceName)]
 internal interface IDbusmenu : IDBusObject

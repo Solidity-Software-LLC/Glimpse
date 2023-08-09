@@ -1,4 +1,4 @@
-namespace GtkNetPanel.Tray;
+namespace GtkNetPanel.DBus.Introspection;
 
 public record DbusObject
 {

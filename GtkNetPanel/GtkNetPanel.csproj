@@ -8,9 +8,15 @@
 
     <ItemGroup>
         <PackageReference Include="GtkSharp" Version="3.24.24.95" />
+        <PackageReference Include="System.Reactive" Version="6.0.0" />
         <PackageReference Include="Tmds.DBus" Version="0.15.0"/>
 
 
+
+
+    <ItemGroup>
+      <Folder Include="src\Services\" />
+    </ItemGroup>
 
     </ItemGroup>
 

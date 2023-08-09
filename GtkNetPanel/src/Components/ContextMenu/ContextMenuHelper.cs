@@ -3,7 +3,7 @@ using GLib;
 using Gtk;
 using Global = Gtk.Global;
 
-namespace GtkNetPanel;
+namespace GtkNetPanel.Components.ContextMenu;
 
 public class ContextMenuHelper
 {

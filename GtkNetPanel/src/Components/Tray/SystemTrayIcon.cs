@@ -1,38 +1,64 @@
 using Gdk;
 using Gtk;
-using GtkNetPanel.Tray;
+using GtkNetPanel.Components.ContextMenu;
+using GtkNetPanel.DBus.Menu;
+using GtkNetPanel.DBus.StatusNotifierItem;
 
-namespace GtkNetPanel;
+namespace GtkNetPanel.Components.Tray;
 
-public class SystemTray : HBox
+// Hover and click effects
+
+public class SystemTrayIcon : EventBox
 {
-	private List<StatusNotifierItem> _statusNotifierItems;
+	private readonly DbusStatusNotifierItem _dbusStatusNotifierItem;
+	private Menu _contextMenu;
 
-	protected override void OnShown()
+	public SystemTrayIcon(DbusStatusNotifierItem dbusStatusNotifierItem)
 	{
-		Task.Run(async () =>
+		var image = LoadImage(dbusStatusNotifierItem.Properties);
+
+		_dbusStatusNotifierItem = dbusStatusNotifierItem;
+		HasTooltip = true;
+		TooltipText = _dbusStatusNotifierItem.Properties.Category;
+
+		Add(image);
+		AddEvents((int)EventMask.ButtonReleaseMask);
+
+		var popup = new Menu();
+
+		DBus.DBus.GetMenuItems(_dbusStatusNotifierItem).ContinueWith(result =>
 		{
-			try
-			{
-				_statusNotifierItems = await DBus.GetTrayItems();
+			DBusMenuFactory.Create(popup, result.Result);
 
-				foreach (var item in _statusNotifierItems)
-				{
-					var image = LoadImage(item.Properties);
-					if (image == null) continue;
-					var systemTrayIcon = new SystemTrayIcon(item, image);
-					PackStart(systemTrayIcon, false, false, 3);
-				}
+			var allMenuItems = DBusMenuFactory.GetAllMenuItems(popup);
 
-				ShowAll();
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine(e);
-			}
+			foreach (var i in allMenuItems) i.Activated += (sender, args) => DBus.DBus.ClickedItem(_dbusStatusNotifierItem, (i.Data["DbusMenuItem"] as DbusMenuItem).Id);
 		});
 
-		base.OnShown();
+		var helper = new ContextMenuHelper();
+		helper.AttachToWidget(this);
+
+		helper.ContextMenu += (_, _) =>
+		{
+			if (popup.Children.Any())
+			{
+				popup.Popup();
+			}
+		};
+
+		ButtonReleaseEvent += async (o, args) =>
+		{
+			if (args.Event.Button != 1) return;
+
+			if (_dbusStatusNotifierItem.Object.InterfaceHasMethod(IStatusNotifierItem.DbusInterfaceName, "Activate"))
+			{
+				await DBus.DBus.ActivateSystemTrayItemAsync(_dbusStatusNotifierItem, (int)args.Event.XRoot, (int)args.Event.YRoot);
+			}
+			else
+			{
+				popup.Popup();
+			}
+		};
 	}
 
 	private byte[] ConvertArgbToRgba(byte[] data, int width, int height)

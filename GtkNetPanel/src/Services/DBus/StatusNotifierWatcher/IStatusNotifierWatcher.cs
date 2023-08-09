@@ -1,6 +1,6 @@
 using Tmds.DBus;
 
-namespace GtkNetPanel.Tray;
+namespace GtkNetPanel.DBus.StatusNotifierWatcher;
 
 [DBusInterface(DbusInterfaceName)]
 internal interface IStatusNotifierWatcher : IDBusObject
@@ -16,4 +16,11 @@ internal interface IStatusNotifierWatcher : IDBusObject
 	Task<StatusNotifierWatcherProperties> GetAllAsync();
 	Task SetAsync(string prop, object val);
 	Task<IDisposable> WatchPropertiesAsync(Action<PropertyChanges> handler);
+}
+
+static class StatusNotifierWatcherExtensions
+{
+	public static Task<string[]> GetRegisteredStatusNotifierItemsAsync(this IStatusNotifierWatcher o) => o.GetAsync<string[]>("RegisteredStatusNotifierItems");
+	public static Task<bool> GetIsStatusNotifierHostRegisteredAsync(this IStatusNotifierWatcher o) => o.GetAsync<bool>("IsStatusNotifierHostRegistered");
+	public static Task<int> GetProtocolVersionAsync(this IStatusNotifierWatcher o) => o.GetAsync<int>("ProtocolVersion");
 }

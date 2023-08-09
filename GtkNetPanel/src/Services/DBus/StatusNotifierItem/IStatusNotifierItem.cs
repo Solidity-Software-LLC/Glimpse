@@ -1,6 +1,6 @@
 using Tmds.DBus;
 
-namespace GtkNetPanel.Tray;
+namespace GtkNetPanel.DBus.StatusNotifierItem;
 
 [DBusInterface(DbusInterfaceName)]
 internal interface IStatusNotifierItem : IDBusObject

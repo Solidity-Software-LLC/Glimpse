@@ -1,4 +1,5 @@
 ﻿using GLib;
+using GtkNetPanel.Components;
 using Application = Gtk.Application;
 using Display = Gdk.Display;
 
