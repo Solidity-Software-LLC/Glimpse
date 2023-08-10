@@ -1,6 +1,5 @@
 using Gdk;
 using Gtk;
-using GtkNetPanel.Services.DBus.Introspection;
 using GtkNetPanel.State;
 
 namespace GtkNetPanel.Services.DBus.StatusNotifierItem;

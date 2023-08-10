@@ -51,9 +51,10 @@ public class DBusSystemTrayService
 		_dispatcher.Dispatch(new AddBulkTrayItemsAction() { Items = results });
 	}
 
-	private async Task<SystemTrayItemState> CreateTrayItemState(string serviceName)
+	private async Task<SystemTrayItemState> CreateTrayItemState(string statusNotifierObjectPath)
 	{
-		var statusNotifierItemDesc = await _introspectionService.FindDBusObjectDescription(serviceName.RemoveObjectPath(), "/", i => i == IStatusNotifierItem.DbusInterfaceName);
+		var serviceName = statusNotifierObjectPath.RemoveObjectPath();
+		var statusNotifierItemDesc = await _introspectionService.FindDBusObjectDescription(serviceName, "/", i => i == IStatusNotifierItem.DbusInterfaceName);
 		var statusNotifierItemProxy = _connection.CreateProxy<IStatusNotifierItem>(statusNotifierItemDesc.ServiceName, statusNotifierItemDesc.ObjectPath);
 		var menuObjectPath = await statusNotifierItemProxy.TryGetAsync<string>("Menu") ?? (await statusNotifierItemProxy.TryGetAsync<ObjectPath>("Menu")).ToString();
 		var dbusMenuDescription = await _introspectionService.FindDBusObjectDescription(statusNotifierItemDesc.ServiceName, menuObjectPath, p => p == IDbusmenu.DbusInterfaceName);

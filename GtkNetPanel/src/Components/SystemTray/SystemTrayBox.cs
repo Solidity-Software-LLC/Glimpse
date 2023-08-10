@@ -51,15 +51,16 @@ public class SystemTrayBox : Box
 
 	private void AddSystemTrayIcon(KeyValuePair<string, SystemTrayItemState> kv)
 	{
-		var rootMenuObservable = _trayState.ToObservable().TakeUntil(s => !s.Items.ContainsKey(kv.Key)).Select(s => s.Items[kv.Key]);
+		var trayIconRemoveObservable = _trayState.ToObservable().Where(s => !s.Items.ContainsKey(kv.Key)).Take(1);
+		var rootMenuObservable = _trayState.ToObservable().TakeUntil(trayIconRemoveObservable).Select(s => s.Items[kv.Key]);
 		var systemTrayIcon = new SystemTrayIcon(rootMenuObservable);
 
-		systemTrayIcon.MenuItemActivated.Subscribe(id =>
+		systemTrayIcon.MenuItemActivated.TakeUntil(trayIconRemoveObservable).Subscribe(id =>
 		{
 			_dispatcher.Dispatch(new ActivateMenuItemAction() { DbusObjectDescription = kv.Value.DbusMenuDescription, MenuItemId = id });
 		});
 
-		systemTrayIcon.ApplicationActivated.Subscribe(t =>
+		systemTrayIcon.ApplicationActivated.TakeUntil(trayIconRemoveObservable).Subscribe(t =>
 		{
 			_dispatcher.Dispatch(new ActivateApplicationAction() { DbusObjectDescription = kv.Value.StatusNotifierItemDescription, X = t.Item1, Y = t.Item2 });
 		});
