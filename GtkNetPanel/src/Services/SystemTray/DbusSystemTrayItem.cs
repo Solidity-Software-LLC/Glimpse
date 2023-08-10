@@ -1,15 +1,13 @@
 using Gdk;
 using Gtk;
-using GtkNetPanel.State;
+using GtkNetPanel.Services.DBus.StatusNotifierItem;
 
 namespace GtkNetPanel.Services.SystemTray;
 
 public static class DbusSystemTrayItemExtensions
 {
-	public static Pixbuf CreateIcon(this SystemTrayItemState dbusSystemTrayItemState, IconTheme iconTheme)
+	public static Pixbuf CreateIcon(this StatusNotifierItemProperties properties, IconTheme iconTheme)
 	{
-		var properties = dbusSystemTrayItemState.Properties;
-
 		if (!string.IsNullOrEmpty(properties.IconThemePath))
 		{
 			var imageData = File.ReadAllBytes(Path.Join(properties.IconThemePath, properties.IconName) +  ".png");

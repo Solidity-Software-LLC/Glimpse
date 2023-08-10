@@ -25,18 +25,20 @@ public class SystemTrayIcon : EventBox
 		_disposables.AddLast(_helper);
 
 		AddEvents((int)EventMask.ButtonReleaseMask);
-		SystemTrayItemState currentSystemTrayItemState = null;
 		var hasActivateMethod = false;
 
 		_disposables.AddLast(
-			trayItemStateObservable.Select(s => s).DistinctUntilChanged().Subscribe(statusState =>
+			trayItemStateObservable.Select(s => s.Properties).DistinctUntilChanged().Subscribe(properties =>
 			{
-				currentSystemTrayItemState = statusState;
-				hasActivateMethod = currentSystemTrayItemState.StatusNotifierItemDescription.InterfaceHasMethod(IStatusNotifierItem.DbusInterfaceName, "Activate");
-
-				CreateTrayIcon(statusState);
-				TooltipText = statusState.Properties.Category;
+				CreateTrayIcon(properties);
+				TooltipText = properties.Category;
 				HasTooltip = !string.IsNullOrEmpty(TooltipText);
+			}));
+
+		_disposables.AddLast(
+			trayItemStateObservable.Select(s => s.StatusNotifierItemDescription).DistinctUntilChanged().Subscribe(desc =>
+			{
+				hasActivateMethod = desc.InterfaceHasMethod(IStatusNotifierItem.DbusInterfaceName, "Activate");
 			}));
 
 		_disposables.AddLast(
@@ -68,14 +70,14 @@ public class SystemTrayIcon : EventBox
 	public IObservable<int> MenuItemActivated => _menuItemActivatedSubject;
 	public IObservable<(int, int)> ApplicationActivated => _applicationActivated;
 
-	private void CreateTrayIcon(SystemTrayItemState state)
+	private void CreateTrayIcon(StatusNotifierItemProperties properties)
 	{
 		if (_icon != null)
 		{
 			Remove(_icon);
 		}
 
-		_icon = new Image(state
+		_icon = new Image(properties
 			.CreateIcon(IconTheme.GetForScreen(Screen))
 			.ScaleSimple(24, 24, InterpType.Bilinear));
 
