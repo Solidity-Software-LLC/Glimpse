@@ -20,3 +20,18 @@ public interface IStatusNotifierItem : IDBusObject
 	Task<IDisposable> WatchNewTitleAsync(Action handler, Action<Exception> onError = null);
 	Task<StatusNotifierItemProperties> GetAllAsync();
 }
+
+public static class StatusNotifierItemExtensions
+{
+	public static async Task<T> TryGetAsync<T>(this IStatusNotifierItem item, string prop)
+	{
+		try
+		{
+			return await item.GetAsync<T>(prop);
+		}
+		catch (Exception e)
+		{
+			return default;
+		}
+	}
+}

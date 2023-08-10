@@ -1,6 +1,6 @@
 namespace GtkNetPanel.Services.DBus.Introspection;
 
-public record DbusObject
+public record DbusObjectDescription
 {
 	public string ServiceName { get; set; }
 	public string ObjectPath { get; set; }

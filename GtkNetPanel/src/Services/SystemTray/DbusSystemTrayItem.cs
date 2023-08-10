@@ -1,21 +1,15 @@
 using Gdk;
 using Gtk;
 using GtkNetPanel.Services.DBus.Introspection;
+using GtkNetPanel.State;
 
 namespace GtkNetPanel.Services.DBus.StatusNotifierItem;
 
-public class DbusStatusNotifierItem
+public static class DbusSystemTrayItemExtensions
 {
-	public StatusNotifierItemProperties Properties { get; set; }
-	public DbusObject Object { get; set; }
-	public DbusObject Menu { get; set; }
-}
-
-public static class DbusStatusNotifierItemExtensions
-{
-	public static Pixbuf CreateIcon(this DbusStatusNotifierItem dbusStatusNotifierItem, IconTheme iconTheme)
+	public static Pixbuf CreateIcon(this SystemTrayItemState dbusSystemTrayItemState, IconTheme iconTheme)
 	{
-		var properties = dbusStatusNotifierItem.Properties;
+		var properties = dbusSystemTrayItemState.Properties;
 
 		if (!string.IsNullOrEmpty(properties.IconThemePath))
 		{

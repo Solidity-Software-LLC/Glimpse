@@ -9,9 +9,9 @@ namespace GtkNetPanel.Components.ContextMenu;
 
 public static class DbusContextMenuHelpers
 {
-	public static DbusMenuItem GetDbusMenuItem(this MenuItem menuItem)
+	public static DbusSystemTrayMenuItem GetDbusMenuItem(this MenuItem menuItem)
 	{
-		return menuItem.Data["DbusMenuItem"] as DbusMenuItem;
+		return menuItem.Data["DbusMenuItem"] as DbusSystemTrayMenuItem;
 	}
 	public static LinkedList<MenuItem> GetAllMenuItems(Menu rootMenu)
 	{
@@ -28,33 +28,33 @@ public static class DbusContextMenuHelpers
 
 		return result;
 	}
-	public static void PopulateMenu(Menu rootMenu, DbusMenuItem rootItem)
+	public static void PopulateMenu(Menu rootMenu, DbusSystemTrayMenuItem rootItem)
 	{
 		foreach (var childMenuItem in rootItem.Children) PopulateMenuInternal(rootMenu, childMenuItem);
 		rootMenu.ShowAll();
 	}
 
-	private static void PopulateMenuInternal(Menu parentMenu, DbusMenuItem dbusMenuItem)
+	private static void PopulateMenuInternal(Menu parentMenu, DbusSystemTrayMenuItem dbusSystemTrayMenuItem)
 	{
-		if (dbusMenuItem.Type == "separator")
+		if (dbusSystemTrayMenuItem.Type == "separator")
 		{
 			parentMenu.Add(new SeparatorMenuItem());
 		}
 		else
 		{
-			var menuItem = CreateMenuItem(dbusMenuItem);
+			var menuItem = CreateMenuItem(dbusSystemTrayMenuItem);
 			parentMenu.Add(menuItem);
 
-			if (dbusMenuItem.Children.Any())
+			if (dbusSystemTrayMenuItem.Children.Any())
 			{
 				var childMenu = new Menu();
 				menuItem.Submenu = childMenu;
-				foreach (var childItem in dbusMenuItem.Children) PopulateMenuInternal(childMenu, childItem);
+				foreach (var childItem in dbusSystemTrayMenuItem.Children) PopulateMenuInternal(childMenu, childItem);
 			}
 		}
 	}
 
-	private static MenuItem CreateMenuItem(DbusMenuItem item)
+	private static MenuItem CreateMenuItem(DbusSystemTrayMenuItem item)
 	{
 		var box = new Box(Orientation.Horizontal, 10);
 

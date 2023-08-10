@@ -1,8 +1,8 @@
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using Gdk;
 using Gtk;
 using GtkNetPanel.Components.ContextMenu;
-using GtkNetPanel.Services.DBus;
 using GtkNetPanel.Services.DBus.StatusNotifierItem;
 using GtkNetPanel.State;
 
@@ -11,25 +11,27 @@ namespace GtkNetPanel.Components.Tray;
 public class SystemTrayIcon : EventBox
 {
 	private readonly Menu _contextMenu;
-	private Image _icon;
 	private readonly LinkedList<IDisposable> _disposables = new();
 	private readonly ContextMenuHelper _helper;
+	private readonly Subject<int> _menuItemActivatedSubject = new();
+	private readonly Subject<(int, int)> _applicationActivated = new();
+	private Image _icon;
 
-	public SystemTrayIcon(IObservable<TrayItemState> trayItemStateObservable)
+	public SystemTrayIcon(IObservable<SystemTrayItemState> trayItemStateObservable)
 	{
 		_contextMenu = new Menu();
 		_helper = new ContextMenuHelper(this);
 		_disposables.AddLast(_helper);
 
 		AddEvents((int)EventMask.ButtonReleaseMask);
-		DbusStatusNotifierItem currentStatus = null;
+		SystemTrayItemState currentSystemTrayItemState = null;
 		var hasActivateMethod = false;
 
 		_disposables.AddLast(
-			trayItemStateObservable.Select(s => s.Status).DistinctUntilChanged().Subscribe(statusState =>
+			trayItemStateObservable.Select(s => s).DistinctUntilChanged().Subscribe(statusState =>
 			{
-				currentStatus = statusState;
-				hasActivateMethod = currentStatus.Object.InterfaceHasMethod(IStatusNotifierItem.DbusInterfaceName, "Activate");
+				currentSystemTrayItemState = statusState;
+				hasActivateMethod = currentSystemTrayItemState.StatusNotifierItemDescription.InterfaceHasMethod(IStatusNotifierItem.DbusInterfaceName, "Activate");
 
 				CreateTrayIcon(statusState);
 				TooltipText = statusState.Properties.Category;
@@ -37,7 +39,7 @@ public class SystemTrayIcon : EventBox
 			}));
 
 		_disposables.AddLast(
-			trayItemStateObservable.Select(s => s.RootMenuItem).DistinctUntilChanged().Subscribe(menuState =>
+			trayItemStateObservable.Select(s => s.RootSystemTrayMenuItem).DistinctUntilChanged().Subscribe(menuState =>
 			{
 				_contextMenu.RemoveAllChildren();
 				DbusContextMenuHelpers.PopulateMenu(_contextMenu, menuState);
@@ -45,7 +47,7 @@ public class SystemTrayIcon : EventBox
 
 				foreach (var i in allMenuItems)
 				{
-					i.Activated += (sender, args) => DBus.ClickedItem(currentStatus, i.GetDbusMenuItem().Id);
+					i.Activated += (_, _) => _menuItemActivatedSubject.OnNext(i.GetDbusMenuItem().Id);
 				}
 			}));
 
@@ -58,7 +60,7 @@ public class SystemTrayIcon : EventBox
 			Observable.FromEventPattern<ButtonPressEventArgs>(this, nameof(ButtonPressEvent))
 				.Where(e => hasActivateMethod && e.EventArgs.Event.Button == 1 && e.EventArgs.Event.Type == EventType.DoubleButtonPress)
 				.Select(e => e.EventArgs.Event)
-				.Subscribe(e => DBus.ActivateSystemTrayItemAsync(currentStatus, (int)e.XRoot, (int)e.YRoot)));
+				.Subscribe(e => _applicationActivated.OnNext(((int)e.XRoot, (int)e.YRoot))));
 
 		_disposables.AddLast(
 			Observable.FromEventPattern<ButtonPressEventArgs>(this, nameof(ButtonPressEvent))
@@ -66,7 +68,10 @@ public class SystemTrayIcon : EventBox
 				.Subscribe(_ => _contextMenu.Popup()));
 	}
 
-	private void CreateTrayIcon(DbusStatusNotifierItem state)
+	public IObservable<int> MenuItemActivated => _menuItemActivatedSubject;
+	public IObservable<(int, int)> ApplicationActivated => _applicationActivated;
+
+	private void CreateTrayIcon(SystemTrayItemState state)
 	{
 		if (_icon != null)
 		{
@@ -83,7 +88,11 @@ public class SystemTrayIcon : EventBox
 	protected override void Dispose(bool disposing)
 	{
 		base.Dispose(disposing);
-		foreach (var d in _disposables) d.Dispose();
+		foreach (var d in _disposables)
+		{
+			d.Dispose();
+		}
+
 		_contextMenu.Destroy();
 	}
 }

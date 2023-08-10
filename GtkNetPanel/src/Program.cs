@@ -2,6 +2,7 @@
 using GtkNetPanel.Components;
 using GtkNetPanel.Components.Tray;
 using GtkNetPanel.Services.DBus;
+using GtkNetPanel.Services.DBus.Introspection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tmds.DBus;
@@ -20,8 +21,9 @@ public static class Program
 			{
 				services.AddFluxor(o => o.ScanAssemblies(typeof(Program).Assembly));
 				services.AddTransient<SharpPanel>();
-				services.AddTransient<SystemTray>();
-				services.AddSingleton<DbusSystemTrayService>();
+				services.AddTransient<SystemTrayBox>();
+				services.AddSingleton<DBusSystemTrayService>();
+				services.AddSingleton<IntrospectionService>();
 				services.AddSingleton(Connection.Session);
 				services.AddHostedService<GtkApplicationHostedService>();
 			})
@@ -31,9 +33,8 @@ public static class Program
 		var store = host.Services.GetRequiredService<IStore>();
 		await store.InitializeAsync();
 
-		var watcher = host.Services.GetRequiredService<DbusSystemTrayService>();
-		watcher.Connect();
-		await watcher.LoadTrayItems();
+		var watcher = host.Services.GetRequiredService<DBusSystemTrayService>();
+		await watcher.Initialize();
 		await host.RunAsync();
 		return 0;
 	}

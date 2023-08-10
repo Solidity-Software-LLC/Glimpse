@@ -2,7 +2,7 @@ using System.Text;
 
 namespace GtkNetPanel.Services.DBus.Menu;
 
-public class DbusMenuItem
+public class DbusSystemTrayMenuItem
 {
 	public int Id { get; set; }
 	public bool? Enabled { get; set; }
@@ -14,9 +14,9 @@ public class DbusMenuItem
 	public string Type { get; set; }
 	public byte[] IconData { get; set; }
 
-	public DbusMenuItem[] Children { get; set; }
+	public DbusSystemTrayMenuItem[] Children { get; set; }
 
-	public static DbusMenuItem From((int, IDictionary<string, object>, object[]) root)
+	public static DbusSystemTrayMenuItem From((int, IDictionary<string, object>, object[]) root)
 	{
 		root.Item2.TryGetValue("enabled", out var enabled);
 		root.Item2.TryGetValue("label", out var label);
@@ -27,7 +27,7 @@ public class DbusMenuItem
 		root.Item2.TryGetValue("icon-data", out var iconData);
 		root.Item2.TryGetValue("type", out var type);
 
-		var item = new DbusMenuItem()
+		var item = new DbusSystemTrayMenuItem()
 		{
 			Id = root.Item1,
 			Enabled = (bool?) enabled,

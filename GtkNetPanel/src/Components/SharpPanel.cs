@@ -12,7 +12,7 @@ public class SharpPanel : Window
 	private readonly CssProvider _cssProvider;
 	private const int PanelHeight = 52;
 
-	public SharpPanel(SystemTray systemTray) : base("Null")
+	public SharpPanel(SystemTrayBox systemTrayBox) : base("Null")
 	{
 		Decorated = false;
 		Resizable = false;
@@ -36,7 +36,7 @@ public class SharpPanel : Window
 		var box = new Box(Orientation.Horizontal, 4);
 		box.PackStart(appMenuWidget, false, false, 0);
 		box.PackStart(new DrawingArea(), true, false, 4);
-		box.PackStart(systemTray, false, false, 4);
+		box.PackStart(systemTrayBox, false, false, 4);
 		box.PackStart(CreateClock(), false, false, 5);
 		box.PackStart(new DrawingArea(), false, false, 4);
 		Add(box);

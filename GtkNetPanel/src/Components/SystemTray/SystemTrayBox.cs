@@ -5,21 +5,23 @@ using GtkNetPanel.State;
 
 namespace GtkNetPanel.Components.Tray;
 
-public class SystemTray : Box
+public class SystemTrayBox : Box
 {
-	private readonly IState<TrayState> _trayState;
+	private readonly IState<SystemTrayState> _trayState;
+	private readonly IDispatcher _dispatcher;
 	private readonly Dictionary<string, SystemTrayIcon> _icons = new();
 
-	public SystemTray(IState<TrayState> trayState) : base(Orientation.Horizontal, 3)
+	public SystemTrayBox(IState<SystemTrayState> trayState, IDispatcher dispatcher) : base(Orientation.Horizontal, 3)
 	{
 		_trayState = trayState;
+		_dispatcher = dispatcher;
 		trayState.ToObservable().Subscribe(s =>
 		{
 			OnItemsChanged(s.Items);
 		});
 	}
 
-	private void OnItemsChanged(IDictionary<string, TrayItemState> items)
+	private void OnItemsChanged(IDictionary<string, SystemTrayItemState> items)
 	{
 		foreach (var i in items)
 		{
@@ -47,10 +49,21 @@ public class SystemTray : Box
 		Remove(icon);
 	}
 
-	private void AddSystemTrayIcon(KeyValuePair<string, TrayItemState> kv)
+	private void AddSystemTrayIcon(KeyValuePair<string, SystemTrayItemState> kv)
 	{
 		var rootMenuObservable = _trayState.ToObservable().TakeUntil(s => !s.Items.ContainsKey(kv.Key)).Select(s => s.Items[kv.Key]);
 		var systemTrayIcon = new SystemTrayIcon(rootMenuObservable);
+
+		systemTrayIcon.MenuItemActivated.Subscribe(id =>
+		{
+			_dispatcher.Dispatch(new ActivateMenuItemAction() { DbusObjectDescription = kv.Value.DbusMenuDescription, MenuItemId = id });
+		});
+
+		systemTrayIcon.ApplicationActivated.Subscribe(t =>
+		{
+			_dispatcher.Dispatch(new ActivateApplicationAction() { DbusObjectDescription = kv.Value.StatusNotifierItemDescription, X = t.Item1, Y = t.Item2 });
+		});
+
 		PackStart(systemTrayIcon, false, false, 3);
 		_icons.Add(kv.Key, systemTrayIcon);
 	}
