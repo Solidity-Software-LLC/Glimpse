@@ -1,6 +1,6 @@
 using Tmds.DBus;
 
-namespace GtkNetPanel.DBus.StatusNotifierItem;
+namespace GtkNetPanel.Services.DBus.StatusNotifierItem;
 
 [Dictionary]
 public record StatusNotifierItemProperties

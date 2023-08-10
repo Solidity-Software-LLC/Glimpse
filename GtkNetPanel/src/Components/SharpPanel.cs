@@ -9,9 +9,10 @@ namespace GtkNetPanel.Components;
 
 public class SharpPanel : Window
 {
-	private CssProvider _cssProvider;
+	private readonly CssProvider _cssProvider;
+	private const int PanelHeight = 52;
 
-	public SharpPanel() : base("Null")
+	public SharpPanel(SystemTray systemTray) : base("Null")
 	{
 		Decorated = false;
 		Resizable = false;
@@ -21,7 +22,7 @@ public class SharpPanel : Window
 		Visual = Screen.RgbaVisual;
 
 		var appMenuWidget = new AppMenu();
-		appMenuWidget.SetSizeRequest(52, 52);
+		appMenuWidget.SetSizeRequest(PanelHeight, PanelHeight);
 
 		_cssProvider = new CssProvider();
 		_cssProvider.LoadFromData(@"
@@ -35,10 +36,12 @@ public class SharpPanel : Window
 		var box = new Box(Orientation.Horizontal, 4);
 		box.PackStart(appMenuWidget, false, false, 0);
 		box.PackStart(new DrawingArea(), true, false, 4);
-		box.PackStart(new SystemTray(), false, false, 4);
+		box.PackStart(systemTray, false, false, 4);
 		box.PackStart(CreateClock(), false, false, 5);
 		box.PackStart(new DrawingArea(), false, false, 4);
 		Add(box);
+
+		ShowAll();
 
 		// var helper = new ContextMenuHelper();
 		// helper.AttachToWidget(this);
@@ -85,12 +88,18 @@ public class SharpPanel : Window
 		return clock;
 	}
 
-	public void ReserveSpace()
+	public void DockToBottom(Gdk.Monitor monitor)
 	{
-		var defaultDisplay = Display.Default;
-		var monitor = defaultDisplay.GetMonitorAtWindow(Window);
 		var monitorDimensions = monitor.Geometry;
-		var reservedSpaceLong = new long[] { 0, 0, 0, 52, 0, 0, 0, 0, 0, 0, 0, monitorDimensions.Width }.SelectMany(BitConverter.GetBytes).ToArray();
+		SetSizeRequest(monitorDimensions.Width, PanelHeight);
+		Move(monitor.Workarea.Left, monitorDimensions.Height - PanelHeight);
+		ReserveSpace(monitor);
+	}
+
+	private void ReserveSpace(Gdk.Monitor monitor)
+	{
+		var monitorDimensions = monitor.Geometry;
+		var reservedSpaceLong = new long[] { 0, 0, 0, PanelHeight, 0, 0, 0, 0, 0, 0, 0, monitorDimensions.Width }.SelectMany(BitConverter.GetBytes).ToArray();
 		Property.Change(Window, Atom.Intern("_NET_WM_STRUT_PARTIAL", false), Atom.Intern("CARDINAL", false), 32, PropMode.Replace, reservedSpaceLong, 12);
 	}
 }

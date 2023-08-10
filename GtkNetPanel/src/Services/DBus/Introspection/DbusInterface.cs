@@ -1,4 +1,4 @@
-namespace GtkNetPanel.DBus.Introspection;
+namespace GtkNetPanel.Services.DBus.Introspection;
 
 public class DbusInterface
 {

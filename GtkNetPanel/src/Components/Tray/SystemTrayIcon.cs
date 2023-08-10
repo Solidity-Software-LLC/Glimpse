@@ -1,113 +1,89 @@
+using System.Reactive.Linq;
 using Gdk;
 using Gtk;
 using GtkNetPanel.Components.ContextMenu;
-using GtkNetPanel.DBus.Menu;
-using GtkNetPanel.DBus.StatusNotifierItem;
+using GtkNetPanel.Services.DBus;
+using GtkNetPanel.Services.DBus.StatusNotifierItem;
+using GtkNetPanel.State;
 
 namespace GtkNetPanel.Components.Tray;
 
-// Hover and click effects
-
 public class SystemTrayIcon : EventBox
 {
-	private readonly DbusStatusNotifierItem _dbusStatusNotifierItem;
-	private Menu _contextMenu;
+	private readonly Menu _contextMenu;
+	private Image _icon;
+	private readonly LinkedList<IDisposable> _disposables = new();
+	private readonly ContextMenuHelper _helper;
 
-	public SystemTrayIcon(DbusStatusNotifierItem dbusStatusNotifierItem)
+	public SystemTrayIcon(IObservable<TrayItemState> trayItemStateObservable)
 	{
-		var image = LoadImage(dbusStatusNotifierItem.Properties);
+		_contextMenu = new Menu();
+		_helper = new ContextMenuHelper(this);
+		_disposables.AddLast(_helper);
 
-		_dbusStatusNotifierItem = dbusStatusNotifierItem;
-		HasTooltip = true;
-		TooltipText = _dbusStatusNotifierItem.Properties.Category;
-
-		Add(image);
 		AddEvents((int)EventMask.ButtonReleaseMask);
+		DbusStatusNotifierItem currentStatus = null;
+		var hasActivateMethod = false;
 
-		var popup = new Menu();
-
-		DBus.DBus.GetMenuItems(_dbusStatusNotifierItem).ContinueWith(result =>
-		{
-			DBusMenuFactory.Create(popup, result.Result);
-
-			var allMenuItems = DBusMenuFactory.GetAllMenuItems(popup);
-
-			foreach (var i in allMenuItems) i.Activated += (sender, args) => DBus.DBus.ClickedItem(_dbusStatusNotifierItem, (i.Data["DbusMenuItem"] as DbusMenuItem).Id);
-		});
-
-		var helper = new ContextMenuHelper();
-		helper.AttachToWidget(this);
-
-		helper.ContextMenu += (_, _) =>
-		{
-			if (popup.Children.Any())
+		_disposables.AddLast(
+			trayItemStateObservable.Select(s => s.Status).DistinctUntilChanged().Subscribe(statusState =>
 			{
-				popup.Popup();
-			}
-		};
+				currentStatus = statusState;
+				hasActivateMethod = currentStatus.Object.InterfaceHasMethod(IStatusNotifierItem.DbusInterfaceName, "Activate");
 
-		ButtonReleaseEvent += async (o, args) =>
-		{
-			if (args.Event.Button != 1) return;
+				CreateTrayIcon(statusState);
+				TooltipText = statusState.Properties.Category;
+				HasTooltip = !string.IsNullOrEmpty(TooltipText);
+			}));
 
-			if (_dbusStatusNotifierItem.Object.InterfaceHasMethod(IStatusNotifierItem.DbusInterfaceName, "Activate"))
+		_disposables.AddLast(
+			trayItemStateObservable.Select(s => s.RootMenuItem).DistinctUntilChanged().Subscribe(menuState =>
 			{
-				await DBus.DBus.ActivateSystemTrayItemAsync(_dbusStatusNotifierItem, (int)args.Event.XRoot, (int)args.Event.YRoot);
-			}
-			else
-			{
-				popup.Popup();
-			}
-		};
+				_contextMenu.RemoveAllChildren();
+				DbusContextMenuHelpers.PopulateMenu(_contextMenu, menuState);
+				var allMenuItems = DbusContextMenuHelpers.GetAllMenuItems(_contextMenu);
+
+				foreach (var i in allMenuItems)
+				{
+					i.Activated += (sender, args) => DBus.ClickedItem(currentStatus, i.GetDbusMenuItem().Id);
+				}
+			}));
+
+		_disposables.AddLast(
+			Observable.FromEventPattern<EventArgs>(_helper, nameof(_helper.ContextMenu))
+				.Where(_ => _contextMenu.Children.Any())
+				.Subscribe(_ => _contextMenu.Popup()));
+
+		_disposables.AddLast(
+			Observable.FromEventPattern<ButtonPressEventArgs>(this, nameof(ButtonPressEvent))
+				.Where(e => hasActivateMethod && e.EventArgs.Event.Button == 1 && e.EventArgs.Event.Type == EventType.DoubleButtonPress)
+				.Select(e => e.EventArgs.Event)
+				.Subscribe(e => DBus.ActivateSystemTrayItemAsync(currentStatus, (int)e.XRoot, (int)e.YRoot)));
+
+		_disposables.AddLast(
+			Observable.FromEventPattern<ButtonPressEventArgs>(this, nameof(ButtonPressEvent))
+				.Where(e => !hasActivateMethod && e.EventArgs.Event.Button == 1 && e.EventArgs.Event.Type == EventType.ButtonPress)
+				.Subscribe(_ => _contextMenu.Popup()));
 	}
 
-	private byte[] ConvertArgbToRgba(byte[] data, int width, int height)
+	private void CreateTrayIcon(DbusStatusNotifierItem state)
 	{
-		var newArray = new byte[data.Length];
-		Array.Copy(data, newArray, data.Length);
-
-		for (var i = 0; i < 4 * width * height; i += 4)
+		if (_icon != null)
 		{
-			var alpha = newArray[i];
-			newArray[i] = newArray[i + 1];
-			newArray[i + 1] = newArray[i + 2];
-			newArray[i + 2] = newArray[i + 3];
-			newArray[i + 3] = alpha;
+			Remove(_icon);
 		}
 
-		return newArray;
+		_icon = new Image(state
+			.CreateIcon(IconTheme.GetForScreen(Screen))
+			.ScaleSimple(24, 24, InterpType.Bilinear));
+
+		Add(_icon);
 	}
 
-	// Move this into the icon class
-	private Image LoadImage(StatusNotifierItemProperties item)
+	protected override void Dispose(bool disposing)
 	{
-		if (!string.IsNullOrEmpty(item.IconThemePath))
-		{
-			var imageData = File.ReadAllBytes(System.IO.Path.Join(item.IconThemePath, item.IconName) +  ".png");
-			var loader = PixbufLoader.NewWithType("png");
-			loader.Write(imageData);
-
-			return new Image(loader.Pixbuf.ScaleSimple(24, 24, InterpType.Bilinear));
-		}
-
-		if (!string.IsNullOrEmpty(item.IconName))
-		{
-			var iconTheme = IconTheme.GetForScreen(Screen);
-			var pixbuf = iconTheme.LoadIcon(item.IconName, 24, IconLookupFlags.DirLtr);
-			pixbuf = pixbuf.ScaleSimple(24, 24, InterpType.Bilinear);
-
-			return new Image(pixbuf);
-		}
-
-		if (item.IconPixmap != null)
-		{
-			var biggestIcon = item.IconPixmap.MaxBy(i => i.Width * i.Height);
-			var colorCorrectedIconData = ConvertArgbToRgba(biggestIcon.Data, biggestIcon.Width, biggestIcon.Height);
-			var pixBuffer = new Pixbuf(colorCorrectedIconData, Colorspace.Rgb, true, 8, biggestIcon.Width, biggestIcon.Height, 4 * biggestIcon.Width);
-			return new Image(pixBuffer.ScaleSimple(24, 24, InterpType.Bilinear));
-		}
-
-		Console.WriteLine("System Tray - Failed to find icon for: " + item.Title);
-		return null;
+		base.Dispose(disposing);
+		foreach (var d in _disposables) d.Dispose();
+		_contextMenu.Destroy();
 	}
 }

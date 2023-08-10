@@ -1,9 +1,9 @@
 using Tmds.DBus;
 
-namespace GtkNetPanel.DBus.StatusNotifierItem;
+namespace GtkNetPanel.Services.DBus.StatusNotifierItem;
 
 [DBusInterface(DbusInterfaceName)]
-internal interface IStatusNotifierItem : IDBusObject
+public interface IStatusNotifierItem : IDBusObject
 {
 	public const string DbusInterfaceName = "org.kde.StatusNotifierItem";
 

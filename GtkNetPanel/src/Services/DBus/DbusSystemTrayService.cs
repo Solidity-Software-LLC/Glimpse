@@ -1,77 +1,71 @@
-using System.Collections.Immutable;
-using System.Reactive.Subjects;
 using System.Xml.Linq;
 using System.Xml.XPath;
-using GtkNetPanel.DBus.Introspection;
-using GtkNetPanel.DBus.Menu;
-using GtkNetPanel.DBus.StatusNotifierItem;
+using Fluxor;
+using GtkNetPanel.Services.DBus.Introspection;
+using GtkNetPanel.Services.DBus.Menu;
+using GtkNetPanel.Services.DBus.StatusNotifierItem;
+using GtkNetPanel.Services.DBus.StatusNotifierWatcher;
+using GtkNetPanel.State;
 using Tmds.DBus;
 
-namespace GtkNetPanel.DBus.StatusNotifierWatcher;
+namespace GtkNetPanel.Services.DBus;
 
-public class StatusNotifierWatcherService
+public class DbusSystemTrayService
 {
 	private const string StatusNotifierObjectPath = "/StatusNotifierWatcher";
 	private readonly Connection _connection;
-	private readonly object _lock = new();
-	private readonly BehaviorSubject<ImmutableList<DbusStatusNotifierItem>> _statusNotifierItemsSubject = new(ImmutableList<DbusStatusNotifierItem>.Empty);
-	private ImmutableList<DbusStatusNotifierItem> _statusNotifierItems = ImmutableList<DbusStatusNotifierItem>.Empty;
+	private readonly IDispatcher _dispatcher;
 
-	public StatusNotifierWatcherService(Connection connection = null) => _connection = connection ?? Connection.Session;
-	public IObservable<ImmutableList<DbusStatusNotifierItem>> StatusNotifierItems => _statusNotifierItemsSubject;
+	public DbusSystemTrayService(Connection connection, IDispatcher dispatcher)
+	{
+		_dispatcher = dispatcher;
+		_connection = connection ?? Connection.Session;
+	}
 
 	public void Connect()
 	{
 		var watcher = _connection.CreateProxy<IStatusNotifierWatcher>(IStatusNotifierWatcher.DbusInterfaceName, StatusNotifierObjectPath);
 
+		// Need to subscribe to item property changes
+		// Need to get the menu here and subscribe to changes there too
+		// Handle unregistering too
+
 		watcher.WatchStatusNotifierItemRegisteredAsync(async s =>
 			{
-				var obj = await FindStatusNotifierItem(s);
-				var item = await CreateStatusNotifierItem(obj);
-
-				lock (_lock)
-				{
-					_statusNotifierItems = _statusNotifierItems.Add(item);
-					_statusNotifierItemsSubject.OnNext(_statusNotifierItems);
-				}
+				_dispatcher.Dispatch(new AddTrayItemAction() { ItemState = await CreateTrayItemState(s) });
 			},
-			exception => { Console.WriteLine(exception); });
+			Console.WriteLine);
 
 		watcher.WatchStatusNotifierItemUnregisteredAsync(objPath =>
 			{
-				var serviceName = objPath.RemoveObjectPath();
-				var serviceToRemove = _statusNotifierItems.FirstOrDefault(s => s.Object.ServiceName == serviceName);
-
-				lock (_lock)
-				{
-					_statusNotifierItems = _statusNotifierItems.Remove(serviceToRemove);
-					_statusNotifierItemsSubject.OnNext(_statusNotifierItems);
-				}
+				_dispatcher.Dispatch(new RemoveTrayItemAction() { ServiceName = objPath.RemoveObjectPath() });
 			},
-			exception => { Console.WriteLine(exception); });
+			Console.WriteLine);
 	}
 
 	public async Task LoadTrayItems()
 	{
-		var results = new List<DbusStatusNotifierItem>();
+		var results = new List<TrayItemState>();
 		var watcher = _connection.CreateProxy<IStatusNotifierWatcher>(IStatusNotifierWatcher.DbusInterfaceName, StatusNotifierObjectPath);
 
-		foreach (var item in await watcher.GetRegisteredStatusNotifierItemsAsync())
+		foreach (var statusItems in await watcher.GetRegisteredStatusNotifierItemsAsync())
 		{
-			var endpoint = await FindStatusNotifierItem(item);
-			if (endpoint == null)
+			if (await FindStatusNotifierItem(statusItems) is { } endpoint)
 			{
-				continue;
+				results.Add(await CreateTrayItemState(endpoint.ServiceName));
 			}
-
-			results.Add(await CreateStatusNotifierItem(endpoint));
 		}
 
-		lock (_lock)
-		{
-			_statusNotifierItems = _statusNotifierItems.AddRange(results.DistinctBy(r => r.Properties.Id));
-			_statusNotifierItemsSubject.OnNext(_statusNotifierItems);
-		}
+		_dispatcher.Dispatch(new AddBulkTrayItemsAction() { Items = results });
+	}
+
+	private async Task<TrayItemState> CreateTrayItemState(string serviceName)
+	{
+		var status = await CreateStatusNotifierItem(await FindStatusNotifierItem(serviceName));
+		var menuProxy = _connection.CreateProxy<IDbusmenu>(status.Menu.ServiceName, status.Menu.ObjectPath);
+		var layoutResult = await menuProxy.GetLayoutAsync(0, -1, Array.Empty<string>());
+		var rootMenuItem = DbusMenuItem.From(layoutResult.layout);
+		return new TrayItemState() { Status = status, RootMenuItem = rootMenuItem };
 	}
 
 	private async Task<DbusObject> FindStatusNotifierItem(string serviceName)
@@ -88,8 +82,7 @@ public class StatusNotifierWatcherService
 
 		if (!string.IsNullOrEmpty(menuPath))
 		{
-			var dbusMenuObject = await FindDbusInterface(endpoint.ServiceName, menuPath, p => p == IDbusmenu.DbusInterfaceName);
-			statusItem = statusItem with { Menu = dbusMenuObject };
+			statusItem.Menu = await FindDbusInterface(endpoint.ServiceName, menuPath, p => p == IDbusmenu.DbusInterfaceName);
 		}
 
 		return statusItem;

@@ -5,63 +5,55 @@ using Global = Gtk.Global;
 
 namespace GtkNetPanel.Components.ContextMenu;
 
-public class ContextMenuHelper
+public class ContextMenuHelper : IDisposable
 {
-    private bool propagating; //Prevent reentry
+	private readonly Widget _widget;
+	private bool propagating; //Prevent reentry
 
-    public ContextMenuHelper() { }
+	public ContextMenuHelper(Widget widget)
+	{
+		_widget = widget;
+		widget.PopupMenu += Widget_PopupMenu;
+		widget.ButtonPressEvent += Widget_ButtonPressEvent;
+	}
 
-    public ContextMenuHelper(Widget widget) => AttachToWidget(widget);
+	public event EventHandler<ContextMenuEventArgs> ContextMenu;
 
-    public ContextMenuHelper(Widget widget, EventHandler<ContextMenuEventArgs> handler)
-    {
-        AttachToWidget(widget);
-        ContextMenu += handler;
-    }
+	[ConnectBefore]
+	private void Widget_PopupMenu(object o, PopupMenuArgs args) => RaiseContextMenuEvent(args, (Widget)o, false);
 
-    public event EventHandler<ContextMenuEventArgs> ContextMenu;
+	[ConnectBefore]
+	private void Widget_ButtonPressEvent(object o, ButtonPressEventArgs args)
+	{
+		if (args.Event.Button == 3 && args.Event.Type == EventType.ButtonPress)
+		{
+			RaiseContextMenuEvent(args, (Widget)o, true);
+		}
+	}
 
-    public void AttachToWidget(Widget widget)
-    {
-        widget.PopupMenu += Widget_PopupMenu;
-        widget.ButtonPressEvent += Widget_ButtonPressEvent;
-    }
+	private void RaiseContextMenuEvent(SignalArgs signalArgs, Widget widget, bool rightClick)
+	{
+		if (!propagating)
+		{
+			//Propagate the event
+			var evnt = Global.CurrentEvent;
+			propagating = true;
+			Global.PropagateEvent(widget, evnt);
+			propagating = false;
+			signalArgs.RetVal = true; //The widget already processed the event in the propagation
 
-    public void DetachFromWidget(Widget widget)
-    {
-        widget.PopupMenu -= Widget_PopupMenu;
-        widget.ButtonPressEvent -= Widget_ButtonPressEvent;
-    }
+			//Raise the context menu event
+			var args = new ContextMenuEventArgs(widget, rightClick);
+			if (ContextMenu != null)
+			{
+				ContextMenu.Invoke(this, args);
+			}
+		}
+	}
 
-    [ConnectBefore]
-    private void Widget_PopupMenu(object o, PopupMenuArgs args) => RaiseContextMenuEvent(args, (Widget)o, false);
-
-    [ConnectBefore]
-    private void Widget_ButtonPressEvent(object o, ButtonPressEventArgs args)
-    {
-        if (args.Event.Button == 3 && args.Event.Type == EventType.ButtonPress)
-        {
-            RaiseContextMenuEvent(args, (Widget)o, true);
-        }
-    }
-
-    private void RaiseContextMenuEvent(SignalArgs signalArgs, Widget widget, bool rightClick)
-    {
-        if (!propagating)
-        {
-            //Propagate the event
-            Event? evnt = Global.CurrentEvent;
-            propagating = true;
-            Global.PropagateEvent(widget, evnt);
-            propagating = false;
-            signalArgs.RetVal = true; //The widget already processed the event in the propagation
-
-            //Raise the context menu event
-            ContextMenuEventArgs args = new ContextMenuEventArgs(widget, rightClick);
-            if (ContextMenu != null)
-            {
-                ContextMenu.Invoke(this, args);
-            }
-        }
-    }
+	public void Dispose()
+	{
+		_widget.PopupMenu -= Widget_PopupMenu;
+		_widget.ButtonPressEvent -= Widget_ButtonPressEvent;
+	}
 }

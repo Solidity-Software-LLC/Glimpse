@@ -1,6 +1,6 @@
 using Tmds.DBus;
 
-namespace GtkNetPanel.DBus.StatusNotifierWatcher;
+namespace GtkNetPanel.Services.DBus.StatusNotifierWatcher;
 
 [Dictionary]
 internal class StatusNotifierWatcherProperties

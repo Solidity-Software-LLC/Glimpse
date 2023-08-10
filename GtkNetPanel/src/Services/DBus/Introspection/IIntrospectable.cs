@@ -1,6 +1,6 @@
 using Tmds.DBus;
 
-namespace GtkNetPanel.DBus.Introspection;
+namespace GtkNetPanel.Services.DBus.Introspection;
 
 [DBusInterface(DbusInterfaceName)]
 public interface IIntrospectable : IDBusObject

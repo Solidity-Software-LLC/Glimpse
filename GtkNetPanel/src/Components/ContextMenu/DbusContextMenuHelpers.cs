@@ -1,14 +1,18 @@
 using Gdk;
 using GLib;
 using Gtk;
-using GtkNetPanel.DBus.Menu;
+using GtkNetPanel.Services.DBus.Menu;
 using Menu = Gtk.Menu;
 using MenuItem = Gtk.MenuItem;
 
 namespace GtkNetPanel.Components.ContextMenu;
 
-public static class DBusMenuFactory
+public static class DbusContextMenuHelpers
 {
+	public static DbusMenuItem GetDbusMenuItem(this MenuItem menuItem)
+	{
+		return menuItem.Data["DbusMenuItem"] as DbusMenuItem;
+	}
 	public static LinkedList<MenuItem> GetAllMenuItems(Menu rootMenu)
 	{
 		var result = new LinkedList<MenuItem>();
@@ -24,13 +28,13 @@ public static class DBusMenuFactory
 
 		return result;
 	}
-	public static void Create(Menu rootMenu, DbusMenuItem rootItem)
+	public static void PopulateMenu(Menu rootMenu, DbusMenuItem rootItem)
 	{
-		foreach (var childMenuItem in rootItem.Children) PopulateMenu(rootMenu, childMenuItem);
+		foreach (var childMenuItem in rootItem.Children) PopulateMenuInternal(rootMenu, childMenuItem);
 		rootMenu.ShowAll();
 	}
 
-	private static void PopulateMenu(Menu parentMenu, DbusMenuItem dbusMenuItem)
+	private static void PopulateMenuInternal(Menu parentMenu, DbusMenuItem dbusMenuItem)
 	{
 		if (dbusMenuItem.Type == "separator")
 		{
@@ -45,7 +49,7 @@ public static class DBusMenuFactory
 			{
 				var childMenu = new Menu();
 				menuItem.Submenu = childMenu;
-				foreach (var childItem in dbusMenuItem.Children) PopulateMenu(childMenu, childItem);
+				foreach (var childItem in dbusMenuItem.Children) PopulateMenuInternal(childMenu, childItem);
 			}
 		}
 	}

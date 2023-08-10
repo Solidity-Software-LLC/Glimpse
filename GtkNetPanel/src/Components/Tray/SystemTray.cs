@@ -1,39 +1,43 @@
-using System.Collections.Immutable;
-using Gdk;
+using System.Reactive.Linq;
+using Fluxor;
 using Gtk;
-using GtkNetPanel.DBus.StatusNotifierItem;
-using GtkNetPanel.DBus.StatusNotifierWatcher;
+using GtkNetPanel.State;
 
 namespace GtkNetPanel.Components.Tray;
 
-public class SystemTray : HBox
+public class SystemTray : Box
 {
-	private readonly StatusNotifierWatcherService _statusNotifierWatcherService = new();
+	private readonly IState<TrayState> _trayState;
 	private readonly Dictionary<string, SystemTrayIcon> _icons = new();
-	private readonly object _lock = new();
 
-	private void OnItemsChanged(ImmutableList<DbusStatusNotifierItem> items)
+	public SystemTray(IState<TrayState> trayState) : base(Orientation.Horizontal, 3)
 	{
-		lock (_lock)
+		_trayState = trayState;
+		trayState.ToObservable().Subscribe(s =>
 		{
-			foreach (var i in items)
-			{
-				if (!_icons.ContainsKey(i.Object.ServiceName))
-				{
-					AddSystemTrayIcon(i);
-				}
-			}
+			OnItemsChanged(s.Items);
+		});
+	}
 
-			foreach (var iconServiceName in _icons.Keys)
+	private void OnItemsChanged(IDictionary<string, TrayItemState> items)
+	{
+		foreach (var i in items)
+		{
+			if (!_icons.ContainsKey(i.Key))
 			{
-				if (items.All(i => i.Object.ServiceName != iconServiceName))
-				{
-					RemoveSystemTrayIcon(iconServiceName);
-				}
+				AddSystemTrayIcon(i);
 			}
-
-			ShowAll();
 		}
+
+		foreach (var iconServiceName in _icons.Keys)
+		{
+			if (!items.ContainsKey(iconServiceName))
+			{
+				RemoveSystemTrayIcon(iconServiceName);
+			}
+		}
+
+		ShowAll();
 	}
 
 	private void RemoveSystemTrayIcon(string iconServiceName)
@@ -43,29 +47,11 @@ public class SystemTray : HBox
 		Remove(icon);
 	}
 
-	private void AddSystemTrayIcon(DbusStatusNotifierItem item)
+	private void AddSystemTrayIcon(KeyValuePair<string, TrayItemState> kv)
 	{
-		var systemTrayIcon = new SystemTrayIcon(item);
+		var rootMenuObservable = _trayState.ToObservable().TakeUntil(s => !s.Items.ContainsKey(kv.Key)).Select(s => s.Items[kv.Key]);
+		var systemTrayIcon = new SystemTrayIcon(rootMenuObservable);
 		PackStart(systemTrayIcon, false, false, 3);
-		_icons.Add(item.Object.ServiceName, systemTrayIcon);
-	}
-
-	protected override void OnShown()
-	{
-		Task.Run(async () =>
-		{
-			try
-			{
-				await _statusNotifierWatcherService.LoadTrayItems();
-				_statusNotifierWatcherService.StatusNotifierItems.Subscribe(OnItemsChanged);
-				_statusNotifierWatcherService.Connect();
-			}
-			catch (Exception e)
-			{
-				Console.WriteLine(e);
-			}
-		});
-
-		base.OnShown();
+		_icons.Add(kv.Key, systemTrayIcon);
 	}
 }

@@ -21,6 +21,7 @@ public class AppMenu : EventBox
 			SetStateFlags(StateFlags.Active, true);
 			QueueDraw();
 		};
+
 		LeaveNotifyEvent += (_, _) =>
 		{
 			SetStateFlags(StateFlags.Normal, true);

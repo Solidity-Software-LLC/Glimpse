@@ -1,45 +1,40 @@
-﻿using GLib;
+﻿using Fluxor;
 using GtkNetPanel.Components;
-using Application = Gtk.Application;
-using Display = Gdk.Display;
+using GtkNetPanel.Components.Tray;
+using GtkNetPanel.Services.DBus;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Tmds.DBus;
 
 namespace GtkNetPanel;
 
 public static class Program
 {
 	[STAThread]
-	public static int Main(string[] args)
+	public static async Task<int> Main(string[] args)
 	{
 		AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) => Console.WriteLine(eventArgs.ExceptionObject);
 
-		Application.Init();
-		SynchronizationContext.SetSynchronizationContext(new GLibSynchronizationContext());
+		var builder = Host.CreateDefaultBuilder(args)
+			.ConfigureServices(services =>
+			{
+				services.AddFluxor(o => o.ScanAssemblies(typeof(Program).Assembly));
+				services.AddTransient<SharpPanel>();
+				services.AddTransient<SystemTray>();
+				services.AddSingleton<DbusSystemTrayService>();
+				services.AddSingleton(Connection.Session);
+				services.AddHostedService<GtkApplicationHostedService>();
+			})
+			.UseConsoleLifetime();
 
-		var sharpPanel = new SharpPanel();
+		var host = builder.Build();
+		var store = host.Services.GetRequiredService<IStore>();
+		await store.InitializeAsync();
 
-		var app = new Application("org.SharpPanel", ApplicationFlags.None);
-		app.Register(Cancellable.Current);
-		app.AddWindow(sharpPanel);
-
-		sharpPanel.ShowAll();
-
-		var defaultDisplay = Display.Default;
-		var monitor = defaultDisplay.GetMonitorAtWindow(sharpPanel.Window);
-		var monitorDimensions = monitor.Geometry;
-
-		sharpPanel.ReserveSpace();
-		sharpPanel.SetSizeRequest(monitorDimensions.Width, 52);
-		sharpPanel.Move(0, monitorDimensions.Height - 52);
-
-		try
-		{
-			Application.Run();
-			return 0;
-		}
-		catch (Exception e)
-		{
-			Console.WriteLine(e);
-			return -1;
-		}
+		var watcher = host.Services.GetRequiredService<DbusSystemTrayService>();
+		watcher.Connect();
+		await watcher.LoadTrayItems();
+		await host.RunAsync();
+		return 0;
 	}
 }
