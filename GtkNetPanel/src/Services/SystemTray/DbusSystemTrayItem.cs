@@ -2,7 +2,7 @@ using Gdk;
 using Gtk;
 using GtkNetPanel.State;
 
-namespace GtkNetPanel.Services.DBus.StatusNotifierItem;
+namespace GtkNetPanel.Services.SystemTray;
 
 public static class DbusSystemTrayItemExtensions
 {

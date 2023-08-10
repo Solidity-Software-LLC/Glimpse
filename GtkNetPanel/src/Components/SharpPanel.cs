@@ -2,7 +2,7 @@ using Cairo;
 using Gdk;
 using Gtk;
 using GtkNetPanel.Components.ApplicationMenuButton;
-using GtkNetPanel.Components.Tray;
+using GtkNetPanel.Components.SystemTray;
 using Window = Gtk.Window;
 
 namespace GtkNetPanel.Components;

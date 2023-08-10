@@ -4,9 +4,10 @@ using Gdk;
 using Gtk;
 using GtkNetPanel.Components.ContextMenu;
 using GtkNetPanel.Services.DBus.StatusNotifierItem;
+using GtkNetPanel.Services.SystemTray;
 using GtkNetPanel.State;
 
-namespace GtkNetPanel.Components.Tray;
+namespace GtkNetPanel.Components.SystemTray;
 
 public class SystemTrayIcon : EventBox
 {
@@ -44,11 +45,7 @@ public class SystemTrayIcon : EventBox
 				_contextMenu.RemoveAllChildren();
 				DbusContextMenuHelpers.PopulateMenu(_contextMenu, menuState);
 				var allMenuItems = DbusContextMenuHelpers.GetAllMenuItems(_contextMenu);
-
-				foreach (var i in allMenuItems)
-				{
-					i.Activated += (_, _) => _menuItemActivatedSubject.OnNext(i.GetDbusMenuItem().Id);
-				}
+				foreach (var i in allMenuItems) i.Activated += (_, _) => _menuItemActivatedSubject.OnNext(i.GetDbusMenuItem().Id);
 			}));
 
 		_disposables.AddLast(

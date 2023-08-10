@@ -3,7 +3,7 @@ using Fluxor;
 using Gtk;
 using GtkNetPanel.State;
 
-namespace GtkNetPanel.Components.Tray;
+namespace GtkNetPanel.Components.SystemTray;
 
 public class SystemTrayBox : Box
 {

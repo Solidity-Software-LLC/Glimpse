@@ -2,6 +2,7 @@ using Gdk;
 using GLib;
 using Gtk;
 using GtkNetPanel.Services.DBus.Menu;
+using GtkNetPanel.Services.SystemTray;
 using Menu = Gtk.Menu;
 using MenuItem = Gtk.MenuItem;
 

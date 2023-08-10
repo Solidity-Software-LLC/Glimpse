@@ -6,7 +6,7 @@ using GtkNetPanel.Services.DBus.StatusNotifierWatcher;
 using GtkNetPanel.State;
 using Tmds.DBus;
 
-namespace GtkNetPanel.Services.DBus;
+namespace GtkNetPanel.Services.SystemTray;
 
 public class DBusSystemTrayService
 {
@@ -26,8 +26,6 @@ public class DBusSystemTrayService
 	public async Task Initialize()
 	{
 		_watcherProxy = _connection.CreateProxy<IStatusNotifierWatcher>(IStatusNotifierWatcher.DbusInterfaceName, StatusNotifierObjectPath);
-
-		// Need to subscribe to item property changes
 
 		await _watcherProxy.WatchStatusNotifierItemRegisteredAsync(async s =>
 			{
@@ -61,22 +59,41 @@ public class DBusSystemTrayService
 		var dbusMenuProxy = _connection.CreateProxy<IDbusmenu>(dbusMenuDescription.ServiceName, dbusMenuDescription.ObjectPath);
 		var dbusMenuLayout = await dbusMenuProxy.GetLayoutAsync(0, -1, Array.Empty<string>());
 
-		var layoutSubscription = await dbusMenuProxy.WatchLayoutUpdatedAsync(async _ =>
+		var propertyUpdateHandler = () =>
 		{
-			var updatedLayoutResult = await dbusMenuProxy.GetLayoutAsync(0, -1, Array.Empty<string>());
-			var updatedRootMenuItem = DbusSystemTrayMenuItem.From(updatedLayoutResult.layout);
-			_dispatcher.Dispatch(new UpdateMenuLayoutAction { ServiceName = serviceName, RootMenuItem = updatedRootMenuItem });
-		}, Console.WriteLine);
-
-		await _watcherProxy.WatchStatusNotifierItemUnregisteredAsync(objPath =>
-		{
-			if (serviceName != objPath.RemoveObjectPath())
+			Task.Run(async () =>
 			{
-				return;
-			}
+				_dispatcher.Dispatch(new UpdateStatusNotifierItemPropertiesAction()
+				{
+					Properties = await statusNotifierItemProxy.GetAllAsync(),
+					ServiceName = serviceName
+				});
+			});
+		};
 
+		var subscriptions = new LinkedList<IDisposable>();
+		subscriptions.AddLast(statusNotifierItemProxy.WatchNewIconAsync(propertyUpdateHandler, Console.WriteLine));
+		subscriptions.AddLast(statusNotifierItemProxy.WatchNewStatusAsync(_ => propertyUpdateHandler(), Console.WriteLine));
+		subscriptions.AddLast(statusNotifierItemProxy.WatchNewTitleAsync(propertyUpdateHandler, Console.WriteLine));
+		subscriptions.AddLast(statusNotifierItemProxy.WatchNewAttentionIconAsync(propertyUpdateHandler, Console.WriteLine));
+		subscriptions.AddLast(statusNotifierItemProxy.WatchNewOverlayIconAsync(propertyUpdateHandler, Console.WriteLine));
+		subscriptions.AddLast(statusNotifierItemProxy.WatchNewToolTipAsync(propertyUpdateHandler, Console.WriteLine));
+		subscriptions.AddLast(
+			await dbusMenuProxy.WatchLayoutUpdatedAsync(async _ =>
+			{
+				var updatedLayoutResult = await dbusMenuProxy.GetLayoutAsync(0, -1, Array.Empty<string>());
+				var updatedRootMenuItem = DbusSystemTrayMenuItem.From(updatedLayoutResult.layout);
+				_dispatcher.Dispatch(new UpdateMenuLayoutAction { ServiceName = serviceName, RootMenuItem = updatedRootMenuItem });
+			}, Console.WriteLine));
+
+		IDisposable watchForRemoveSubscription = null;
+
+		watchForRemoveSubscription = await _watcherProxy.WatchStatusNotifierItemUnregisteredAsync(objPath =>
+		{
+			if (serviceName != objPath.RemoveObjectPath()) return;
 			_dispatcher.Dispatch(new RemoveTrayItemAction { ServiceName = serviceName });
-			layoutSubscription.Dispose();
+			subscriptions.ToList().ForEach(s => s.Dispose());
+			watchForRemoveSubscription?.Dispose();
 		}, Console.WriteLine);
 
 		return new SystemTrayItemState()

@@ -1,8 +1,9 @@
 ﻿using Fluxor;
 using GtkNetPanel.Components;
-using GtkNetPanel.Components.Tray;
+using GtkNetPanel.Components.SystemTray;
 using GtkNetPanel.Services.DBus;
 using GtkNetPanel.Services.DBus.Introspection;
+using GtkNetPanel.Services.SystemTray;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tmds.DBus;

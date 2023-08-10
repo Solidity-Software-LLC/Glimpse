@@ -4,6 +4,7 @@ using GtkNetPanel.Services.DBus;
 using GtkNetPanel.Services.DBus.Introspection;
 using GtkNetPanel.Services.DBus.Menu;
 using GtkNetPanel.Services.DBus.StatusNotifierItem;
+using GtkNetPanel.Services.SystemTray;
 
 namespace GtkNetPanel.State;
 
@@ -73,8 +74,25 @@ public class ActivateMenuItemAction
 	public int MenuItemId { get; set; }
 }
 
+public class UpdateStatusNotifierItemPropertiesAction
+{
+	public string ServiceName { get; set; }
+	public StatusNotifierItemProperties Properties { get; set; }
+}
+
 public static class SystemTrayItemStateReducers
 {
+	[ReducerMethod]
+	public static SystemTrayState ReduceUpdateStatusNotifierItemPropertiesAction(SystemTrayState state, UpdateStatusNotifierItemPropertiesAction action)
+	{
+		if (state.Items.TryGetValue(action.ServiceName, out var currentItem))
+		{
+			return new() { Items = state.Items.SetItem(action.ServiceName, new SystemTrayItemState(currentItem) { Properties = action.Properties }) };
+		}
+
+		return state;
+	}
+
 	[ReducerMethod]
 	public static SystemTrayState ReduceUpdateMenuLayoutAction(SystemTrayState state, UpdateMenuLayoutAction action)
 	{
