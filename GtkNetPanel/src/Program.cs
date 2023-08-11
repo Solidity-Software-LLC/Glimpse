@@ -1,9 +1,10 @@
 ﻿using Fluxor;
 using GtkNetPanel.Components;
+using GtkNetPanel.Components.ApplicationBar;
 using GtkNetPanel.Components.SystemTray;
-using GtkNetPanel.Services.DBus;
 using GtkNetPanel.Services.DBus.Introspection;
 using GtkNetPanel.Services.SystemTray;
+using GtkNetPanel.Services.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tmds.DBus;
@@ -23,8 +24,10 @@ public static class Program
 				services.AddFluxor(o => o.ScanAssemblies(typeof(Program).Assembly));
 				services.AddTransient<SharpPanel>();
 				services.AddTransient<SystemTrayBox>();
+				services.AddTransient<ApplicationBarBox>();
 				services.AddSingleton<DBusSystemTrayService>();
 				services.AddSingleton<IntrospectionService>();
+				services.AddSingleton<TasksService>();
 				services.AddSingleton(Connection.Session);
 				services.AddHostedService<GtkApplicationHostedService>();
 			})
@@ -33,6 +36,9 @@ public static class Program
 		var host = builder.Build();
 		var store = host.Services.GetRequiredService<IStore>();
 		await store.InitializeAsync();
+
+		var tasksService = host.Services.GetRequiredService<TasksService>();
+		tasksService.Initialize();
 
 		var watcher = host.Services.GetRequiredService<DBusSystemTrayService>();
 		await watcher.Initialize();

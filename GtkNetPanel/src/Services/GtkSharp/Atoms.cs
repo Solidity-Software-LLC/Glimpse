@@ -15,4 +15,5 @@ public static class Atoms
 	public static Atom _NET_WM_NAME = Atom.Intern("_NET_WM_NAME", true);
 	public static Atom _NET_WM_ICON_NAME = Atom.Intern("_NET_WM_ICON_NAME", true);
 	public static Atom _NET_WM_ICON = Atom.Intern("_NET_WM_ICON", true);
+	public static Atom _NET_WM_PID = Atom.Intern("_NET_WM_PID", true);
 }

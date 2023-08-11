@@ -1,8 +1,6 @@
 using System.Collections.Immutable;
 using Fluxor;
-using GtkNetPanel.Services.DBus;
 using GtkNetPanel.Services.DBus.Introspection;
-using GtkNetPanel.Services.DBus.Menu;
 using GtkNetPanel.Services.DBus.StatusNotifierItem;
 using GtkNetPanel.Services.SystemTray;
 

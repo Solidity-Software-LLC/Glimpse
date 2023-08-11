@@ -1,6 +1,7 @@
 using System.Text;
 using Gdk;
 using Gtk;
+using GtkNetPanel.State;
 using Monitor = Gdk.Monitor;
 
 namespace GtkNetPanel.Services.GtkSharp;
@@ -45,6 +46,12 @@ public static class GtkExtensions
 		return success ? data : null;
 	}
 
+	public static int GetIntProperty(this Gdk.Window window, Atom property)
+	{
+		var success = Property.Get(window, property, false, out int[] data);
+		return success ? data[0] : 0;
+	}
+
 	public static List<WindowIcon> GetIcons(this Gdk.Window window, Atom property)
 	{
 		var success = Property.Get(window, property, Atoms.AnyPropertyType, 0, 1024 * 1024 * 5, 0, out _, out _, out _, out var data);
@@ -74,16 +81,9 @@ public static class GtkExtensions
 			{
 				Width = (int) width,
 				Height = (int) height,
-				Data = imageData
+				Data = ImageHelper.ConvertArgbToRgba(imageData, (int) width, (int) height)
 			});
 		}
 		return icons;
 	}
-}
-
-public class WindowIcon
-{
-	public int Width { get; set; }
-	public int Height { get; set; }
-	public byte[] Data { get; set; }
 }

@@ -46,7 +46,6 @@ public class GtkApplicationHostedService : IHostedService
 					})
 					.ToList();
 
-
 				panels.ForEach(app.AddWindow);
 
 				Application.Run();
@@ -60,5 +59,9 @@ public class GtkApplicationHostedService : IHostedService
 		return Task.CompletedTask;
 	}
 
-	public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+	public Task StopAsync(CancellationToken cancellationToken)
+	{
+		Application.Quit();
+		return Task.CompletedTask;
+	}
 }
