@@ -1,6 +1,7 @@
 using Cairo;
 using Gdk;
 using Gtk;
+using GtkNetPanel.Components.ApplicationBar;
 using GtkNetPanel.Components.ApplicationMenuButton;
 using GtkNetPanel.Components.SystemTray;
 using Window = Gtk.Window;
@@ -35,6 +36,8 @@ public class SharpPanel : Window
 
 		var box = new Box(Orientation.Horizontal, 4);
 		box.PackStart(appMenuWidget, false, false, 0);
+		box.PackStart(new DrawingArea(), false, false, 4);
+		box.PackStart(new ApplicationBarBox(), false, false, 4);
 		box.PackStart(new DrawingArea(), true, false, 4);
 		box.PackStart(systemTrayBox, false, false, 4);
 		box.PackStart(CreateClock(), false, false, 5);
@@ -99,7 +102,9 @@ public class SharpPanel : Window
 	private void ReserveSpace(Gdk.Monitor monitor)
 	{
 		var monitorDimensions = monitor.Geometry;
-		var reservedSpaceLong = new long[] { 0, 0, 0, PanelHeight, 0, 0, 0, 0, 0, 0, 0, monitorDimensions.Width }.SelectMany(BitConverter.GetBytes).ToArray();
+		var bottomStartX = monitor.Workarea.Left;
+		var bottomEndX = bottomStartX + monitorDimensions.Width;
+		var reservedSpaceLong = new long[] { 0, 0, 0, PanelHeight, 0, 0, 0, 0, 0, 0, bottomStartX, bottomEndX }.SelectMany(BitConverter.GetBytes).ToArray();
 		Property.Change(Window, Atom.Intern("_NET_WM_STRUT_PARTIAL", false), Atom.Intern("CARDINAL", false), 32, PropMode.Replace, reservedSpaceLong, 12);
 	}
 }

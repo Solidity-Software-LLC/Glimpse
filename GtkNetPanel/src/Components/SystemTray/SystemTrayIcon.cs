@@ -4,6 +4,7 @@ using Gdk;
 using Gtk;
 using GtkNetPanel.Components.ContextMenu;
 using GtkNetPanel.Services.DBus.StatusNotifierItem;
+using GtkNetPanel.Services.GtkSharp;
 using GtkNetPanel.Services.SystemTray;
 using GtkNetPanel.State;
 

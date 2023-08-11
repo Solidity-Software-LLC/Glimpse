@@ -27,6 +27,7 @@ public class DbusSystemTrayMenuItem
 		root.Item2.TryGetValue("icon-data", out var iconData);
 		root.Item2.TryGetValue("type", out var type);
 
+
 		var item = new DbusSystemTrayMenuItem()
 		{
 			Id = root.Item1,
@@ -38,10 +39,27 @@ public class DbusSystemTrayMenuItem
 			ToggleType = (string) toggleType,
 			Type = (string) type,
 			IconData = (byte[]) iconData,
-			Children = root.Item3.Cast<(int, IDictionary<string, object>, object[])>().Select(From).ToArray()
+			Children = ProcessChildren(root.Item3)
 		};
 
 		return item;
+	}
+
+	private static DbusSystemTrayMenuItem[] ProcessChildren(object[] children)
+	{
+		if (!children.Any()) return Array.Empty<DbusSystemTrayMenuItem>();
+
+		if (children.First().GetType().IsAssignableTo(typeof((int, IDictionary<string, object>, object[]))))
+		{
+			return children.Cast<(int, IDictionary<string, object>, object[])>().Select(From).ToArray();
+		}
+
+		if (children.First().GetType().IsAssignableTo(typeof((int, object[], object[]))))
+		{
+			throw new Exception("Wrong child type returned for menu item");
+		}
+
+		return Array.Empty<DbusSystemTrayMenuItem>();
 	}
 
 	public string Print(int depth)

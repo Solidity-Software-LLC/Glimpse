@@ -1,6 +1,7 @@
 using Gdk;
 using GLib;
 using GtkNetPanel.Components;
+using GtkNetPanel.Services.GtkSharp;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Application = Gtk.Application;
