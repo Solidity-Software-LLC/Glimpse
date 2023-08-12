@@ -11,7 +11,7 @@ public class SharpPanel : Window
 {
 	private const int PanelHeight = 52;
 
-	public SharpPanel(SystemTrayBox systemTrayBox, ApplicationBarBox applicationBarBox) : base("Null")
+	public SharpPanel(SystemTrayBox systemTrayBox, ApplicationBarView applicationBarView) : base("Null")
 	{
 		Decorated = false;
 		Resizable = false;
@@ -25,7 +25,7 @@ public class SharpPanel : Window
 		box.Hexpand = true;
 		box.Vexpand = false;
 		box.PackStart(new AppMenu(), false, false, 0);
-		box.PackStart(applicationBarBox, false, false, 0);
+		box.PackStart(applicationBarView, false, false, 0);
 		box.PackStart(new DrawingArea(), true, false, 4);
 		box.PackStart(systemTrayBox, false, false, 4);
 		box.PackStart(CreateClock(), false, false, 5);
@@ -40,15 +40,11 @@ public class SharpPanel : Window
 
 		ShowAll();
 
-		// var helper = new ContextMenuHelper();
-		// helper.AttachToWidget(this);
+		// var helper = new ContextMenuHelper(this);
 		// helper.ContextMenu += (o, a) =>
 		// {
 		// 	var popup = new Menu();
-		// 	popup.Add(new MenuItem("Configure Panel"));
-		// 	popup.Add(new MenuItem("Restart Panel"));
-		// 	popup.Add(new SeparatorMenuItem());
-		// 	popup.Add(new MenuItem("Remove Widget"));
+		// 	popup.Add(new MenuItem("Open Task Manager"));
 		// 	popup.ShowAll();
 		// 	popup.Popup();
 		// };

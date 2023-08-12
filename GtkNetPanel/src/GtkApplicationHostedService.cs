@@ -1,9 +1,9 @@
+using Autofac;
 using Gdk;
 using GLib;
 using Gtk;
 using GtkNetPanel.Components;
 using GtkNetPanel.Services.GtkSharp;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Application = Gtk.Application;
 using Task = System.Threading.Tasks.Task;
@@ -12,11 +12,13 @@ namespace GtkNetPanel;
 
 public class GtkApplicationHostedService : IHostedService
 {
-	private readonly IServiceProvider _serviceProvider;
+	private readonly ILifetimeScope _serviceProvider;
+	private readonly Application _application;
 
-	public GtkApplicationHostedService(IServiceProvider serviceProvider)
+	public GtkApplicationHostedService(ILifetimeScope serviceProvider, Application application)
 	{
 		_serviceProvider = serviceProvider;
+		_application = application;
 	}
 
 	public Task StartAsync(CancellationToken cancellationToken)
@@ -34,8 +36,7 @@ public class GtkApplicationHostedService : IHostedService
 
 				SynchronizationContext.SetSynchronizationContext(new GLibSynchronizationContext());
 				Application.Init();
-				var app = new Application("org.SharpPanel", ApplicationFlags.None);
-				app.Register(Cancellable.Current);
+				_application.Register(Cancellable.Current);
 
 				var cssProvider = new CssProvider();
 				cssProvider.LoadFromData(@"
@@ -66,13 +67,14 @@ public class GtkApplicationHostedService : IHostedService
 					.GetMonitors()
 					.Select(m =>
 					{
-						var panel = _serviceProvider.GetRequiredService<SharpPanel>();
+
+						var panel = _serviceProvider.BeginLifetimeScope("panel").Resolve<SharpPanel>();
 						panel.DockToBottom(m);
 						return panel;
 					})
 					.ToList();
 
-				panels.ForEach(app.AddWindow);
+				panels.ForEach(_application.AddWindow);
 
 				Application.Run();
 			}

@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Cairo;
 using Gdk;
 using Gtk;
 
@@ -28,8 +27,8 @@ public class AppMenu : EventBox
 		LeaveNotifyEvent += (_, _) => SetStateFlags(StateFlags.Normal, true);
 		ButtonPressEvent += (_, _) =>
 		{
-			var process = new ProcessStartInfo() { FileName = "/usr/bin/xfce4-popup-whiskermenu", UseShellExecute = false, Arguments = "-p"};
-			Process.Start(process);
+			var startInfo = new ProcessStartInfo() { FileName = "/usr/bin/xfce4-popup-whiskermenu", UseShellExecute = true, Arguments = "-p"};
+			Process.Start(startInfo);
 		};
 	}
 }
