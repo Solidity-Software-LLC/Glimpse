@@ -1,21 +1,21 @@
 using System.Collections.Immutable;
 using Fluxor;
-using Gdk;
+using GtkNetPanel.Services;
 
 namespace GtkNetPanel.State;
 
 [FeatureState]
 public class TasksState
 {
-	public ImmutableList<TaskState> Tasks = ImmutableList<TaskState>.Empty;
+	public ImmutableDictionary<string, TaskState> Tasks = ImmutableDictionary<string, TaskState>.Empty;
 }
 
 public class TaskState
 {
 	public string Name { get; set; }
-	public List<Atom> State { get; set; }
+	public List<string> State { get; set; }
 	public List<WindowIcon> Icons { get; set; }
-	public int ProcessId { get; set; }
+	public GenericWindowRef WindowRef { get; set; }
 }
 
 public class WindowIcon
@@ -30,11 +30,27 @@ public class AddTaskAction
 	public TaskState Task { get; set; }
 }
 
+public class RemoveTaskAction
+{
+	public string WindowId { get; set; }
+}
+
 public class TasksStateReducers
 {
 	[ReducerMethod]
 	public static TasksState ReduceAddTaskAction(TasksState state, AddTaskAction action)
 	{
-		return new TasksState() { Tasks = state.Tasks.Add(action.Task) };
+		return new TasksState() { Tasks = state.Tasks.SetItem(action.Task.WindowRef.Id, action.Task) };
+	}
+
+	[ReducerMethod]
+	public static TasksState ReduceRemoveTaskAction(TasksState state, RemoveTaskAction action)
+	{
+		if (state.Tasks.ContainsKey(action.WindowId))
+		{
+			return new TasksState() { Tasks = state.Tasks.Remove(action.WindowId) };
+		}
+
+		return state;
 	}
 }

@@ -1,0 +1,37 @@
+.app-preview-popup-container {
+	border-radius: 10px;
+	background-color: rgba(33, 33, 33, 1);
+}
+
+.app-preview-app {
+	padding: 20px;
+}
+
+.app-preview-app:first-child {
+	border-radius: 10px 0 0 10px;
+}
+
+.app-preview-app:last-child {
+	border-radius: 0 10px 10px 0;
+}
+
+.app-preview-app:hover {
+	background-color: rgba(100, 100, 100, 1);
+}
+
+.panel {
+	background-color: rgba(0, 0, 0, 0.7);
+}
+
+.application-icon {
+	background-color: rgba(255, 255, 255, 0.1);
+	border-radius: 5px;
+}
+
+.application-icon:hover {
+	background-color: rgba(255, 255, 255, 0.3);
+}
+
+label {
+	font: 12px Sans;
+}

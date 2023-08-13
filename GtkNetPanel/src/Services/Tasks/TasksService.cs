@@ -1,6 +1,6 @@
 using Fluxor;
-using Gdk;
-using GtkNetPanel.Services.GtkSharp;
+using GtkNetPanel.Interop.X11;
+using GtkNetPanel.Services.X11;
 using GtkNetPanel.State;
 
 namespace GtkNetPanel.Services.Tasks;
@@ -8,27 +8,35 @@ namespace GtkNetPanel.Services.Tasks;
 public class TasksService
 {
 	private readonly IDispatcher _dispatcher;
+	private readonly XLibAdaptorService _xLibAdaptorService;
 
-	public TasksService(IDispatcher dispatcher)
+	public TasksService(IDispatcher dispatcher, XLibAdaptorService xLibAdaptorService)
 	{
 		_dispatcher = dispatcher;
+		_xLibAdaptorService = xLibAdaptorService;
 	}
 
 	public void Initialize()
 	{
-		foreach (var window in Display.Open(null).DefaultScreen.WindowStack.Where(w => w.TypeHint == WindowTypeHint.Normal))
+		_xLibAdaptorService.WindowCreated.Subscribe(w =>
 		{
-			var task = CreateTask(window);
-			_dispatcher.Dispatch(new AddTaskAction() { Task = task });
-		}
+			_dispatcher.Dispatch(new AddTaskAction() { Task = CreateTask(w) });
+		});
+
+		_xLibAdaptorService.WindowRemoved.Subscribe(w =>
+		{
+			_dispatcher.Dispatch(new RemoveTaskAction() { WindowId = $"{w.Display}_{w.Window}"});
+		});
 	}
 
-	private TaskState CreateTask(Window window)
+	private TaskState CreateTask(XWindowRef windowRef)
 	{
-		var state = window.GetAtomProperty(Atoms._NET_WM_STATE);
-		var icons = window.GetIcons(Atoms._NET_WM_ICON);
-		var name = window.GetStringProperty(Atoms._NET_WM_NAME);
-		var processId = window.GetIntProperty(Atoms._NET_WM_PID);
-		return new TaskState() { ProcessId = processId, Name = name, Icons = icons, State = state.ToList() };
+		return new TaskState()
+		{
+			Name = _xLibAdaptorService.GetStringProperty(windowRef, XAtoms.NetWmName),
+			WindowRef = new GenericWindowRef() { Id = $"{windowRef.Display}_{windowRef.Window}", InternalRef = windowRef },
+			Icons = _xLibAdaptorService.GetIcons(windowRef),
+			State = _xLibAdaptorService.GetAtomArray(windowRef, XAtoms.NetWmState).ToList()
+		};
 	}
 }

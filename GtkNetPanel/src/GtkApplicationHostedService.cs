@@ -38,36 +38,15 @@ public class GtkApplicationHostedService : IHostedService
 				Application.Init();
 				_application.Register(Cancellable.Current);
 
+				var assemblyName = typeof(GtkApplicationHostedService).Assembly.GetName().Name;
 				var cssProvider = new CssProvider();
-				cssProvider.LoadFromData(@"
-					.panel {
-						background-color: rgba(0, 0, 0, 0.7);
-					}
-
-					.highlight {
-						border-radius: 5px;
-					}
-
-					.highlight:hover {
-						background-color: rgba(255, 255, 255, 0.3);
-					}
-
-					.application-icon {
-						background-color: rgba(255, 255, 255, 0.1);
-					}
-
-					label {
-						font: 12px Sans;
-					}
-				");
-
+				cssProvider.LoadFromResource($"{assemblyName}.styles.css");
 				StyleContext.AddProviderForScreen(Display.Default.DefaultScreen, cssProvider, uint.MaxValue);
 
 				var panels = Display.Default
 					.GetMonitors()
 					.Select(m =>
 					{
-
 						var panel = _serviceProvider.BeginLifetimeScope("panel").Resolve<SharpPanel>();
 						panel.DockToBottom(m);
 						return panel;
@@ -75,7 +54,6 @@ public class GtkApplicationHostedService : IHostedService
 					.ToList();
 
 				panels.ForEach(_application.AddWindow);
-
 				Application.Run();
 			}
 			catch (Exception e)

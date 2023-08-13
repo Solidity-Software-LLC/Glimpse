@@ -1,13 +1,19 @@
 using System.Text;
 using Gdk;
 using Gtk;
-using GtkNetPanel.State;
 using Monitor = Gdk.Monitor;
+using Window = Gdk.Window;
 
 namespace GtkNetPanel.Services.GtkSharp;
 
 public static class GtkExtensions
 {
+	public static Pixbuf GetWindowScreenshot(this Window window, int targetHeight)
+	{
+		var ratio = (double) window.Width / window.Height;
+		return new Pixbuf(window, 0, 0, window.Width, window.Height).ScaleSimple((int) (targetHeight * ratio), targetHeight, InterpType.Bilinear);
+	}
+
 	public static IEnumerable<Monitor> GetMonitors(this Display display)
 	{
 		for (var i = 0; i < display.NMonitors; i++)
@@ -21,7 +27,7 @@ public static class GtkExtensions
 		widget.Children.ToList().ForEach(widget.Remove);
 	}
 
-	public static string GetStringProperty(this Gdk.Window window, Atom property)
+	public static string GetStringProperty(this Window window, Atom property)
 	{
 		var success = Property.Get(window, property, Atoms.AnyPropertyType, 0, 1024, 0, out var actualReturnType, out _, out _, out var data);
 
@@ -40,50 +46,15 @@ public static class GtkExtensions
 		return null;
 	}
 
-	public static Atom[] GetAtomProperty(this Gdk.Window window, Atom property)
+	public static Atom[] GetAtomProperty(this Window window, Atom property)
 	{
 		var success = Property.Get(window, property, false, out Atom[] data);
 		return success ? data : null;
 	}
 
-	public static int GetIntProperty(this Gdk.Window window, Atom property)
+	public static int GetIntProperty(this Window window, Atom property)
 	{
 		var success = Property.Get(window, property, false, out int[] data);
 		return success ? data[0] : 0;
-	}
-
-	public static List<WindowIcon> GetIcons(this Gdk.Window window, Atom property)
-	{
-		var success = Property.Get(window, property, Atoms.AnyPropertyType, 0, 1024 * 1024 * 5, 0, out _, out _, out _, out var data);
-		if (!success) return null;
-
-		var icons = new List<WindowIcon>();
-		var binaryReader = new BinaryReader(new MemoryStream(data));
-
-		while (binaryReader.PeekChar() != -1)
-		{
-			var width = binaryReader.ReadInt64();
-			var height = binaryReader.ReadInt64();
-			var numPixels = width * height;
-			var imageData = new byte[numPixels * sizeof(int)];
-
-			for (var i = 0; i < numPixels * sizeof(int); i += sizeof(int))
-			{
-				var intBytes = BitConverter.GetBytes(binaryReader.ReadInt32());
-				binaryReader.ReadInt32();
-				imageData[i] = intBytes[3];
-				imageData[i+1] = intBytes[2];
-				imageData[i+2] = intBytes[1];
-				imageData[i+3] = intBytes[0];
-			}
-
-			icons.Add(new WindowIcon()
-			{
-				Width = (int) width,
-				Height = (int) height,
-				Data = ImageHelper.ConvertArgbToRgba(imageData, (int) width, (int) height)
-			});
-		}
-		return icons;
 	}
 }

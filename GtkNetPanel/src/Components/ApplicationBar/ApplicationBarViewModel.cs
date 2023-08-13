@@ -1,9 +1,10 @@
+using System.Collections.Immutable;
 using GtkNetPanel.State;
 
 namespace GtkNetPanel.Components.ApplicationBar;
 
 public class ApplicationBarViewModel
 {
-	public IEnumerable<TaskState> Tasks { get; set; } = new List<TaskState>();
+	public ImmutableDictionary<string, TaskState> Tasks { get; set; } = ImmutableDictionary<string, TaskState>.Empty;
 	public TaskState ShownWindowPicker { get; set; }
 }

@@ -7,8 +7,10 @@ using GtkNetPanel.Components;
 using GtkNetPanel.Components.ApplicationBar;
 using GtkNetPanel.Components.SystemTray;
 using GtkNetPanel.Services.DBus.Introspection;
+using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.SystemTray;
 using GtkNetPanel.Services.Tasks;
+using GtkNetPanel.Services.X11;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tmds.DBus;
@@ -38,11 +40,13 @@ public static class Program
 					.As<BehaviorSubject<ApplicationBarViewModel>>()
 					.InstancePerMatchingLifetimeScope("panel");
 
+				containerBuilder.RegisterType<X11DisplayServer>().As<IDisplayServer>();
 				containerBuilder.RegisterType<DBusSystemTrayService>();
 				containerBuilder.RegisterType<IntrospectionService>();
 				containerBuilder.RegisterType<TasksService>();
+				containerBuilder.RegisterType<XLibAdaptorService>().SingleInstance();
 				containerBuilder.RegisterInstance(Connection.Session).ExternallyOwned();
-				containerBuilder.Register(_ => new Application("org.SharpPanel", ApplicationFlags.None));
+				containerBuilder.Register(_ => new Application("org.SharpPanel", ApplicationFlags.None)).SingleInstance();
 			}))
 			.ConfigureServices(services =>
 			{
@@ -54,6 +58,9 @@ public static class Program
 		var host = builder.Build();
 		var store = host.Services.GetRequiredService<IStore>();
 		await store.InitializeAsync();
+
+		var xService = host.Services.GetRequiredService<XLibAdaptorService>();
+		xService.Initialize();
 
 		var tasksService = host.Services.GetRequiredService<TasksService>();
 		tasksService.Initialize();

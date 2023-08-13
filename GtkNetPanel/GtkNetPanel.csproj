@@ -4,7 +4,14 @@
 		<TargetFramework>net6.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<OutputType>Exe</OutputType>
+		<GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
 	</PropertyGroup>
+	
+	<ItemGroup>
+		<EmbeddedResource Include="src/Components/styles.css">
+			<LogicalName>$(TargetName).styles.css</LogicalName>
+		</EmbeddedResource>
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Autofac" Version="7.1.0" />
@@ -14,8 +21,9 @@
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1"/>
 		<PackageReference Include="System.Reactive" Version="6.0.0"/>
 		<PackageReference Include="Tmds.DBus" Version="0.15.0"/>
-
 	</ItemGroup>
+
+
 
 
 </Project>
