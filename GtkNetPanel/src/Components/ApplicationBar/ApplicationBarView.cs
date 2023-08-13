@@ -2,11 +2,8 @@ using System.Collections.Immutable;
 using System.Reactive.Linq;
 using Gdk;
 using Gtk;
-using GtkNetPanel.Services;
-using GtkNetPanel.Services.GtkSharp;
 using GtkNetPanel.State;
-using Pango;
-using Application = Gtk.Application;
+using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
 
 namespace GtkNetPanel.Components.ApplicationBar;
@@ -60,7 +57,7 @@ public class ApplicationBarView : Box
 		Window.GetOrigin(out _, out var y);
 		applicationIcon.TranslateCoordinates(Toplevel, 0, 0, out var x, out _);
 
-		var childWindow = new Gtk.Window(WindowType.Toplevel);
+		var childWindow = new Window(WindowType.Toplevel);
 		childWindow.SkipPagerHint = true;
 		childWindow.SkipTaskbarHint = true;
 		childWindow.Decorated = false;

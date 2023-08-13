@@ -9,7 +9,6 @@ using GtkNetPanel.Components.SystemTray;
 using GtkNetPanel.Services.DBus.Introspection;
 using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.SystemTray;
-using GtkNetPanel.Services.Tasks;
 using GtkNetPanel.Services.X11;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -40,10 +39,9 @@ public static class Program
 					.As<BehaviorSubject<ApplicationBarViewModel>>()
 					.InstancePerMatchingLifetimeScope("panel");
 
-				containerBuilder.RegisterType<X11DisplayServer>().As<IDisplayServer>();
+				containerBuilder.RegisterType<X11DisplayServer>().As<X11DisplayServer>().As<IDisplayServer>().SingleInstance();
 				containerBuilder.RegisterType<DBusSystemTrayService>();
 				containerBuilder.RegisterType<IntrospectionService>();
-				containerBuilder.RegisterType<TasksService>();
 				containerBuilder.RegisterType<XLibAdaptorService>().SingleInstance();
 				containerBuilder.RegisterInstance(Connection.Session).ExternallyOwned();
 				containerBuilder.Register(_ => new Application("org.SharpPanel", ApplicationFlags.None)).SingleInstance();
@@ -62,8 +60,8 @@ public static class Program
 		var xService = host.Services.GetRequiredService<XLibAdaptorService>();
 		xService.Initialize();
 
-		var tasksService = host.Services.GetRequiredService<TasksService>();
-		tasksService.Initialize();
+		var displayServer = host.Services.GetRequiredService<X11DisplayServer>();
+		displayServer.Initialize();
 
 		var watcher = host.Services.GetRequiredService<DBusSystemTrayService>();
 		await watcher.Initialize();
