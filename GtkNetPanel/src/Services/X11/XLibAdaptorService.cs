@@ -5,6 +5,7 @@ using GtkNetPanel.Interop.X11;
 using GtkNetPanel.Services.GtkSharp;
 using GtkNetPanel.State;
 using Microsoft.Extensions.Hosting;
+using Task = System.Threading.Tasks.Task;
 
 namespace GtkNetPanel.Services.X11;
 
@@ -46,7 +47,7 @@ public class XLibAdaptorService : IDisposable
 			{
 				var e = Marshal.PtrToStructure<XPropertyEvent>(eventPointer);
 
-				if (e.atom != XAtoms.NetClientList)
+				if (e.atom == XAtoms.NetClientList)
 				{
 					HandleWindowListUpdate();
 				}
@@ -101,6 +102,12 @@ public class XLibAdaptorService : IDisposable
 		}
 
 		return results;
+	}
+
+	public XClassHint GetClassHint(XWindowRef windowRef)
+	{
+		XLib.XGetClassHint(windowRef.Display, windowRef.Window, out var classHint);
+		return classHint;
 	}
 
 	public string GetStringProperty(XWindowRef windowRef, ulong property)
@@ -167,7 +174,7 @@ public class XLibAdaptorService : IDisposable
 		return atomNames.ToArray();
 	}
 
-	public List<WindowIcon> GetIcons(XWindowRef windowRef)
+	public List<BitmapImage> GetIcons(XWindowRef windowRef)
 	{
 		var success = XLib.XGetWindowProperty(windowRef.Display, windowRef.Window, XAtoms.NetWmIcon, 0, 1024 * 1024 * 10, false, 0, out var actualTypeReturn, out var actualFormatReturn, out var actualLength, out var bytesLeft, out var dataPointer);
 
@@ -177,7 +184,7 @@ public class XLibAdaptorService : IDisposable
 		Marshal.Copy(dataPointer, data, 0, data.Length);
 		XLib.XFree(dataPointer);
 		using var binaryReader = new BinaryReader(new MemoryStream(data));
-		var icons = new List<WindowIcon>();
+		var icons = new List<BitmapImage>();
 
 		while (binaryReader.PeekChar() != -1)
 		{
@@ -196,7 +203,7 @@ public class XLibAdaptorService : IDisposable
 				imageData[i+3] = intBytes[0];
 			}
 
-			icons.Add(new WindowIcon()
+			icons.Add(new BitmapImage()
 			{
 				Width = (int) width,
 				Height = (int) height,
@@ -246,5 +253,25 @@ public class XLibAdaptorService : IDisposable
 		XLib.XMapWindow(windowRef.Display, windowRef.Window);
 		XLib.XRaiseWindow(windowRef.Display, windowRef.Window);
 		XLib.XFlush(windowRef.Display);
+	}
+
+	public BitmapImage CaptureWindowScreenshot(XWindowRef windowRef)
+	{
+		XLib.XGetWindowAttributes(windowRef.Display, windowRef.Window, out var windowAttributes);
+		var imagePointer = XLib.XGetImage(windowRef.Display, windowRef.Window, 0, 0, windowAttributes.width, windowAttributes.height, XConstants.AllPlanes, XConstants.ZPixmap);
+
+		if (imagePointer == IntPtr.Zero)
+		{
+			var icons = GetIcons(windowRef);
+			var biggestIcon = icons.MaxBy(i => i.Width);
+			return biggestIcon;
+		}
+
+		var image = Marshal.PtrToStructure<XImage>(imagePointer);
+		var imageData = new byte[image.bytes_per_line * image.height];
+		Marshal.Copy(image.data, imageData, 0, imageData.Length);
+		var bitmap = new BitmapImage() { Data = imageData, Height = image.height, Width = image.width };
+		XLib.XDestroyImage(imagePointer);
+		return bitmap;
 	}
 }

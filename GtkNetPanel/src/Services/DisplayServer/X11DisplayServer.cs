@@ -16,9 +16,14 @@ public class X11DisplayServer : IDisplayServer
 		_dispatcher = dispatcher;
 	}
 
-	public void ToggleWindowVisibility(GenericWindowRef stateWindowRef)
+	public BitmapImage CaptureWindowScreenshot(GenericWindowRef windowRef)
 	{
-		_xService.ToggleWindowVisibility((XWindowRef)stateWindowRef.InternalRef);
+		return _xService.CaptureWindowScreenshot((XWindowRef)windowRef.InternalRef);
+	}
+
+	public void ToggleWindowVisibility(GenericWindowRef windowRef)
+	{
+		_xService.ToggleWindowVisibility((XWindowRef)windowRef.InternalRef);
 	}
 
 	public void MakeWindowVisible(GenericWindowRef windowRef)
@@ -43,10 +48,11 @@ public class X11DisplayServer : IDisplayServer
 	{
 		return new TaskState()
 		{
-			Name = _xService.GetStringProperty(windowRef, XAtoms.NetWmName),
+			Title = _xService.GetStringProperty(windowRef, XAtoms.NetWmName),
 			WindowRef = new GenericWindowRef() { Id = $"{windowRef.Display}_{windowRef.Window}", InternalRef = windowRef },
 			Icons = _xService.GetIcons(windowRef),
-			State = _xService.GetAtomArray(windowRef, XAtoms.NetWmState).ToList()
+			State = _xService.GetAtomArray(windowRef, XAtoms.NetWmState).ToList(),
+			ApplicationName = _xService.GetClassHint(windowRef).res_name,
 		};
 	}
 }

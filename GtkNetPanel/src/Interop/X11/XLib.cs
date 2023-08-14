@@ -82,6 +82,85 @@ public class XLib
 	[DllImport("libX11.so.6")]
 	public static extern int XDefaultScreenOfDisplay(ulong display);
 
+	[DllImport("libX11.so.6")]
+	public static extern int XGetClassHint(ulong display, ulong window, out XClassHint class_hints);
+
+	[DllImport("libX11.so.6")]
+	public static extern int XGetWindowAttributes(ulong display, ulong window, out XWindowAttributes window_attributes);
+
+	[DllImport("libX11.so.6")]
+	public static extern IntPtr XGetImage(ulong display, ulong window, int x, int y, uint width, uint height, ulong plane_mask, int format);
+
+	[DllImport("libX11.so.6")]
+	public static extern int XDestroyImage(IntPtr image);
+}
+
+public static class XConstants
+{
+	public const uint AllPlanes = 0xFFFFFFFF;
+	public const int ZPixmap = 2; // This value might vary, please confirm the correct value for your system
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct XImage
+{
+	public int width, height;
+	public int xoffset;
+	public int format;
+	public IntPtr data;
+	public int byte_order;
+	public int bitmap_unit;
+	public int bitmap_bit_order;
+	public int bitmap_pad;
+	public int depth;
+	public int bytes_per_line;
+	public int bits_per_pixel;
+	public ulong red_mask;
+	public ulong green_mask;
+	public ulong blue_mask;
+	public IntPtr obdata;
+	private struct funcs
+	{
+		IntPtr create_image;
+		IntPtr destroy_image;
+		IntPtr get_pixel;
+		IntPtr put_pixel;
+		IntPtr sub_image;
+		IntPtr add_pixel;
+	}
+
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct XWindowAttributes
+{
+	public int x, y;
+	public uint width, height;
+	public int border_width;
+	public int depth;
+	public IntPtr visual;
+	public ulong root;
+	public int @class;
+	public int bit_gravity;
+	public int win_gravity;
+	public int backing_store;
+	public ulong backing_planes;
+	public ulong backing_pixel;
+	public bool save_under;
+	public ulong colormap;
+	public bool map_installed;
+	public int map_state;
+	public long all_event_masks;
+	public long your_event_masks;
+	public long do_not_propagate_mask;
+	public bool override_redirect;
+	public IntPtr screen;
+}
+
+public struct XClassHint
+{
+	public string res_name;
+	public string res_class;
 }
 
 [Flags]

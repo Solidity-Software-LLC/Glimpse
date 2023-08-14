@@ -25,7 +25,6 @@ public static class XAtoms
 	public static readonly ulong NetWmWindowTypeNormal;
 	public static readonly ulong WmChangeState;
 
-
 	static XAtoms()
 	{
 		var display = XLib.XOpenDisplay(0);

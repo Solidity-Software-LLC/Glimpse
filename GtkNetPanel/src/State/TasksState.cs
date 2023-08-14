@@ -12,13 +12,14 @@ public class TasksState
 
 public class TaskState
 {
-	public string Name { get; set; }
+	public string Title { get; set; }
 	public List<string> State { get; set; }
-	public List<WindowIcon> Icons { get; set; }
+	public List<BitmapImage> Icons { get; set; }
 	public GenericWindowRef WindowRef { get; set; }
+	public string ApplicationName { get; set; }
 }
 
-public class WindowIcon
+public class BitmapImage
 {
 	public int Width { get; set; }
 	public int Height { get; set; }

@@ -32,6 +32,11 @@ public class ApplicationBarController
 		});
 	}
 
+	public BitmapImage CaptureWindowScreenshot(GenericWindowRef windowRef)
+	{
+		return _displayServer.CaptureWindowScreenshot(windowRef);
+	}
+
 	public void OnPreviewWindowClicked(ButtonReleaseEventArgs e, GenericWindowRef windowRef)
 	{
 		_displayServer.MakeWindowVisible(windowRef);
