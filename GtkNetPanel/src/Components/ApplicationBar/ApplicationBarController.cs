@@ -1,3 +1,4 @@
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Fluxor;
 using Gtk;
@@ -25,10 +26,25 @@ public class ApplicationBarController
 		_viewModelSubject = viewModelSubject;
 		_displayServer = displayServer;
 
-		state.ToObservable().Subscribe(s =>
+		state.ToObservable().SelectMany(s => s.Tasks).GroupBy(s => s.Value.ApplicationName).Subscribe(s =>
 		{
-			_currentViewModel = new ApplicationBarViewModel() { Tasks = s.Tasks, ShownWindowPicker = _currentViewModel.ShownWindowPicker };
-			_viewModelSubject.OnNext(_currentViewModel);
+			s.Take(1).Select(kv => kv.Value).Subscribe(task =>
+			{
+				_currentViewModel = _currentViewModel with { Groups = _currentViewModel.Groups.Add(s.Key, new IconGroupViewModel(task)) };
+				_viewModelSubject.OnNext(_currentViewModel);
+			});
+
+			s.Skip(1).Select(kv => kv.Value).Subscribe(task =>
+			{
+				_currentViewModel = _currentViewModel with { Groups = _currentViewModel.Groups.SetItem(s.Key, _currentViewModel.Groups[s.Key].UpdateTask(task)) };
+				_viewModelSubject.OnNext(_currentViewModel);
+			},
+			e => { },
+			() =>
+			{
+				_currentViewModel = _currentViewModel with { Groups = _currentViewModel.Groups.Remove(s.Key) };
+				_viewModelSubject.OnNext(_currentViewModel);
+			});
 		});
 	}
 
@@ -42,16 +58,24 @@ public class ApplicationBarController
 		_displayServer.MakeWindowVisible(windowRef);
 	}
 
-	public void OnClickApplicationIcon(ButtonReleaseEventArgs e, TaskState state)
+	public void OnClickApplicationIcon(ButtonReleaseEventArgs e, string applicationName)
 	{
-		if (e.Event.Button == 1)
+		var group = _currentViewModel.Groups[applicationName];
+
+		if (e.Event.Button == 1 && group.Tasks.Count == 1)
 		{
-			_displayServer.ToggleWindowVisibility(state.WindowRef);
+			_displayServer.ToggleWindowVisibility(group.Tasks.First().WindowRef);
 		}
 		else
 		{
-			_currentViewModel = new ApplicationBarViewModel() { Tasks = _currentViewModel.Tasks, ShownWindowPicker = state };
+			_currentViewModel = _currentViewModel with { GroupForWindowPicker = applicationName };
 			_viewModelSubject.OnNext(_currentViewModel);
 		}
+	}
+
+	public void CloseWindowPicker()
+	{
+		_currentViewModel = _currentViewModel with { GroupForWindowPicker = null };
+		_viewModelSubject.OnNext(_currentViewModel);
 	}
 }
