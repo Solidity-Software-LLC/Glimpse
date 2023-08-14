@@ -270,6 +270,7 @@ public class XLibAdaptorService : IDisposable
 		var image = Marshal.PtrToStructure<XImage>(imagePointer);
 		var imageData = new byte[image.bytes_per_line * image.height];
 		Marshal.Copy(image.data, imageData, 0, imageData.Length);
+
 		var bitmap = new BitmapImage() { Data = imageData, Height = image.height, Width = image.width };
 		XLib.XDestroyImage(imagePointer);
 		return bitmap;

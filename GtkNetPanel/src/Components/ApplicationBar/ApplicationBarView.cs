@@ -19,9 +19,8 @@ public class ApplicationBarView : Box
 		_application = application;
 		_controller = controller;
 
-		viewModelObservable.Select(vm => vm.GroupForWindowPicker).DistinctUntilChanged().WithLatestFrom(viewModelObservable).Subscribe(tuple =>
+		viewModelObservable.Select(vm => vm.GroupForWindowPicker).DistinctUntilChanged().Where(w => w != null).WithLatestFrom(viewModelObservable).Subscribe(tuple =>
 		{
-			if (string.IsNullOrEmpty(tuple.First)) return;
 			var windowPickerPopup = CreateWindowPickerPopup(tuple.Second.Groups[tuple.First]);
 			_application.AddWindow(windowPickerPopup);
 			windowPickerPopup.GrabFocus();
@@ -36,10 +35,7 @@ public class ApplicationBarView : Box
 				ShowAll();
 			});
 
-			groupedObservable.Skip(1).Subscribe(group =>
-			{
-				// Update icon if it changed
-			},
+			groupedObservable.Skip(1).Subscribe(group => { }, // Update icon if it changed
 			e => { },
 			() =>
 			{
@@ -54,6 +50,7 @@ public class ApplicationBarView : Box
 	{
 		var applicationIcon = _icons[group.ApplicationName];
 		var previewSelectionLayout = new Box(Orientation.Horizontal, 0);
+		previewSelectionLayout.AppPaintable = true;
 		previewSelectionLayout.StyleContext.AddClass("app-preview-popup-container");
 
 		foreach (var task in group.Tasks)
@@ -75,32 +72,49 @@ public class ApplicationBarView : Box
 		windowPickerPopup.TypeHint = WindowTypeHint.Dialog;
 		windowPickerPopup.Visual = Screen.RgbaVisual;
 		windowPickerPopup.Add(previewSelectionLayout);
-		windowPickerPopup.Move(x, y - windowPickerPopup.HeightRequest);
 		windowPickerPopup.ShowAll();
+		windowPickerPopup.Destroyed += (_, _) => windowPickerPopup.Dispose();
 		windowPickerPopup.FocusOutEvent += (_, _) =>
 		{
 			_controller.CloseWindowPicker();
 			windowPickerPopup.Close();
 		};
-		windowPickerPopup.Destroyed += (_, _) => windowPickerPopup.Dispose();
+
+		var hasMoved = false;
+
+		windowPickerPopup.Drawn += (_, _) =>
+		{
+			if (hasMoved) return;
+			hasMoved = true;
+			var windowX = x + applicationIcon.Window.Width / 2 - windowPickerPopup.Window.Width / 2;
+			var windowY = y - windowPickerPopup.Window.Height - 8;
+			if (windowX < 8) windowX = 8;
+			windowPickerPopup.Move(windowX, windowY);
+		};
+
 		return windowPickerPopup;
 	}
 
 	private Widget CreateAppPreview(TaskState task)
 	{
 		var applicationName = new Label(task.Title);
-		applicationName.Ellipsize = EllipsizeMode.Start;
+		applicationName.Ellipsize = EllipsizeMode.End;
 		applicationName.Justify = Justification.Left;
+		applicationName.MaxWidthChars = 1;
 
 		var bitmapImage = _controller.CaptureWindowScreenshot(task.WindowRef);
 		var imageBuffer = new Pixbuf(bitmapImage.Data, Colorspace.Rgb, true, 8, bitmapImage.Width, bitmapImage.Height, 4 * bitmapImage.Width);
-		imageBuffer = imageBuffer.ScaleSimple(150, 150, InterpType.Bilinear);
+		var ratio = (double) imageBuffer.Width / imageBuffer.Height;
+		imageBuffer = imageBuffer.ScaleSimple((int) (100 * ratio), 100, InterpType.Bilinear);
+		Console.WriteLine(125 * ratio);
 
 		var appWindowContainer = new Box(Orientation.Vertical, 0);
 		appWindowContainer.Hexpand = false;
 		appWindowContainer.Vexpand = false;
 		appWindowContainer.Add(applicationName);
 		appWindowContainer.Add(new Image(imageBuffer));
+		appWindowContainer.StyleContext.AddClass("app-preview-layout");
+		appWindowContainer.WidthRequest = 230;
 
 		var eventBox = new EventBox();
 		eventBox.AddHoverHighlighting();
