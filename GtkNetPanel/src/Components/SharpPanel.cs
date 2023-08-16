@@ -20,24 +20,26 @@ public class SharpPanel : Window
 		AppPaintable = true;
 		Visual = Screen.RgbaVisual;
 
-		var box = new Box(Orientation.Horizontal, 0);
-		box.Valign = Align.Center;
-		box.Hexpand = true;
-		box.Vexpand = false;
-		box.PackStart(new AppMenu(), false, false, 0);
-		box.PackStart(applicationBarView, false, false, 0);
-		box.PackStart(new DrawingArea(), true, false, 4);
-		box.PackStart(systemTrayBox, false, false, 4);
-		box.PackStart(CreateClock(), false, false, 5);
-		box.PackStart(new DrawingArea(), false, false, 4);
+		var centerBox = new Box(Orientation.Horizontal, 0);
+		centerBox.PackStart(new AppMenu(), false, false, 0);
+		centerBox.PackStart(applicationBarView, false, false, 0);
+		centerBox.Halign = Align.Center;
 
-		var wrapperBox = new Box(Orientation.Horizontal, 0);
-		wrapperBox.Hexpand = true;
-		wrapperBox.Expand = true;
-		wrapperBox.Add(box);
-		wrapperBox.StyleContext.AddClass("panel");
-		Add(wrapperBox);
+		var rightBox = new Box(Orientation.Horizontal, 0);
+		rightBox.PackStart(systemTrayBox, false, false, 4);
+		rightBox.PackStart(CreateClock(), false, false, 5);
+		rightBox.Halign = Align.End;
 
+		var grid = new Grid();
+		grid.Attach(new DrawingArea(), 0, 0, 1, 1);
+		grid.Attach(centerBox, 1, 0, 1, 1);
+		grid.Attach(rightBox, 2, 0, 1, 1);
+		grid.Vexpand = true;
+		grid.Hexpand = true;
+		grid.RowHomogeneous = true;
+		grid.ColumnHomogeneous = true;
+		grid.StyleContext.AddClass("panel");
+		Add(grid);
 		ShowAll();
 
 		// var helper = new ContextMenuHelper(this);

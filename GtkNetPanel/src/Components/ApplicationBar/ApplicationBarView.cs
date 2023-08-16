@@ -32,7 +32,7 @@ public class ApplicationBarView : Box
 			groupedObservable.Take(1).Subscribe(group =>
 			{
 				_icons.Add(groupedObservable.Key, CreateAppIcon(group.Value));
-				PackStart(_icons[groupedObservable.Key], false, false, 0);
+				PackStart(_icons[groupedObservable.Key], false, false, 2);
 				ShowAll();
 			});
 
