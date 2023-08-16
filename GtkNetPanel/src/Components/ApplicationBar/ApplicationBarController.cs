@@ -26,24 +26,21 @@ public class ApplicationBarController
 		_viewModelSubject = viewModelSubject;
 		_displayServer = displayServer;
 
-		state.ToObservable().SelectMany(s => s.Tasks).GroupBy(s => s.Value.ApplicationName).Subscribe(s =>
-		{
-			s.Take(1).Select(kv => kv.Value).Subscribe(task =>
-			{
-				_currentViewModel = _currentViewModel with { Groups = _currentViewModel.Groups.Add(s.Key, new IconGroupViewModel(task)) };
-				_viewModelSubject.OnNext(_currentViewModel);
-			});
+		viewModelSubject.Subscribe(s => _currentViewModel = s);
 
-			s.Skip(1).Select(kv => kv.Value).Subscribe(task =>
+		state.ToObservable().Select(s => s.Tasks).Unbundle(kv => kv.Value.ApplicationName).Subscribe(groupedObservable =>
+		{
+			groupedObservable.UnbundleMany(t => t.Value.WindowRef.Id).Subscribe(taskObservable =>
 			{
-				_currentViewModel = _currentViewModel with { Groups = _currentViewModel.Groups.SetItem(s.Key, _currentViewModel.Groups[s.Key].UpdateTask(task)) };
-				_viewModelSubject.OnNext(_currentViewModel);
+				taskObservable.Subscribe(
+					t => _viewModelSubject.OnNext(_currentViewModel.UpdateTaskInGroup(groupedObservable.Key, t.Value)),
+					e => { },
+					() => _viewModelSubject.OnNext(_currentViewModel.RemoveTaskFromGroup(groupedObservable.Key, taskObservable.Key)));
 			},
 			e => { },
 			() =>
 			{
-				_currentViewModel = _currentViewModel with { Groups = _currentViewModel.Groups.Remove(s.Key) };
-				_viewModelSubject.OnNext(_currentViewModel);
+				_viewModelSubject.OnNext(_currentViewModel with { Groups = _currentViewModel.Groups.Remove(groupedObservable.Key) });
 			});
 		});
 	}

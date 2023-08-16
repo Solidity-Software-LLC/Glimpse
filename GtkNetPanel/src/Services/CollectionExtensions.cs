@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-namespace GtkNetPanel;
+namespace GtkNetPanel.Services;
 
 public struct Pairing<TKey, TLeft, TRight>
 {

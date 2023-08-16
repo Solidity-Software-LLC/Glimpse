@@ -1,4 +1,4 @@
-namespace GtkNetPanel;
+namespace GtkNetPanel.Services;
 
 public static class StringExtensions
 {

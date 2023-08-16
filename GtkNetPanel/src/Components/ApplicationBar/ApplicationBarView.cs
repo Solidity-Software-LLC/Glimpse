@@ -1,6 +1,7 @@
 using System.Reactive.Linq;
 using Gdk;
 using Gtk;
+using GtkNetPanel.Services;
 using GtkNetPanel.State;
 using Pango;
 using Window = Gtk.Window;
@@ -26,12 +27,12 @@ public class ApplicationBarView : Box
 			windowPickerPopup.GrabFocus();
 		});
 
-		viewModelObservable.Select(v => v.Groups).DistinctUntilChanged().SelectMany(g => g.Values).GroupBy(g => g.ApplicationName).Subscribe(groupedObservable =>
+		viewModelObservable.Select(v => v.Groups).DistinctUntilChanged().UnbundleMany(g => g.Key).Subscribe(groupedObservable =>
 		{
 			groupedObservable.Take(1).Subscribe(group =>
 			{
-				_icons.Add(group.ApplicationName, CreateAppIcon(group));
-				PackStart(_icons[group.ApplicationName], false, false, 0);
+				_icons.Add(groupedObservable.Key, CreateAppIcon(group.Value));
+				PackStart(_icons[groupedObservable.Key], false, false, 0);
 				ShowAll();
 			});
 
@@ -106,7 +107,6 @@ public class ApplicationBarView : Box
 		var imageBuffer = new Pixbuf(bitmapImage.Data, Colorspace.Rgb, true, 8, bitmapImage.Width, bitmapImage.Height, 4 * bitmapImage.Width);
 		var ratio = (double) imageBuffer.Width / imageBuffer.Height;
 		imageBuffer = imageBuffer.ScaleSimple((int) (100 * ratio), 100, InterpType.Bilinear);
-		Console.WriteLine(125 * ratio);
 
 		var appWindowContainer = new Box(Orientation.Vertical, 0);
 		appWindowContainer.Hexpand = false;
