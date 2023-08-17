@@ -27,16 +27,18 @@ public class ApplicationBarView : Box
 			windowPickerPopup.GrabFocus();
 		});
 
-		viewModelObservable.Select(v => v.Groups).DistinctUntilChanged().UnbundleMany(g => g.Key).Subscribe(groupedObservable =>
+		viewModelObservable.Select(v => v.Groups).UnbundleMany(g => g.Key).Subscribe(groupedObservable =>
 		{
-			groupedObservable.Take(1).Subscribe(group =>
-			{
-				_icons.Add(groupedObservable.Key, CreateAppIcon(group.Value));
-				PackStart(_icons[groupedObservable.Key], false, false, 2);
-				ShowAll();
-			});
+			var obs = groupedObservable.Select(g => g.Value).DistinctUntilChanged();
+			_icons.Add(groupedObservable.Key, new ApplicationIcon(obs));
+			_icons[groupedObservable.Key].ButtonReleaseEvent += (o, args) => _controller.OnClickApplicationIcon(args, groupedObservable.Key);
+			PackStart(_icons[groupedObservable.Key], false, false, 2);
+			ShowAll();
 
-			groupedObservable.Skip(1).Subscribe(group => { }, // Update icon if it changed
+			groupedObservable.Select(g => g.Value).DistinctUntilChanged().Skip(1).Subscribe(g =>
+			{
+
+			},
 			e => { },
 			() =>
 			{
@@ -121,25 +123,6 @@ public class ApplicationBarView : Box
 		eventBox.ButtonReleaseEvent += (o, args) => _controller.OnPreviewWindowClicked(args, task.WindowRef);
 		eventBox.Add(appWindowContainer);
 		eventBox.StyleContext.AddClass("app-preview-app");
-
-		return eventBox;
-	}
-
-	private EventBox CreateAppIcon(IconGroupViewModel group)
-	{
-		var task = group.Tasks.First();
-		var biggestIcon = task.Icons.MaxBy(i => i.Width);
-		var imageBuffer = new Pixbuf(biggestIcon.Data, Colorspace.Rgb, true, 8, biggestIcon.Width, biggestIcon.Height, sizeof(int) * biggestIcon.Width);
-		var image = new Image(imageBuffer.ScaleSimple(28, 28, InterpType.Bilinear));
-		image.SetSizeRequest(42, 42);
-
-		var eventBox = new EventBox();
-		eventBox.Vexpand = false;
-		eventBox.Valign = Align.Center;
-		eventBox.StyleContext.AddClass("application-icon");
-		eventBox.Add(image);
-		eventBox.AddHoverHighlighting();
-		eventBox.ButtonReleaseEvent += (o, args) => _controller.OnClickApplicationIcon(args, group.ApplicationName);
 
 		return eventBox;
 	}

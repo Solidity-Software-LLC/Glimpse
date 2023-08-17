@@ -32,8 +32,8 @@ public class ApplicationBarController
 		{
 			groupedObservable.UnbundleMany(t => t.Value.WindowRef.Id).Subscribe(taskObservable =>
 			{
-				taskObservable.Subscribe(
-					t => _viewModelSubject.OnNext(_currentViewModel.UpdateTaskInGroup(groupedObservable.Key, t.Value)),
+				taskObservable.Select(t => t.Value).DistinctUntilChanged().Subscribe(
+					t => _viewModelSubject.OnNext(_currentViewModel.UpdateTaskInGroup(groupedObservable.Key, t)),
 					e => { },
 					() => _viewModelSubject.OnNext(_currentViewModel.RemoveTaskFromGroup(groupedObservable.Key, taskObservable.Key)));
 			},
