@@ -49,6 +49,9 @@ public class X11DisplayServer : IDisplayServer
 
 	private TaskState CreateTask(XWindowRef windowRef)
 	{
+		var allowedX11WindowActions = _xService.GetAtomArray(windowRef, XAtoms.NetWmAllowedActions);
+		var windowActions = ParseWindowActions(allowedX11WindowActions);
+
 		return new TaskState()
 		{
 			Title = _xService.GetStringProperty(windowRef, XAtoms.NetWmName),
@@ -56,7 +59,31 @@ public class X11DisplayServer : IDisplayServer
 			Icons = _xService.GetIcons(windowRef),
 			State = _xService.GetAtomArray(windowRef, XAtoms.NetWmState).ToList(),
 			ApplicationName = _xService.GetClassHint(windowRef).res_name,
-			DesktopFile = _freeDesktopService.FindAppDesktopFile(_xService.GetClassHint(windowRef).res_name)
+			DesktopFile = _freeDesktopService.FindAppDesktopFile(_xService.GetClassHint(windowRef).res_name),
+			AllowedActions = windowActions
 		};
+	}
+
+	private AllowedWindowActions[] ParseWindowActions(string[] x11WindowActions)
+	{
+		var results = new LinkedList<AllowedWindowActions>();
+
+		foreach (var a in x11WindowActions)
+		{
+			var words = a.ToLower().Split("_", StringSplitOptions.RemoveEmptyEntries);
+			var wordsProperCased = words.Select(s => char.ToUpper(s[0]) + s[1..]);
+			var normalizedName = string.Join("", wordsProperCased.Skip(3));
+
+			if (normalizedName.Contains("Maximize"))
+			{
+				results.AddLast(AllowedWindowActions.Maximize);
+			}
+			else if (Enum.TryParse(normalizedName, out AllowedWindowActions enumValue))
+			{
+				results.AddLast(enumValue);
+			}
+		}
+
+		return results.Distinct().ToArray();
 	}
 }

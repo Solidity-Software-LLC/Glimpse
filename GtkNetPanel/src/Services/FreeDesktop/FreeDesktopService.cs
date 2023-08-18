@@ -9,6 +9,12 @@ public class FreeDesktopService
 	public void Init()
 	{
 		var environmentVariables = Environment.GetEnvironmentVariables();
+
+		if (!environmentVariables.Contains("XDG_DATA_DIRS"))
+		{
+			throw new Exception("XDG_DATA_DIRS environment variables not found");
+		}
+
 		var dataDirectories = environmentVariables["XDG_DATA_DIRS"].ToString().Split(":", StringSplitOptions.RemoveEmptyEntries).ToList();
 		dataDirectories.Add(Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local/share"));
 

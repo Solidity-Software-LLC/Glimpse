@@ -6,7 +6,7 @@ public class DesktopFile
 	public string IconName { get; set; }
 	public string StartupWmClass { get; set; }
 	public string Exec { get; set; }
-	public List<DesktopFileAction> Actions { get; set; } = new();
+	public List<DesktopFileAction> Actions { get; set; }
 
 	public static DesktopFile From(IniConfiguration configuration)
 	{
@@ -28,7 +28,7 @@ public class DesktopFile
 			IconName = iconName ?? "",
 			Exec = exec ?? "",
 			StartupWmClass = startupWmClass ?? "",
-			Actions = ParseActions(configuration)
+			Actions = ParseActions(configuration) ?? new List<DesktopFileAction>()
 		};
 	}
 

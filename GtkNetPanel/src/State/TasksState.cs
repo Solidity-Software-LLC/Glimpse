@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Fluxor;
 using GtkNetPanel.Services;
+using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;
 
 namespace GtkNetPanel.State;
@@ -19,6 +20,7 @@ public class TaskState
 	public GenericWindowRef WindowRef { get; set; }
 	public string ApplicationName { get; set; }
 	public DesktopFile DesktopFile { get; set; }
+	public AllowedWindowActions[] AllowedActions { get; set; }
 }
 
 public class BitmapImage

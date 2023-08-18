@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using GtkNetPanel.Services.FreeDesktop;
 using GtkNetPanel.State;
 
 namespace GtkNetPanel.Components.ApplicationBar;
@@ -37,6 +38,7 @@ public record IconGroupViewModel
 {
 	public ImmutableList<TaskState> Tasks { get; set; } = ImmutableList<TaskState>.Empty;
 	public string ApplicationName { get; set; }
+	public DesktopFile DesktopFile { get; set; }
 
 	public virtual bool Equals(IconGroupViewModel other) => ReferenceEquals(this, other);
 
@@ -44,6 +46,7 @@ public record IconGroupViewModel
 	{
 		ApplicationName = taskState.ApplicationName;
 		Tasks = Tasks.Add(taskState);
+		DesktopFile = taskState.DesktopFile;
 	}
 
 	public IconGroupViewModel UpdateTask(TaskState task)
