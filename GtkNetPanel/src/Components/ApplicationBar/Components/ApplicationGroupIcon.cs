@@ -2,33 +2,22 @@ using Cairo;
 using Gdk;
 using Gtk;
 using GtkNetPanel.Components.ContextMenu;
-using GtkNetPanel.Services.DisplayServer;
-using Action = System.Action;
 
-namespace GtkNetPanel.Components.ApplicationBar;
+namespace GtkNetPanel.Components.ApplicationBar.Components;
 
-public class ApplicationIcon : EventBox
+public class ApplicationGroupIcon : EventBox
 {
 	private IconGroupViewModel _currentViewModel;
-	private Menu _contextMenu;
 
-	private readonly List<AllowedWindowActions> _displayableActions = new()
-	{
-		AllowedWindowActions.Maximize,
-		AllowedWindowActions.Minimize,
-		AllowedWindowActions.Move,
-		AllowedWindowActions.Resize
-	};
-
-	public ApplicationIcon(IObservable<IconGroupViewModel> viewModel)
+	public ApplicationGroupIcon(IObservable<IconGroupViewModel> viewModel)
 	{
 		Vexpand = false;
 		Valign = Align.Center;
 		AppPaintable = true;
 		Visual = Screen.RgbaVisual;
-
+		var contextMenu = new ApplicationGroupContextMenu(viewModel);
 		var contextMenuHelper = new ContextMenuHelper(this);
-		contextMenuHelper.ContextMenu += ShowContextMenu;
+		contextMenuHelper.ContextMenu += (_, _) => contextMenu.Popup();
 
 		AddEvents((int)(EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
 
@@ -56,66 +45,7 @@ public class ApplicationIcon : EventBox
 			Add(image);
 			ShowAll();
 			QueueDraw();
-
-			_contextMenu?.Destroy();
-			_contextMenu = CreateContextMenu(group);
 		});
-	}
-
-	private void ShowContextMenu(object sender, ContextMenuEventArgs args)
-	{
-		_contextMenu.Popup();
-	}
-
-	private MenuItem CreateMenuItem(string label, string iconName, Action action)
-	{
-		var box = new Box(Orientation.Horizontal, 0);
-
-		if (!string.IsNullOrEmpty(iconName))
-		{
-			box.PackStart(Image.NewFromIconName(iconName, IconSize.Menu), false, false, 0);
-		}
-
-		box.PackStart(new Label(label), false, false, 0);
-		var menuItem = new MenuItem();
-		menuItem.Add(box);
-		return menuItem;
-	}
-
-	private Menu CreateContextMenu(IconGroupViewModel group)
-	{
-		var contextMenu = new Menu();
-		contextMenu.Add(CreateMenuItem("Pin to Dock", "", () => { }));
-		contextMenu.Add(new SeparatorMenuItem());
-
-		var allowedActions = group.Tasks.First().AllowedActions;
-		var desktopFile = group.Tasks.First().DesktopFile;
-
-		foreach (var action in _displayableActions)
-		{
-			var menuItem = CreateMenuItem(action.ToString(), "", () => { });
-			menuItem.Sensitive = allowedActions.Contains(action);
-			contextMenu.Add(menuItem);
-		}
-
-		if (desktopFile != null && desktopFile.Actions.Count > 0)
-		{
-			contextMenu.Add(new SeparatorMenuItem());
-
-			foreach (var action in desktopFile.Actions)
-			{
-				contextMenu.Add(CreateMenuItem(action.ActionName, action.IconName, () => { }));
-			}
-		}
-
-		if (allowedActions.Contains(AllowedWindowActions.Close))
-		{
-			contextMenu.Add(new SeparatorMenuItem());
-			contextMenu.Add(CreateMenuItem("Close", "", () => { }));
-		}
-
-		contextMenu.ShowAll();
-		return contextMenu;
 	}
 
 	protected override bool OnDrawn(Context cr)

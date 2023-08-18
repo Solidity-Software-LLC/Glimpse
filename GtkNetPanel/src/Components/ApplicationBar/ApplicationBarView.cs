@@ -1,6 +1,7 @@
 using System.Reactive.Linq;
 using Gdk;
 using Gtk;
+using GtkNetPanel.Components.ApplicationBar.Components;
 using GtkNetPanel.Services;
 using GtkNetPanel.State;
 using Pango;
@@ -30,7 +31,7 @@ public class ApplicationBarView : Box
 		viewModelObservable.Select(v => v.Groups).UnbundleMany(g => g.Key).Subscribe(groupedObservable =>
 		{
 			var obs = groupedObservable.Select(g => g.Value).DistinctUntilChanged();
-			_icons.Add(groupedObservable.Key, new ApplicationIcon(obs));
+			_icons.Add(groupedObservable.Key, new ApplicationGroupIcon(obs));
 			_icons[groupedObservable.Key].ButtonReleaseEvent += (o, args) => _controller.OnClickApplicationIcon(args, groupedObservable.Key);
 			PackStart(_icons[groupedObservable.Key], false, false, 2);
 			ShowAll();
