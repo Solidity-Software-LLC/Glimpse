@@ -59,14 +59,21 @@ public class ApplicationBarController
 	{
 		var group = _currentViewModel.Groups[applicationName];
 
-		if (e.Event.Button == 1 && group.Tasks.Count == 1)
+		if (e.Event.Button == 1)
 		{
-			_displayServer.ToggleWindowVisibility(group.Tasks.First().WindowRef);
+			if (group.Tasks.Count == 1)
+			{
+				_displayServer.ToggleWindowVisibility(group.Tasks.First().WindowRef);
+			}
+			else
+			{
+				_currentViewModel = _currentViewModel with { GroupForWindowPicker = applicationName };
+				_viewModelSubject.OnNext(_currentViewModel);
+			}
 		}
-		else
+		else if (e.Event.Button == 3)
 		{
-			_currentViewModel = _currentViewModel with { GroupForWindowPicker = applicationName };
-			_viewModelSubject.OnNext(_currentViewModel);
+
 		}
 	}
 

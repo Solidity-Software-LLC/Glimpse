@@ -20,9 +20,9 @@ public class AppMenu : EventBox
 		SetSizeRequest(42, 42);
 		this.AddHoverHighlighting();
 
-		ButtonPressEvent += (_, _) =>
+		ButtonReleaseEvent += (_, _) =>
 		{
-			var startInfo = new ProcessStartInfo() { FileName = "/usr/bin/xfce4-popup-whiskermenu", UseShellExecute = true, Arguments = "-p"};
+			var startInfo = new ProcessStartInfo() { FileName = "/usr/bin/xfce4-popup-whiskermenu", Arguments = "-p"};
 			Process.Start(startInfo);
 		};
 	}

@@ -8,6 +8,7 @@ using GtkNetPanel.Components.ApplicationBar;
 using GtkNetPanel.Components.SystemTray;
 using GtkNetPanel.Services.DBus.Introspection;
 using GtkNetPanel.Services.DisplayServer;
+using GtkNetPanel.Services.FreeDesktop;
 using GtkNetPanel.Services.SystemTray;
 using GtkNetPanel.Services.X11;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +40,7 @@ public static class Program
 					.As<BehaviorSubject<ApplicationBarViewModel>>()
 					.InstancePerMatchingLifetimeScope("panel");
 
+				containerBuilder.RegisterType<FreeDesktopService>().SingleInstance();
 				containerBuilder.RegisterType<X11DisplayServer>().As<X11DisplayServer>().As<IDisplayServer>().SingleInstance();
 				containerBuilder.RegisterType<DBusSystemTrayService>();
 				containerBuilder.RegisterType<IntrospectionService>();
@@ -56,6 +58,9 @@ public static class Program
 		var host = builder.Build();
 		var store = host.Services.GetRequiredService<IStore>();
 		await store.InitializeAsync();
+
+		var fdService = host.Services.GetRequiredService<FreeDesktopService>();
+		fdService.Init();
 
 		var xService = host.Services.GetRequiredService<XLibAdaptorService>();
 		xService.Initialize();

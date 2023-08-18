@@ -1,5 +1,6 @@
 using Fluxor;
 using GtkNetPanel.Interop.X11;
+using GtkNetPanel.Services.FreeDesktop;
 using GtkNetPanel.Services.X11;
 using GtkNetPanel.State;
 
@@ -9,11 +10,13 @@ public class X11DisplayServer : IDisplayServer
 {
 	private readonly XLibAdaptorService _xService;
 	private readonly IDispatcher _dispatcher;
+	private readonly FreeDesktopService _freeDesktopService;
 
-	public X11DisplayServer(XLibAdaptorService xService, IDispatcher dispatcher)
+	public X11DisplayServer(XLibAdaptorService xService, IDispatcher dispatcher, FreeDesktopService freeDesktopService)
 	{
 		_xService = xService;
 		_dispatcher = dispatcher;
+		_freeDesktopService = freeDesktopService;
 	}
 
 	public BitmapImage CaptureWindowScreenshot(GenericWindowRef windowRef)
@@ -53,6 +56,7 @@ public class X11DisplayServer : IDisplayServer
 			Icons = _xService.GetIcons(windowRef),
 			State = _xService.GetAtomArray(windowRef, XAtoms.NetWmState).ToList(),
 			ApplicationName = _xService.GetClassHint(windowRef).res_name,
+			DesktopFile = _freeDesktopService.FindAppDesktopFile(_xService.GetClassHint(windowRef).res_name)
 		};
 	}
 }
