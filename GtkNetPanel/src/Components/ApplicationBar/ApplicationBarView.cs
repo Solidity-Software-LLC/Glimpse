@@ -1,12 +1,7 @@
 using System.Reactive.Linq;
-using Gdk;
 using Gtk;
 using GtkNetPanel.Components.ApplicationBar.Components;
 using GtkNetPanel.Services;
-using GtkNetPanel.State;
-using Pango;
-using Window = Gtk.Window;
-using WindowType = Gtk.WindowType;
 
 namespace GtkNetPanel.Components.ApplicationBar;
 
@@ -14,117 +9,47 @@ public class ApplicationBarView : Box
 {
 	private readonly Application _application;
 	private readonly ApplicationBarController _controller;
-	private readonly Dictionary<string, Widget> _icons = new();
 
 	public ApplicationBarView(IObservable<ApplicationBarViewModel> viewModelObservable, Application application, ApplicationBarController controller)
 	{
 		_application = application;
 		_controller = controller;
 
-		viewModelObservable.Select(vm => vm.GroupForWindowPicker).DistinctUntilChanged().Where(w => w != null).WithLatestFrom(viewModelObservable).Subscribe(tuple =>
-		{
-			var windowPickerPopup = CreateWindowPickerPopup(tuple.Second.Groups[tuple.First]);
-			_application.AddWindow(windowPickerPopup);
-			windowPickerPopup.GrabFocus();
-		});
-
 		viewModelObservable.Select(v => v.Groups).UnbundleMany(g => g.Key).Subscribe(groupedObservable =>
 		{
 			var obs = groupedObservable.Select(g => g.Value).DistinctUntilChanged();
-			_icons.Add(groupedObservable.Key, new ApplicationGroupIcon(obs));
-			_icons[groupedObservable.Key].ButtonReleaseEvent += (o, args) => _controller.OnClickApplicationIcon(args, groupedObservable.Key);
-			PackStart(_icons[groupedObservable.Key], false, false, 2);
+			var groupIcon = CreateApplicationGroup(obs);
+			PackStart(groupIcon, false, false, 2);
 			ShowAll();
-
-			groupedObservable.Select(g => g.Value).DistinctUntilChanged().Skip(1).Subscribe(g =>
-			{
-
-			},
-			e => { },
-			() =>
-			{
-				var widget = _icons[groupedObservable.Key];
-				_icons.Remove(groupedObservable.Key);
-				Remove(widget);
-			});
+			obs.Subscribe(g => { }, e => { }, () => Remove(groupIcon));
 		});
 	}
 
-	private Window CreateWindowPickerPopup(IconGroupViewModel group)
+	private Widget CreateApplicationGroup(IObservable<IconGroupViewModel> viewModelObservable)
 	{
-		var applicationIcon = _icons[group.ApplicationName];
-		var previewSelectionLayout = new Box(Orientation.Horizontal, 0);
-		previewSelectionLayout.AppPaintable = true;
-		previewSelectionLayout.StyleContext.AddClass("app-preview-popup-container");
+		var contextMenu = new ApplicationGroupContextMenu(viewModelObservable);
+		var windowPicker = new WindowPicker(viewModelObservable, _application);
+		var groupIcon = new ApplicationGroupIcon(viewModelObservable);
 
-		foreach (var task in group.Tasks)
-		{
-			var preview = CreateAppPreview(task);
-			previewSelectionLayout.PackStart(preview, false, false, 0);
-		}
+		Observable.FromEventPattern(windowPicker, nameof(windowPicker.VisibilityNotifyEvent))
+			.Subscribe(_ => windowPicker.CenterAbove(groupIcon));
 
-		Window.GetOrigin(out _, out var y);
-		applicationIcon.TranslateCoordinates(Toplevel, 0, 0, out var x, out _);
+		windowPicker.PreviewWindowClicked
+			.Subscribe(w => _controller.MakeWindowVisible(w));
 
-		var windowPickerPopup = new Window(WindowType.Toplevel);
-		windowPickerPopup.SkipPagerHint = true;
-		windowPickerPopup.SkipTaskbarHint = true;
-		windowPickerPopup.Decorated = false;
-		windowPickerPopup.Resizable = false;
-		windowPickerPopup.CanFocus = true;
-		windowPickerPopup.AppPaintable = true;
-		windowPickerPopup.TypeHint = WindowTypeHint.Dialog;
-		windowPickerPopup.Visual = Screen.RgbaVisual;
-		windowPickerPopup.Add(previewSelectionLayout);
-		windowPickerPopup.ShowAll();
-		windowPickerPopup.Destroyed += (_, _) => windowPickerPopup.Dispose();
-		windowPickerPopup.FocusOutEvent += (_, _) =>
-		{
-			_controller.CloseWindowPicker();
-			windowPickerPopup.Close();
-		};
+		groupIcon.ContextMenuOpened
+			.Subscribe(_ => contextMenu.Popup());
 
-		var hasMoved = false;
+		Observable.FromEventPattern<ButtonReleaseEventArgs>(groupIcon, nameof(ButtonReleaseEvent))
+			.WithLatestFrom(viewModelObservable)
+			.Where(t => t.First.EventArgs.Event.Button == 1 && t.Second.Tasks.Count == 1)
+			.Subscribe(t => _controller.ToggleWindowVisibility(t.Second.Tasks.First().WindowRef));
 
-		windowPickerPopup.Drawn += (_, _) =>
-		{
-			if (hasMoved) return;
-			hasMoved = true;
-			var windowX = x + applicationIcon.Window.Width / 2 - windowPickerPopup.Window.Width / 2;
-			var windowY = y - windowPickerPopup.Window.Height - 8;
-			if (windowX < 8) windowX = 8;
-			windowPickerPopup.Move(windowX, windowY);
-		};
+		Observable.FromEventPattern<ButtonReleaseEventArgs>(groupIcon, nameof(ButtonReleaseEvent))
+			.WithLatestFrom(viewModelObservable)
+			.Where(t => t.First.EventArgs.Event.Button == 1 && t.Second.Tasks.Count > 1)
+			.Subscribe(_ => windowPicker.Popup());
 
-		return windowPickerPopup;
-	}
-
-	private Widget CreateAppPreview(TaskState task)
-	{
-		var applicationName = new Label(task.Title);
-		applicationName.Ellipsize = EllipsizeMode.End;
-		applicationName.Justify = Justification.Left;
-		applicationName.MaxWidthChars = 1;
-
-		var bitmapImage = _controller.CaptureWindowScreenshot(task.WindowRef);
-		var imageBuffer = new Pixbuf(bitmapImage.Data, Colorspace.Rgb, true, 8, bitmapImage.Width, bitmapImage.Height, 4 * bitmapImage.Width);
-		var ratio = (double) imageBuffer.Width / imageBuffer.Height;
-		imageBuffer = imageBuffer.ScaleSimple((int) (100 * ratio), 100, InterpType.Bilinear);
-
-		var appWindowContainer = new Box(Orientation.Vertical, 0);
-		appWindowContainer.Hexpand = false;
-		appWindowContainer.Vexpand = false;
-		appWindowContainer.Add(applicationName);
-		appWindowContainer.Add(new Image(imageBuffer));
-		appWindowContainer.StyleContext.AddClass("app-preview-layout");
-		appWindowContainer.WidthRequest = 230;
-
-		var eventBox = new EventBox();
-		eventBox.AddHoverHighlighting();
-		eventBox.ButtonReleaseEvent += (o, args) => _controller.OnPreviewWindowClicked(args, task.WindowRef);
-		eventBox.Add(appWindowContainer);
-		eventBox.StyleContext.AddClass("app-preview-app");
-
-		return eventBox;
+		return groupIcon;
 	}
 }

@@ -7,7 +7,6 @@ namespace GtkNetPanel.Components.ApplicationBar;
 public record ApplicationBarViewModel
 {
 	public ImmutableDictionary<string, IconGroupViewModel> Groups { get; set; } = ImmutableDictionary<string, IconGroupViewModel>.Empty;
-	public string GroupForWindowPicker { get; set; }
 
 	public virtual bool Equals(ApplicationBarViewModel other) => ReferenceEquals(this, other);
 

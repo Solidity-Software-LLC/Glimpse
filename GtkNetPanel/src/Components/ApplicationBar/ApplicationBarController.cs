@@ -1,7 +1,6 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Fluxor;
-using Gtk;
 using GtkNetPanel.Services;
 using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.State;
@@ -45,41 +44,13 @@ public class ApplicationBarController
 		});
 	}
 
-	public BitmapImage CaptureWindowScreenshot(GenericWindowRef windowRef)
-	{
-		return _displayServer.CaptureWindowScreenshot(windowRef);
-	}
-
-	public void OnPreviewWindowClicked(ButtonReleaseEventArgs e, GenericWindowRef windowRef)
+	public void MakeWindowVisible(GenericWindowRef windowRef)
 	{
 		_displayServer.MakeWindowVisible(windowRef);
 	}
 
-	public void OnClickApplicationIcon(ButtonReleaseEventArgs e, string applicationName)
+	public void ToggleWindowVisibility(GenericWindowRef windowRef)
 	{
-		var group = _currentViewModel.Groups[applicationName];
-
-		if (e.Event.Button == 1)
-		{
-			if (group.Tasks.Count == 1)
-			{
-				_displayServer.ToggleWindowVisibility(group.Tasks.First().WindowRef);
-			}
-			else
-			{
-				_currentViewModel = _currentViewModel with { GroupForWindowPicker = applicationName };
-				_viewModelSubject.OnNext(_currentViewModel);
-			}
-		}
-		else if (e.Event.Button == 3)
-		{
-
-		}
-	}
-
-	public void CloseWindowPicker()
-	{
-		_currentViewModel = _currentViewModel with { GroupForWindowPicker = null };
-		_viewModelSubject.OnNext(_currentViewModel);
+		_displayServer.ToggleWindowVisibility(windowRef);
 	}
 }

@@ -1,18 +1,24 @@
+using System.Reactive.Subjects;
 using Gtk;
 using GtkNetPanel.Services.DisplayServer;
-using Action = System.Action;
+using GtkNetPanel.Services.FreeDesktop;
 
 namespace GtkNetPanel.Components.ApplicationBar.Components;
 
 public class ApplicationGroupContextMenu : Menu
 {
-	private readonly List<AllowedWindowActions> _displayableActions = new()
+	private static readonly List<AllowedWindowActions> s_displayableActions = new()
 	{
 		AllowedWindowActions.Maximize,
 		AllowedWindowActions.Minimize,
 		AllowedWindowActions.Move,
 		AllowedWindowActions.Resize
 	};
+
+	private readonly Subject<IconGroupViewModel> _buttonReleaseSubject = new();
+	private readonly Subject<bool> _pinSubject = new();
+	private readonly Subject<AllowedWindowActions> _windowAction = new();
+	private readonly Subject<DesktopFileAction> _desktopFileAction = new();
 
 	public ApplicationGroupContextMenu(IObservable<IconGroupViewModel> viewModel)
 	{
@@ -23,18 +29,26 @@ public class ApplicationGroupContextMenu : Menu
 		});
 	}
 
+	public IObservable<bool> Pin => _pinSubject;
+	public IObservable<IconGroupViewModel> ButtonRelease => _buttonReleaseSubject;
+	public IObservable<AllowedWindowActions> WindowAction => _windowAction;
+	public Subject<DesktopFileAction> DesktopFileAction => _desktopFileAction;
+
 	private void CreateContextMenu(IconGroupViewModel group)
 	{
-		Add(CreateMenuItem("Pin to Dock", "", () => { }));
+		var pinMenuItem = CreateMenuItem("Pin to Dock", "");
+		pinMenuItem.ButtonReleaseEvent += (o, args) => _pinSubject.OnNext(true);
+		Add(pinMenuItem);
 		Add(new SeparatorMenuItem());
 
 		var allowedActions = group.Tasks.First().AllowedActions;
 		var desktopFile = group.Tasks.First().DesktopFile;
 
-		foreach (var action in _displayableActions)
+		foreach (var action in s_displayableActions)
 		{
-			var menuItem = CreateMenuItem(action.ToString(), "", () => { });
+			var menuItem = CreateMenuItem(action.ToString(), "");
 			menuItem.Sensitive = allowedActions.Contains(action);
+			menuItem.ButtonReleaseEvent += (o, args) => _windowAction.OnNext(action);
 			Add(menuItem);
 		}
 
@@ -44,20 +58,24 @@ public class ApplicationGroupContextMenu : Menu
 
 			foreach (var action in desktopFile.Actions)
 			{
-				Add(CreateMenuItem(action.ActionName, action.IconName, () => { }));
+				var menuItem = CreateMenuItem(action.ActionName, action.IconName);
+				menuItem.ButtonReleaseEvent += (o, args) => _desktopFileAction.OnNext(action);
+				Add(menuItem);
 			}
 		}
 
 		if (allowedActions.Contains(AllowedWindowActions.Close))
 		{
 			Add(new SeparatorMenuItem());
-			Add(CreateMenuItem("Close", "", () => { }));
+			var menuItem = CreateMenuItem("Close", "");
+			menuItem.ButtonReleaseEvent += (o, args) => _windowAction.OnNext(AllowedWindowActions.Close);
+			Add(menuItem);
 		}
 
 		ShowAll();
 	}
 
-	private MenuItem CreateMenuItem(string label, string iconName, Action action)
+	private MenuItem CreateMenuItem(string label, string iconName)
 	{
 		var box = new Box(Orientation.Horizontal, 0);
 

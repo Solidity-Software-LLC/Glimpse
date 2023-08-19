@@ -1,3 +1,4 @@
+using System.Reactive.Subjects;
 using Cairo;
 using Gdk;
 using Gtk;
@@ -8,18 +9,23 @@ namespace GtkNetPanel.Components.ApplicationBar.Components;
 public class ApplicationGroupIcon : EventBox
 {
 	private IconGroupViewModel _currentViewModel;
+	private readonly Subject<bool> _contextMenuObservable = new();
 
 	public ApplicationGroupIcon(IObservable<IconGroupViewModel> viewModel)
 	{
+		Visible = false;
+
 		Vexpand = false;
 		Valign = Align.Center;
 		AppPaintable = true;
 		Visual = Screen.RgbaVisual;
-		var contextMenu = new ApplicationGroupContextMenu(viewModel);
 		var contextMenuHelper = new ContextMenuHelper(this);
-		contextMenuHelper.ContextMenu += (_, _) => contextMenu.Popup();
-
 		AddEvents((int)(EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
+
+		contextMenuHelper.ContextMenu += (_, _) =>
+		{
+			_contextMenuObservable.OnNext(true);
+		};
 
 		EnterNotifyEvent += (_, _) =>
 		{
@@ -48,6 +54,8 @@ public class ApplicationGroupIcon : EventBox
 		});
 	}
 
+	public IObservable<bool> ContextMenuOpened => _contextMenuObservable;
+
 	protected override bool OnDrawn(Context cr)
 	{
 		cr.Save();
@@ -55,7 +63,7 @@ public class ApplicationGroupIcon : EventBox
 		var w = Window.Width;
 		var h = Window.Height;
 
-		if (_currentViewModel.Tasks.Count > 1)
+		if (_currentViewModel != null && _currentViewModel.Tasks.Count > 1)
 		{
 			var imageSurface = new ImageSurface(Format.ARGB32, w, h);
 			var imageContext = new Context(imageSurface);

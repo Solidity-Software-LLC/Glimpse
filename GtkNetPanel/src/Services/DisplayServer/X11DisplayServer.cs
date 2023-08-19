@@ -19,11 +19,6 @@ public class X11DisplayServer : IDisplayServer
 		_freeDesktopService = freeDesktopService;
 	}
 
-	public BitmapImage CaptureWindowScreenshot(GenericWindowRef windowRef)
-	{
-		return _xService.CaptureWindowScreenshot((XWindowRef)windowRef.InternalRef);
-	}
-
 	public void ToggleWindowVisibility(GenericWindowRef windowRef)
 	{
 		_xService.ToggleWindowVisibility((XWindowRef)windowRef.InternalRef);
@@ -60,7 +55,8 @@ public class X11DisplayServer : IDisplayServer
 			State = _xService.GetAtomArray(windowRef, XAtoms.NetWmState).ToList(),
 			ApplicationName = _xService.GetClassHint(windowRef).res_name,
 			DesktopFile = _freeDesktopService.FindAppDesktopFile(_xService.GetClassHint(windowRef).res_name),
-			AllowedActions = windowActions
+			AllowedActions = windowActions,
+			Screenshot = _xService.CaptureWindowScreenshot(windowRef)
 		};
 	}
 

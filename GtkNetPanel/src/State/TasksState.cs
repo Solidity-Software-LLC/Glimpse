@@ -21,6 +21,7 @@ public class TaskState
 	public string ApplicationName { get; set; }
 	public DesktopFile DesktopFile { get; set; }
 	public AllowedWindowActions[] AllowedActions { get; set; }
+	public BitmapImage Screenshot { get; set; }
 }
 
 public class BitmapImage
