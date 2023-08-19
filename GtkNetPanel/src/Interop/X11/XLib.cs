@@ -95,7 +95,13 @@ public class XLib
 	public static extern int XDestroyImage(IntPtr image);
 
 	[DllImport("libX11.so.6")]
-	public static extern int XSendEvent(ulong display, ulong window, bool propagate, long event_mask, ref XClientMessageEvent send_event);
+	public static extern int XSendEvent(ulong display, ulong window, bool propagate, long event_mask, IntPtr send_event);
+
+	[DllImport("libX11.so.6")]
+	public static extern int XWarpPointer(ulong display, ulong src_w, ulong dest_w, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y);
+
+	[DllImport("libX11.so.6")]
+	public static extern bool XTranslateCoordinates(ulong display, ulong src_w, ulong dest_w, int src_x, int src_y, out int dest_x_return, out int dest_y_return, out ulong child_return);
 }
 
 public static class XConstants
@@ -361,7 +367,7 @@ public enum NotifyDetail : int
 	NotifyDetailNone = 7,
 }
 
-[StructLayout(LayoutKind.Sequential)]
+[StructLayout(LayoutKind.Sequential, Size = 24 * sizeof(long))]
 public struct XClientMessageEvent
 {
 	public int type;

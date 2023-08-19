@@ -7,9 +7,11 @@ using GtkNetPanel.Services.FreeDesktop;
 namespace GtkNetPanel.State;
 
 [FeatureState]
-public class TasksState
+public record TasksState
 {
 	public ImmutableDictionary<string, TaskState> Tasks = ImmutableDictionary<string, TaskState>.Empty;
+	public GenericWindowRef FocusedWindow = new();
+	public virtual bool Equals(TasksState other) => ReferenceEquals(this, other);
 }
 
 public class TaskState
@@ -41,12 +43,17 @@ public class RemoveTaskAction
 	public string WindowId { get; set; }
 }
 
+public class UpdateFocusAction
+{
+	public GenericWindowRef WindowRef { get; set; }
+}
+
 public class TasksStateReducers
 {
 	[ReducerMethod]
 	public static TasksState ReduceAddTaskAction(TasksState state, AddTaskAction action)
 	{
-		return new TasksState() { Tasks = state.Tasks.SetItem(action.Task.WindowRef.Id, action.Task) };
+		return state with { Tasks = state.Tasks.SetItem(action.Task.WindowRef.Id, action.Task) };
 	}
 
 	[ReducerMethod]
@@ -54,9 +61,15 @@ public class TasksStateReducers
 	{
 		if (state.Tasks.ContainsKey(action.WindowId))
 		{
-			return new TasksState() { Tasks = state.Tasks.Remove(action.WindowId) };
+			return state with { Tasks = state.Tasks.Remove(action.WindowId) };
 		}
 
 		return state;
+	}
+
+	[ReducerMethod]
+	public static TasksState ReduceUpdateFocusAction(TasksState state, UpdateFocusAction action)
+	{
+		return state with { FocusedWindow = action.WindowRef };
 	}
 }

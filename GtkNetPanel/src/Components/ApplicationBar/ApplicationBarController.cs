@@ -10,6 +10,7 @@ namespace GtkNetPanel.Components.ApplicationBar;
 
 public class ApplicationBarController
 {
+	private readonly IState<TasksState> _state;
 	private readonly ILogger<ApplicationBarController> _logger;
 	private readonly BehaviorSubject<ApplicationBarViewModel> _viewModelSubject;
 	private readonly IDisplayServer _displayServer;
@@ -21,6 +22,7 @@ public class ApplicationBarController
 		BehaviorSubject<ApplicationBarViewModel> viewModelSubject,
 		IDisplayServer displayServer)
 	{
+		_state = state;
 		_logger = logger;
 		_viewModelSubject = viewModelSubject;
 		_displayServer = displayServer;
@@ -56,9 +58,27 @@ public class ApplicationBarController
 
 	public void HandleWindowAction(AllowedWindowActions action, IconGroupViewModel group)
 	{
+		var focusedWindow = group.Tasks.FirstOrDefault(t => t.WindowRef.Id == _state.Value.FocusedWindow.Id) ?? group.Tasks.First();
+
 		if (action == AllowedWindowActions.Close)
 		{
 			group.Tasks.ForEach(t => _displayServer.CloseWindow(t));
+		}
+		else if (action == AllowedWindowActions.Maximize)
+		{
+			_displayServer.MaximizeWindow(focusedWindow.WindowRef);
+		}
+		else if (action == AllowedWindowActions.Minimize)
+		{
+			_displayServer.MinimizeWindow(focusedWindow.WindowRef);
+		}
+		else if (action == AllowedWindowActions.Resize)
+		{
+			_displayServer.StartResizing(focusedWindow.WindowRef);
+		}
+		else if (action == AllowedWindowActions.Move)
+		{
+			_displayServer.StartMoving(focusedWindow.WindowRef);
 		}
 	}
 }

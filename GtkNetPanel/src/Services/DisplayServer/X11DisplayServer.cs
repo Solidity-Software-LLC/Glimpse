@@ -26,12 +26,36 @@ public class X11DisplayServer : IDisplayServer
 
 	public void MakeWindowVisible(GenericWindowRef windowRef)
 	{
-		_xService.ToggleWindowVisibility((XWindowRef)windowRef.InternalRef);
+		_xService.MakeWindowVisible((XWindowRef)windowRef.InternalRef);
 	}
 
 	public void CloseWindow(TaskState taskState)
 	{
 		_xService.CloseWindow((XWindowRef)taskState.WindowRef.InternalRef);
+	}
+
+	public void MaximizeWindow(GenericWindowRef windowRef)
+	{
+		_xService.MakeWindowVisible((XWindowRef) windowRef.InternalRef);
+		_xService.MaximizeWindow((XWindowRef) windowRef.InternalRef);
+	}
+
+	public void MinimizeWindow(GenericWindowRef windowRef)
+	{
+		_xService.MakeWindowVisible((XWindowRef) windowRef.InternalRef);
+		_xService.MinimizeWindow((XWindowRef) windowRef.InternalRef);
+	}
+
+	public void StartResizing(GenericWindowRef windowRef)
+	{
+		_xService.MakeWindowVisible((XWindowRef) windowRef.InternalRef);
+		_xService.StartResizing((XWindowRef) windowRef.InternalRef);
+	}
+
+	public void StartMoving(GenericWindowRef windowRef)
+	{
+		_xService.MakeWindowVisible((XWindowRef) windowRef.InternalRef);
+		_xService.StartMoving((XWindowRef) windowRef.InternalRef);
 	}
 
 	public void Initialize()
@@ -44,6 +68,11 @@ public class X11DisplayServer : IDisplayServer
 		_xService.WindowRemoved.Subscribe(w =>
 		{
 			_dispatcher.Dispatch(new RemoveTaskAction() { WindowId = $"{w.Display}_{w.Window}"});
+		});
+
+		_xService.FocusChanged.Subscribe(w =>
+		{
+			_dispatcher.Dispatch(new UpdateFocusAction() { WindowRef = new GenericWindowRef() { Id = $"{w.Display}_{w.Window}", InternalRef = w } });
 		});
 	}
 
@@ -85,6 +114,8 @@ public class X11DisplayServer : IDisplayServer
 			}
 		}
 
+		results.AddLast(AllowedWindowActions.Maximize);
+		results.AddLast(AllowedWindowActions.Minimize);
 		return results.Distinct().ToArray();
 	}
 }

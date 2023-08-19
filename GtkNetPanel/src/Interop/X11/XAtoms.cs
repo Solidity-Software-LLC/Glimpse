@@ -26,6 +26,11 @@ public static class XAtoms
 	public static readonly ulong WmChangeState;
 	public static readonly ulong NetWmAllowedActions;
 	public static readonly ulong NetCloseWindow;
+	public static readonly ulong NetActiveWindow;
+	public static readonly ulong NetWmStateMaximizedVert;
+	public static readonly ulong NetWmStateMaximizedHorz;
+	public static readonly ulong NetWmStateHidden;
+	public static readonly ulong NetWmMoveresize;
 
 	static XAtoms()
 	{
@@ -47,6 +52,11 @@ public static class XAtoms
 		WmChangeState = XLib.XInternAtom(display, "WM_CHANGE_STATE", true);
 		NetWmAllowedActions = XLib.XInternAtom(display, "_NET_WM_ALLOWED_ACTIONS", true);
 		NetCloseWindow = XLib.XInternAtom(display, "_NET_CLOSE_WINDOW", true);
+		NetActiveWindow = XLib.XInternAtom(display, "_NET_ACTIVE_WINDOW", true);
+		NetWmStateMaximizedVert = XLib.XInternAtom(display, "_NET_WM_STATE_MAXIMIZED_VERT", true);
+		NetWmStateMaximizedHorz = XLib.XInternAtom(display, "_NET_WM_STATE_MAXIMIZED_HORZ", true);
+		NetWmStateHidden = XLib.XInternAtom(display, "_NET_WM_STATE_HIDDEN", true);
+		NetWmMoveresize = XLib.XInternAtom(display, "_NET_WM_MOVERESIZE", true);
 
 		XLib.XCloseDisplay(display);
 	}

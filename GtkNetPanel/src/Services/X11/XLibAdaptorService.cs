@@ -15,6 +15,7 @@ public class XLibAdaptorService : IDisposable
 	private readonly IHostApplicationLifetime _applicationLifetime;
 	private readonly Subject<XWindowRef> _windowCreated = new();
 	private readonly Subject<XWindowRef> _windowRemoved = new();
+	private readonly Subject<XWindowRef> _focusChanged = new();
 	private List<XWindowRef> _knownWindows = new();
 
 	public XLibAdaptorService(IHostApplicationLifetime applicationLifetime)
@@ -24,6 +25,7 @@ public class XLibAdaptorService : IDisposable
 
 	public IObservable<XWindowRef> WindowCreated => _windowCreated;
 	public IObservable<XWindowRef> WindowRemoved => _windowRemoved;
+	public IObservable<XWindowRef> FocusChanged => _focusChanged;
 
 	public void Initialize()
 	{
@@ -50,6 +52,12 @@ public class XLibAdaptorService : IDisposable
 				if (e.atom == XAtoms.NetClientList)
 				{
 					HandleWindowListUpdate();
+				}
+				else if (e.atom == XAtoms.NetActiveWindow)
+				{
+					var activeWindow = GetULongArray(_rootWindowRef, XAtoms.NetActiveWindow)[0];
+					if (activeWindow == 0) continue;
+					_focusChanged.OnNext(new XWindowRef() { Display = _rootWindowRef.Display, Window = activeWindow });
 				}
 			}
 
@@ -229,6 +237,7 @@ public class XLibAdaptorService : IDisposable
 		return results;
 	}
 
+	// Can I use XSendEvent with propagate set to true instead of searching parents?
 	public void ToggleWindowVisibility(XWindowRef windowRef)
 	{
 		XLib.XGetInputFocus(windowRef.Display, out var focusedWindow, out _);
@@ -246,6 +255,52 @@ public class XLibAdaptorService : IDisposable
 		}
 
 		XLib.XFlush(windowRef.Display);
+	}
+
+	private void ModifyNetWmState(XWindowRef windowRef, ulong[] properties, bool add)
+	{
+		var message = new XClientMessageEvent();
+		message.window = windowRef.Window;
+		message.display = windowRef.Display;
+		message.ptr1 = (IntPtr) (add ? 1 : 0);
+		message.format = 32;
+		message.message_type = XAtoms.NetWmState;
+		message.type = (int) Event.ClientMessage;
+		message.send_event = 1;
+
+		if (properties.Length >= 1) message.ptr2 = (IntPtr) properties[0];
+		if (properties.Length >= 2) message.ptr3 = (IntPtr) properties[1];
+		if (properties.Length >= 3) message.ptr4 = (IntPtr) properties[2];
+		if (properties.Length >= 4) message.ptr5 = (IntPtr) properties[3];
+
+		var pointer = Marshal.AllocHGlobal(24 * sizeof(long));
+		Marshal.StructureToPtr(message, pointer, true);
+		XLib.XSendEvent(windowRef.Display, windowRef.Window, true, (long)EventMask.SubstructureNotifyMask, pointer);
+		XLib.XFlush(windowRef.Display);
+		Marshal.FreeHGlobal(pointer);
+	}
+
+	public void MaximizeWindow(XWindowRef windowRef)
+	{
+		var state = GetULongArray(windowRef, XAtoms.NetWmState);
+		var alreadyMaximized = state.Any(a => a == XAtoms.NetWmStateMaximizedHorz || a == XAtoms.NetWmStateMaximizedVert);
+		ModifyNetWmState(windowRef, new[] { XAtoms.NetWmStateMaximizedHorz, XAtoms.NetWmStateMaximizedVert}, !alreadyMaximized);
+	}
+
+	public void MinimizeWindow(XWindowRef windowRef)
+	{
+		var state = GetULongArray(windowRef, XAtoms.NetWmState);
+		var alreadyIconified = state.Any(a => a == XAtoms.NetWmStateHidden);
+
+		if (alreadyIconified)
+		{
+			XLib.XMapWindow(windowRef.Display, windowRef.Window);
+			XLib.XRaiseWindow(windowRef.Display, windowRef.Window);
+		}
+		else
+		{
+			XLib.XIconifyWindow(windowRef.Display, windowRef.Window, 0);
+		}
 	}
 
 	public void MakeWindowVisible(XWindowRef windowRef)
@@ -278,15 +333,60 @@ public class XLibAdaptorService : IDisposable
 
 	public void CloseWindow(XWindowRef windowRef)
 	{
-		var closeEvent = new XClientMessageEvent();
-		closeEvent.display = windowRef.Display;
-		closeEvent.window = windowRef.Window;
-		closeEvent.format = 32;
-		closeEvent.type = (int) Event.ClientMessage;
-		closeEvent.message_type = XAtoms.NetCloseWindow;
-		closeEvent.send_event = 1;
+		var message = new XClientMessageEvent();
+		message.display = windowRef.Display;
+		message.window = windowRef.Window;
+		message.format = 32;
+		message.type = (int) Event.ClientMessage;
+		message.message_type = XAtoms.NetCloseWindow;
+		message.send_event = 1;
 
-		XLib.XSendEvent(windowRef.Display, windowRef.Window, true, (long)EventMask.SubstructureNotifyMask, ref closeEvent);
+		var pointer = Marshal.AllocHGlobal(24 * sizeof(long));
+		Marshal.StructureToPtr(message, pointer, true);
+		XLib.XSendEvent(windowRef.Display, windowRef.Window, true, (long)EventMask.SubstructureNotifyMask, pointer);
 		XLib.XFlush(windowRef.Display);
+		Marshal.FreeHGlobal(pointer);
+	}
+
+
+	public void StartResizing(XWindowRef windowRef)
+	{
+		XLib.XGetWindowAttributes(windowRef.Display, windowRef.Window, out var windowAttributes);
+		XLib.XTranslateCoordinates(_rootWindowRef.Display, windowRef.Window, _rootWindowRef.Window, 0, 0, out var x, out var y, out _);
+		XLib.XWarpPointer(windowRef.Display, 0, windowRef.Window, 0, 0, 0, 0, (int) windowAttributes.width, (int) windowAttributes.height);
+		var args = new ulong[] { (ulong)(x + windowAttributes.width / 2), (ulong)(y + windowAttributes.height / 2), 4, 1, 1 };
+		SendClientMessage(windowRef, XAtoms.NetWmMoveresize, args);
+	}
+
+	public void StartMoving(XWindowRef windowRef)
+	{
+		XLib.XGetWindowAttributes(windowRef.Display, windowRef.Window, out var windowAttributes);
+		XLib.XTranslateCoordinates(_rootWindowRef.Display, windowRef.Window, _rootWindowRef.Window, 0, 0, out var x, out var y, out _);
+		XLib.XWarpPointer(windowRef.Display, 0, windowRef.Window, 0, 0, 0, 0, (int) windowAttributes.width / 2, (int) windowAttributes.height / 2);
+		var args = new ulong[] { (ulong)(x + windowAttributes.width / 2), (ulong)(y + windowAttributes.height / 2), 8, 1, 1 };
+		SendClientMessage(windowRef, XAtoms.NetWmMoveresize, args);
+	}
+
+	private void SendClientMessage(XWindowRef windowRef, ulong messageType, ulong[] data)
+	{
+		var message = new XClientMessageEvent();
+		message.display = windowRef.Display;
+		message.window = windowRef.Window;
+		message.format = 32;
+		message.type = (int) Event.ClientMessage;
+		message.message_type = XAtoms.NetWmMoveresize;
+		message.send_event = 1;
+
+		if (data.Length >= 1) message.ptr1 = (IntPtr) data[0];
+		if (data.Length >= 2) message.ptr2 = (IntPtr) data[1];
+		if (data.Length >= 3) message.ptr3 = (IntPtr) data[2];
+		if (data.Length >= 4) message.ptr4 = (IntPtr) data[3];
+		if (data.Length >= 5) message.ptr5 = (IntPtr) data[4];
+
+		var pointer = Marshal.AllocHGlobal(24 * sizeof(long));
+		Marshal.StructureToPtr(message, pointer, true);
+		XLib.XSendEvent(windowRef.Display, windowRef.Window, true, (long)EventMask.SubstructureNotifyMask, pointer);
+		XLib.XFlush(windowRef.Display);
+		Marshal.FreeHGlobal(pointer);
 	}
 }
