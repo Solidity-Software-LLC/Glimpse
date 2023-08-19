@@ -93,6 +93,9 @@ public class XLib
 
 	[DllImport("libX11.so.6")]
 	public static extern int XDestroyImage(IntPtr image);
+
+	[DllImport("libX11.so.6")]
+	public static extern int XSendEvent(ulong display, ulong window, bool propagate, long event_mask, ref XClientMessageEvent send_event);
 }
 
 public static class XConstants
@@ -356,4 +359,21 @@ public enum NotifyDetail : int
 	NotifyPointer = 5,
 	NotifyPointerRoot = 6,
 	NotifyDetailNone = 7,
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public struct XClientMessageEvent
+{
+	public int type;
+	public ulong serial;
+	public int send_event;
+	public ulong display;
+	public ulong window;
+	public ulong message_type;
+	public int format;
+	public IntPtr ptr1;
+	public IntPtr ptr2;
+	public IntPtr ptr3;
+	public IntPtr ptr4;
+	public IntPtr ptr5;
 }

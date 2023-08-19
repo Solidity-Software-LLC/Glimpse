@@ -29,6 +29,11 @@ public class X11DisplayServer : IDisplayServer
 		_xService.ToggleWindowVisibility((XWindowRef)windowRef.InternalRef);
 	}
 
+	public void CloseWindow(TaskState taskState)
+	{
+		_xService.CloseWindow((XWindowRef)taskState.WindowRef.InternalRef);
+	}
+
 	public void Initialize()
 	{
 		_xService.WindowCreated.Subscribe(w =>

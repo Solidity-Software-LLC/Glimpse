@@ -25,7 +25,7 @@ public static class XAtoms
 	public static readonly ulong NetWmWindowTypeNormal;
 	public static readonly ulong WmChangeState;
 	public static readonly ulong NetWmAllowedActions;
-
+	public static readonly ulong NetCloseWindow;
 
 	static XAtoms()
 	{
@@ -46,6 +46,7 @@ public static class XAtoms
 		NetWmWindowTypeNormal = XLib.XInternAtom(display, "_NET_WM_WINDOW_TYPE_NORMAL", true);
 		WmChangeState = XLib.XInternAtom(display, "WM_CHANGE_STATE", true);
 		NetWmAllowedActions = XLib.XInternAtom(display, "_NET_WM_ALLOWED_ACTIONS", true);
+		NetCloseWindow = XLib.XInternAtom(display, "_NET_CLOSE_WINDOW", true);
 
 		XLib.XCloseDisplay(display);
 	}

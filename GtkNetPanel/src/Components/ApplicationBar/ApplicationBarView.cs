@@ -21,7 +21,7 @@ public class ApplicationBarView : Box
 			var groupIcon = CreateApplicationGroup(obs);
 			PackStart(groupIcon, false, false, 2);
 			ShowAll();
-			obs.Subscribe(g => { }, e => { }, () => Remove(groupIcon));
+			obs.Subscribe(_ => { }, _ => { }, () => Remove(groupIcon));
 		});
 	}
 
@@ -49,6 +49,10 @@ public class ApplicationBarView : Box
 			.WithLatestFrom(viewModelObservable)
 			.Where(t => t.First.EventArgs.Event.Button == 1 && t.Second.Tasks.Count > 1)
 			.Subscribe(_ => windowPicker.Popup());
+
+		contextMenu.WindowAction
+			.WithLatestFrom(viewModelObservable)
+			.Subscribe(t => _controller.HandleWindowAction(t.First, t.Second));
 
 		return groupIcon;
 	}

@@ -53,4 +53,12 @@ public class ApplicationBarController
 	{
 		_displayServer.ToggleWindowVisibility(windowRef);
 	}
+
+	public void HandleWindowAction(AllowedWindowActions action, IconGroupViewModel group)
+	{
+		if (action == AllowedWindowActions.Close)
+		{
+			group.Tasks.ForEach(t => _displayServer.CloseWindow(t));
+		}
+	}
 }

@@ -275,4 +275,18 @@ public class XLibAdaptorService : IDisposable
 		XLib.XDestroyImage(imagePointer);
 		return bitmap;
 	}
+
+	public void CloseWindow(XWindowRef windowRef)
+	{
+		var closeEvent = new XClientMessageEvent();
+		closeEvent.display = windowRef.Display;
+		closeEvent.window = windowRef.Window;
+		closeEvent.format = 32;
+		closeEvent.type = (int) Event.ClientMessage;
+		closeEvent.message_type = XAtoms.NetCloseWindow;
+		closeEvent.send_event = 1;
+
+		XLib.XSendEvent(windowRef.Display, windowRef.Window, true, (long)EventMask.SubstructureNotifyMask, ref closeEvent);
+		XLib.XFlush(windowRef.Display);
+	}
 }
