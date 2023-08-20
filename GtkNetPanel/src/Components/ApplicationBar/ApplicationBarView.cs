@@ -54,6 +54,10 @@ public class ApplicationBarView : Box
 			.WithLatestFrom(viewModelObservable)
 			.Subscribe(t => _controller.HandleWindowAction(t.First, t.Second));
 
+		contextMenu.DesktopFileAction
+			.WithLatestFrom(viewModelObservable)
+			.Subscribe(t => _controller.HandleDesktopFileAction(t.First, t.Second));
+
 		return groupIcon;
 	}
 }

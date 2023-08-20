@@ -348,7 +348,6 @@ public class XLibAdaptorService : IDisposable
 		Marshal.FreeHGlobal(pointer);
 	}
 
-
 	public void StartResizing(XWindowRef windowRef)
 	{
 		XLib.XGetWindowAttributes(windowRef.Display, windowRef.Window, out var windowAttributes);

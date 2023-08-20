@@ -3,6 +3,7 @@ using System.Reactive.Subjects;
 using Fluxor;
 using GtkNetPanel.Services;
 using GtkNetPanel.Services.DisplayServer;
+using GtkNetPanel.Services.FreeDesktop;
 using GtkNetPanel.State;
 using Microsoft.Extensions.Logging;
 
@@ -14,18 +15,21 @@ public class ApplicationBarController
 	private readonly ILogger<ApplicationBarController> _logger;
 	private readonly BehaviorSubject<ApplicationBarViewModel> _viewModelSubject;
 	private readonly IDisplayServer _displayServer;
+	private readonly FreeDesktopService _freeDesktopService;
 	private ApplicationBarViewModel _currentViewModel = new();
 
 	public ApplicationBarController(
 		IState<TasksState> state,
 		ILogger<ApplicationBarController> logger,
 		BehaviorSubject<ApplicationBarViewModel> viewModelSubject,
-		IDisplayServer displayServer)
+		IDisplayServer displayServer,
+		FreeDesktopService freeDesktopService)
 	{
 		_state = state;
 		_logger = logger;
 		_viewModelSubject = viewModelSubject;
 		_displayServer = displayServer;
+		_freeDesktopService = freeDesktopService;
 
 		viewModelSubject.Subscribe(s => _currentViewModel = s);
 
@@ -54,6 +58,11 @@ public class ApplicationBarController
 	public void ToggleWindowVisibility(GenericWindowRef windowRef)
 	{
 		_displayServer.ToggleWindowVisibility(windowRef);
+	}
+
+	public void HandleDesktopFileAction(DesktopFileAction action, IconGroupViewModel group)
+	{
+		_freeDesktopService.Run(action);
 	}
 
 	public void HandleWindowAction(AllowedWindowActions action, IconGroupViewModel group)

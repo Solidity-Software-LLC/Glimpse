@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using SearchOption = System.IO.SearchOption;
 
 namespace GtkNetPanel.Services.FreeDesktop;
@@ -53,5 +54,15 @@ public class FreeDesktopService
 		}
 
 		return null;
+	}
+
+	public void Run(DesktopFileAction action)
+	{
+		var parts = action.Exec.Split(" ");
+		var executable = parts.FirstOrDefault();
+		if (string.IsNullOrEmpty(executable)) return;
+		var startInfo = new ProcessStartInfo(executable, string.Join(" ", parts[1..]));
+		startInfo.WorkingDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+		Process.Start(startInfo);
 	}
 }
