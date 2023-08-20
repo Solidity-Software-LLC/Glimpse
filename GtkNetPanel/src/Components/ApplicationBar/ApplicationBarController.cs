@@ -2,8 +2,6 @@ using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Fluxor;
-using Gdk;
-using Gtk;
 using GtkNetPanel.Services;
 using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;

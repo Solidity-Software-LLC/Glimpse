@@ -1,3 +1,4 @@
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Cairo;
 using Gdk;
@@ -39,9 +40,14 @@ public class ApplicationGroupIcon : EventBox
 			QueueDraw();
 		};
 
-		viewModel.Subscribe(group =>
+		var image = new Image();
+		image.SetSizeRequest(42, 42);
+		Add(image);
+		ShowAll();
+
+		viewModel.DistinctUntilChanged(x => x.Tasks.Count).Subscribe(group =>
 		{
-			Children.ToList().ForEach(Remove);
+			Console.WriteLine(group.ApplicationName + " " + group.Tasks.Count);
 			_currentViewModel = group;
 			Pixbuf imageBuffer;
 
@@ -67,10 +73,9 @@ public class ApplicationGroupIcon : EventBox
 				imageBuffer = IconTheme.GetForScreen(Screen).LoadIcon("application-default-icon", 26, IconLookupFlags.DirLtr);
 			}
 
-			var image = new Image(imageBuffer.ScaleSimple(26, 26, InterpType.Bilinear));
-			image.SetSizeRequest(42, 42);
-			Add(image);
-			ShowAll();
+			imageBuffer = imageBuffer.ScaleSimple(26, 26, InterpType.Bilinear);
+			image.Pixbuf = imageBuffer;
+
 			QueueDraw();
 		});
 	}
