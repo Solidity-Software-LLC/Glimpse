@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Gdk;
 using Gtk;
+using GtkNetPanel.Components.Shared;
 
 namespace GtkNetPanel.Components.ApplicationMenuButton;
 

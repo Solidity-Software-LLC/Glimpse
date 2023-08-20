@@ -9,27 +9,27 @@ namespace GtkNetPanel.State;
 [FeatureState]
 public record RootState
 {
-	public ImmutableList<ApplicationGroup> Groups = ImmutableList<ApplicationGroup>.Empty;
+	public ImmutableList<ApplicationGroupState> Groups = ImmutableList<ApplicationGroupState>.Empty;
 	public GenericWindowRef FocusedWindow = new();
 
 	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
 }
 
-public record ApplicationGroup
+public record ApplicationGroupState
 {
 	public ImmutableList<TaskState> Tasks { get; set; } = ImmutableList<TaskState>.Empty;
 	public DesktopFile DesktopFile { get; set; }
 	public string ApplicationName { get; set; }
 
-	public virtual bool Equals(ApplicationGroup other) => ReferenceEquals(this, other);
+	public virtual bool Equals(ApplicationGroupState other) => ReferenceEquals(this, other);
 
-	public ApplicationGroup(DesktopFile file)
+	public ApplicationGroupState(DesktopFile file)
 	{
 		ApplicationName = file.Name;
 		DesktopFile = file;
 	}
 
-	public ApplicationGroup(TaskState task)
+	public ApplicationGroupState(TaskState task)
 	{
 		ApplicationName = task.ApplicationName;
 		DesktopFile = task.DesktopFile;
@@ -86,7 +86,7 @@ public class TasksStateReducers
 
 		if (groupToReplace == null)
 		{
-			return state with { Groups = groups.Add(new ApplicationGroup(action.DesktopFile)) };
+			return state with { Groups = groups.Add(new ApplicationGroupState(action.DesktopFile)) };
 		}
 
 		return state;
@@ -100,7 +100,7 @@ public class TasksStateReducers
 
 		if (groupToReplace == null)
 		{
-			return state with { Groups = groups.Add(new ApplicationGroup(action.Task)) };
+			return state with { Groups = groups.Add(new ApplicationGroupState(action.Task)) };
 		}
 
 		var updatedGroup = groupToReplace with { Tasks = groupToReplace.Tasks.Add(action.Task) };

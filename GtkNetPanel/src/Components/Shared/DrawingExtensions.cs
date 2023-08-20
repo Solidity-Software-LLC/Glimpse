@@ -1,6 +1,6 @@
 using Cairo;
 
-namespace GtkNetPanel.Components.ApplicationBar;
+namespace GtkNetPanel.Components.Shared;
 
 public static class DrawingExtensions
 {

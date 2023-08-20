@@ -2,7 +2,7 @@ using Gdk;
 using Gtk;
 using Window = Gtk.Window;
 
-namespace GtkNetPanel.Components;
+namespace GtkNetPanel.Components.Shared;
 
 public static class Extensions
 {

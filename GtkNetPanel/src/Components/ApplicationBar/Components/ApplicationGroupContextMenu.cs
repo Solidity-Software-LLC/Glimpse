@@ -15,12 +15,11 @@ public class ApplicationGroupContextMenu : Menu
 		AllowedWindowActions.Resize
 	};
 
-	private readonly Subject<IconGroupViewModel> _buttonReleaseSubject = new();
 	private readonly Subject<bool> _pinSubject = new();
 	private readonly Subject<AllowedWindowActions> _windowAction = new();
 	private readonly Subject<DesktopFileAction> _desktopFileAction = new();
 
-	public ApplicationGroupContextMenu(IObservable<IconGroupViewModel> viewModel)
+	public ApplicationGroupContextMenu(IObservable<ApplicationBarGroupViewModel> viewModel)
 	{
 		viewModel.Subscribe(vm =>
 		{
@@ -30,19 +29,33 @@ public class ApplicationGroupContextMenu : Menu
 	}
 
 	public IObservable<bool> Pin => _pinSubject;
-	public IObservable<IconGroupViewModel> ButtonRelease => _buttonReleaseSubject;
 	public IObservable<AllowedWindowActions> WindowAction => _windowAction;
 	public Subject<DesktopFileAction> DesktopFileAction => _desktopFileAction;
 
-	private void CreateContextMenu(IconGroupViewModel group)
+	private void CreateContextMenu(ApplicationBarGroupViewModel barGroup)
 	{
 		var pinMenuItem = CreateMenuItem("Pin to Dock", "");
 		pinMenuItem.ButtonReleaseEvent += (o, args) => _pinSubject.OnNext(true);
 		Add(pinMenuItem);
+
+		if (barGroup.Tasks.Count == 0)
+		{
+			CreateDesktopFileContextMenu(barGroup);
+		}
+		else
+		{
+			CreateRunningTaskContextMenu(barGroup);
+		}
+
+		ShowAll();
+	}
+
+	private void CreateRunningTaskContextMenu(ApplicationBarGroupViewModel barGroup)
+	{
 		Add(new SeparatorMenuItem());
 
-		var allowedActions = group.Tasks.First().AllowedActions;
-		var desktopFile = group.Tasks.First().DesktopFile;
+		var allowedActions = barGroup.Tasks.First().AllowedActions;
+		var desktopFile = barGroup.Tasks.First().DesktopFile;
 
 		foreach (var action in s_displayableActions)
 		{
@@ -71,8 +84,21 @@ public class ApplicationGroupContextMenu : Menu
 			menuItem.ButtonReleaseEvent += (o, args) => _windowAction.OnNext(AllowedWindowActions.Close);
 			Add(menuItem);
 		}
+	}
 
-		ShowAll();
+	private void CreateDesktopFileContextMenu(ApplicationBarGroupViewModel barGroup)
+	{
+		if (barGroup.DesktopFile.Actions.Count > 0)
+		{
+			Add(new SeparatorMenuItem());
+		}
+
+		foreach (var action in barGroup.DesktopFile.Actions)
+		{
+			var menuItem = CreateMenuItem(action.ActionName, action.IconName);
+			menuItem.ButtonReleaseEvent += (o, args) => _desktopFileAction.OnNext(action);
+			Add(menuItem);
+		}
 	}
 
 	private MenuItem CreateMenuItem(string label, string iconName)

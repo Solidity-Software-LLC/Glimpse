@@ -29,17 +29,12 @@ public static class Program
 		var builder = Host.CreateDefaultBuilder(args)
 			.UseServiceProviderFactory(new AutofacServiceProviderFactory(containerBuilder =>
 			{
-				containerBuilder.RegisterType<SharpPanel>();
+				containerBuilder.RegisterType<App>();
 				containerBuilder.RegisterType<SystemTrayBox>();
 
 				containerBuilder.RegisterType<ApplicationBarView>();
-				containerBuilder.RegisterType<ApplicationBarView>();
 				containerBuilder.RegisterType<ApplicationBarController>();
 				containerBuilder.RegisterType<ApplicationBarViewModel>();
-				containerBuilder.RegisterType<BehaviorSubject<ApplicationBarViewModel>>()
-					.As<IObservable<ApplicationBarViewModel>>()
-					.As<BehaviorSubject<ApplicationBarViewModel>>()
-					.InstancePerMatchingLifetimeScope("panel");
 
 				containerBuilder.RegisterType<FreeDesktopService>().SingleInstance();
 				containerBuilder.RegisterType<X11DisplayServer>().As<X11DisplayServer>().As<IDisplayServer>().SingleInstance();

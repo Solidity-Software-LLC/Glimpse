@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Fluxor;
@@ -15,38 +16,33 @@ public class ApplicationBarController
 	private readonly ILogger<ApplicationBarController> _logger;
 	private readonly IDisplayServer _displayServer;
 	private readonly FreeDesktopService _freeDesktopService;
-	private ApplicationBarViewModel _currentViewModel = new();
+	private readonly BehaviorSubject<ApplicationBarViewModel> _viewModelSubject;
 
 	public ApplicationBarController(
 		IState<RootState> state,
 		ILogger<ApplicationBarController> logger,
-		BehaviorSubject<ApplicationBarViewModel> viewModelSubject,
 		IDisplayServer displayServer,
 		FreeDesktopService freeDesktopService)
 	{
+		_viewModelSubject = new BehaviorSubject<ApplicationBarViewModel>(new());
+
 		_state = state;
 		_logger = logger;
 		_displayServer = displayServer;
 		_freeDesktopService = freeDesktopService;
 
-		viewModelSubject.Subscribe(s => _currentViewModel = s);
-
-		state.ToObservable().Select(s => s.Groups).UnbundleMany(t => t.ApplicationName).Subscribe(groupedObservable =>
+		state.ToObservable().Select(s => s.Groups).DistinctUntilChanged().Subscribe(s =>
 		{
-			groupedObservable.Select(g => g.Tasks).UnbundleMany(g => g.WindowRef.Id).Subscribe(taskObservable =>
+			_viewModelSubject.OnNext(new ApplicationBarViewModel()
 			{
-				taskObservable.DistinctUntilChanged().Subscribe(
-					t => viewModelSubject.OnNext(_currentViewModel.UpdateTaskInGroup(groupedObservable.Key, t)),
-					e => { },
-					() => viewModelSubject.OnNext(_currentViewModel.RemoveTaskFromGroup(groupedObservable.Key, taskObservable.Key)));
-			},
-			e => { },
-			() =>
-			{
-				viewModelSubject.OnNext(_currentViewModel with { Groups = _currentViewModel.Groups.Remove(groupedObservable.Key) });
+				Groups = s
+					.Select(g => new ApplicationBarGroupViewModel() { ApplicationName = g.ApplicationName, DesktopFile = g.DesktopFile, Tasks = g.Tasks })
+					.ToImmutableList()
 			});
 		});
 	}
+
+	public IObservable<ApplicationBarViewModel> ViewModel => _viewModelSubject;
 
 	public void MakeWindowVisible(GenericWindowRef windowRef)
 	{
@@ -58,18 +54,18 @@ public class ApplicationBarController
 		_displayServer.ToggleWindowVisibility(windowRef);
 	}
 
-	public void HandleDesktopFileAction(DesktopFileAction action, IconGroupViewModel group)
+	public void HandleDesktopFileAction(DesktopFileAction action, ApplicationBarGroupViewModel barGroup)
 	{
 		_freeDesktopService.Run(action);
 	}
 
-	public void HandleWindowAction(AllowedWindowActions action, IconGroupViewModel group)
+	public void HandleWindowAction(AllowedWindowActions action, ApplicationBarGroupViewModel barGroup)
 	{
-		var focusedWindow = group.Tasks.FirstOrDefault(t => t.WindowRef.Id == _state.Value.FocusedWindow.Id) ?? group.Tasks.First();
+		var focusedWindow = barGroup.Tasks.FirstOrDefault(t => t.WindowRef.Id == _state.Value.FocusedWindow.Id) ?? barGroup.Tasks.First();
 
 		if (action == AllowedWindowActions.Close)
 		{
-			group.Tasks.ForEach(t => _displayServer.CloseWindow(t));
+			barGroup.Tasks.ForEach(t => _displayServer.CloseWindow(t));
 		}
 		else if (action == AllowedWindowActions.Maximize)
 		{

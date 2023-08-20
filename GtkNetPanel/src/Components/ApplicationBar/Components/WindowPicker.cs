@@ -1,6 +1,7 @@
 using System.Reactive.Subjects;
 using Gdk;
 using Gtk;
+using GtkNetPanel.Components.Shared;
 using GtkNetPanel.Services;
 using GtkNetPanel.State;
 using Pango;
@@ -14,7 +15,7 @@ public class WindowPicker : Window
 	private readonly Application _application;
 	private readonly Subject<GenericWindowRef> _previewWindowClicked = new();
 
-	public WindowPicker(IObservable<IconGroupViewModel> viewModelObservable, Application application) : base(WindowType.Toplevel)
+	public WindowPicker(IObservable<ApplicationBarGroupViewModel> viewModelObservable, Application application) : base(WindowType.Toplevel)
 	{
 		SkipPagerHint = true;
 		SkipTaskbarHint = true;

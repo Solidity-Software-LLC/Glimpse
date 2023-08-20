@@ -7,11 +7,11 @@ using Window = Gtk.Window;
 
 namespace GtkNetPanel.Components;
 
-public class SharpPanel : Window
+public class App : Window
 {
 	private const int PanelHeight = 52;
 
-	public SharpPanel(SystemTrayBox systemTrayBox, ApplicationBarView applicationBarView) : base("Null")
+	public App(SystemTrayBox systemTrayBox, ApplicationBarView applicationBarView) : base("Null")
 	{
 		Decorated = false;
 		Resizable = false;

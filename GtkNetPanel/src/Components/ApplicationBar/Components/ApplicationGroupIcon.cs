@@ -3,18 +3,18 @@ using Cairo;
 using Gdk;
 using Gtk;
 using GtkNetPanel.Components.ContextMenu;
+using GtkNetPanel.Components.Shared;
 
 namespace GtkNetPanel.Components.ApplicationBar.Components;
 
 public class ApplicationGroupIcon : EventBox
 {
-	private IconGroupViewModel _currentViewModel;
+	private ApplicationBarGroupViewModel _currentViewModel;
 	private readonly Subject<bool> _contextMenuObservable = new();
 
-	public ApplicationGroupIcon(IObservable<IconGroupViewModel> viewModel)
+	public ApplicationGroupIcon(IObservable<ApplicationBarGroupViewModel> viewModel)
 	{
 		Visible = false;
-
 		Vexpand = false;
 		Valign = Align.Center;
 		AppPaintable = true;
@@ -43,9 +43,19 @@ public class ApplicationGroupIcon : EventBox
 		{
 			Children.ToList().ForEach(Remove);
 			_currentViewModel = group;
-			var task = group.Tasks.First();
-			var biggestIcon = task.Icons.MaxBy(i => i.Width);
-			var imageBuffer = new Pixbuf(biggestIcon.Data, Colorspace.Rgb, true, 8, biggestIcon.Width, biggestIcon.Height, sizeof(int) * biggestIcon.Width);
+			Pixbuf imageBuffer;
+
+			if (group.Tasks.Count > 0)
+			{
+				var task = group.Tasks.First();
+				var biggestIcon = task.Icons.MaxBy(i => i.Width);
+				imageBuffer = new Pixbuf(biggestIcon.Data, Colorspace.Rgb, true, 8, biggestIcon.Width, biggestIcon.Height, sizeof(int) * biggestIcon.Width);
+			}
+			else
+			{
+				imageBuffer = IconTheme.GetForScreen(Screen).LoadIcon(group.DesktopFile.IconName, 26, IconLookupFlags.DirLtr);
+			}
+
 			var image = new Image(imageBuffer.ScaleSimple(26, 26, InterpType.Bilinear));
 			image.SetSizeRequest(42, 42);
 			Add(image);
@@ -58,12 +68,28 @@ public class ApplicationGroupIcon : EventBox
 
 	protected override bool OnDrawn(Context cr)
 	{
+		if (_currentViewModel == null) return base.OnDrawn(cr);
+
 		cr.Save();
 
 		var w = Window.Width;
 		var h = Window.Height;
 
-		if (_currentViewModel != null && _currentViewModel.Tasks.Count > 1)
+		if (_currentViewModel.Tasks.Count == 0)
+		{
+			cr.Operator = Operator.Over;
+			cr.SetSourceRGBA(1, 1, 1, StateFlags.HasFlag(StateFlags.Prelight) ? 0.3 : 0);
+			cr.RoundedRectangle(0, 0, w, h, 4);
+			cr.Fill();
+		}
+		else if (_currentViewModel.Tasks.Count == 1)
+		{
+			cr.Operator = Operator.Over;
+			cr.SetSourceRGBA(1, 1, 1, StateFlags.HasFlag(StateFlags.Prelight) ? 0.3 : 0.1);
+			cr.RoundedRectangle(0, 0, w, h, 4);
+			cr.Fill();
+		}
+		else
 		{
 			var imageSurface = new ImageSurface(Format.ARGB32, w, h);
 			var imageContext = new Context(imageSurface);
@@ -88,13 +114,6 @@ public class ApplicationGroupIcon : EventBox
 
 			imageSurface.Dispose();
 			imageContext.Dispose();
-		}
-		else
-		{
-			cr.Operator = Operator.Over;
-			cr.SetSourceRGBA(1, 1, 1, StateFlags.HasFlag(StateFlags.Prelight) ? 0.3 : 0.1);
-			cr.RoundedRectangle(0, 0, w, h, 4);
-			cr.Fill();
 		}
 
 		cr.Restore();
