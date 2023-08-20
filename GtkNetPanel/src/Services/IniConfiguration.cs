@@ -10,6 +10,7 @@ public class IniConfiguration
 {
 	public Dictionary<string, string> NameValuePairs { get; set; } = new();
 	public LinkedList<IniSection> Sections { get; set; } = new();
+	public string FilePath { get; set; }
 
 	public static IniConfiguration Read(Stream stream)
 	{

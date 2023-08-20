@@ -20,6 +20,7 @@ public record ApplicationGroupState
 	public ImmutableList<TaskState> Tasks { get; set; } = ImmutableList<TaskState>.Empty;
 	public DesktopFile DesktopFile { get; set; }
 	public string ApplicationName { get; set; }
+	public bool IsPinned { get; set; }
 
 	public virtual bool Equals(ApplicationGroupState other) => ReferenceEquals(this, other);
 
@@ -27,6 +28,7 @@ public record ApplicationGroupState
 	{
 		ApplicationName = file.Name;
 		DesktopFile = file;
+		IsPinned = true;
 	}
 
 	public ApplicationGroupState(TaskState task)
@@ -34,6 +36,7 @@ public record ApplicationGroupState
 		ApplicationName = task.ApplicationName;
 		DesktopFile = task.DesktopFile;
 		Tasks = Tasks.Add(task);
+		IsPinned = false;
 	}
 }
 
@@ -76,8 +79,22 @@ public class AddDesktopFileAction
 	public DesktopFile DesktopFile { get; set; }
 }
 
+public class TogglePinningAction
+{
+	public string ApplicationName { get; set; }
+}
+
 public class TasksStateReducers
 {
+	[ReducerMethod]
+	public static RootState ReduceTogglePinningAction(RootState state, TogglePinningAction action)
+	{
+		var group = state.Groups.FirstOrDefault(g => g.ApplicationName == action.ApplicationName);
+		if (group == null) return state;
+		var newGroup = group with { IsPinned = !group.IsPinned };
+		return state with { Groups = state.Groups.Replace(group, newGroup) };
+	}
+
 	[ReducerMethod]
 	public static RootState ReduceAddDesktopFile(RootState state, AddDesktopFileAction action)
 	{
@@ -114,7 +131,7 @@ public class TasksStateReducers
 
 		if (group == null) return state;
 
-		if (group.Tasks.Count == 1)
+		if (group.Tasks.Count == 1 && !group.IsPinned)
 		{
 			return state with { Groups = state.Groups.Remove(group) };
 		}

@@ -5,8 +5,10 @@ public class DesktopFile
 	public string Name { get; set; }
 	public string IconName { get; set; }
 	public string StartupWmClass { get; set; }
-	public string Exec { get; set; }
+	public DesktopFileExec Exec { get; set; }
 	public List<DesktopFileAction> Actions { get; set; }
+	public List<string> Categories { get; set; }
+	public IniConfiguration IniConfiguration { get; set; }
 
 	public static DesktopFile From(IniConfiguration configuration)
 	{
@@ -18,18 +20,46 @@ public class DesktopFile
 		}
 
 		desktopEntry.NameValuePairs.TryGetValue("Name", out var name);
-		desktopEntry.NameValuePairs.TryGetValue("Icon", out var iconName);
+		desktopEntry.NameValuePairs.TryGetValue("Icon", out var icon);
 		desktopEntry.NameValuePairs.TryGetValue("Exec", out var exec);
+		desktopEntry.NameValuePairs.TryGetValue("Categories", out var categories);
 		desktopEntry.NameValuePairs.TryGetValue("StartupWMClass", out var startupWmClass);
 
-		return new DesktopFile()
+		var desktopFile = new DesktopFile()
 		{
+			IniConfiguration = configuration,
 			Name = name ?? "",
-			IconName = iconName ?? "",
-			Exec = exec ?? "",
+			IconName = icon ?? "",
+			Exec = ParseExec(exec) ?? new DesktopFileExec(),
 			StartupWmClass = startupWmClass ?? "",
-			Actions = ParseActions(configuration) ?? new List<DesktopFileAction>()
+			Actions = ParseActions(configuration) ?? new List<DesktopFileAction>(),
+			Categories = ParseCategories(categories) ?? new List<string>()
 		};
+
+		return desktopFile;
+	}
+
+	//private static string[] s_allExecPlaceholders = new[] { "%f", "%F", "%u", "%U", "%d", "%D", "%n", "%N", "%i", "%c", "%k", "%v", "%m" };
+	private static readonly string[] s_execPlaceholders = new[] { "%f", "%F", "%u", "%U" };
+
+	private static DesktopFileExec ParseExec(string exec)
+	{
+		if (string.IsNullOrEmpty(exec)) return null;
+
+		foreach (var ph in s_execPlaceholders) exec = exec.Replace(ph, "");
+
+		var parts = exec.Split(" ", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+		var result = new DesktopFileExec();
+		result.FullExec = exec;
+		result.Executable = parts[0];
+		if (parts.Length > 1) result.Arguments = string.Join(" ", parts[1..]);
+		return result;
+	}
+
+	private static List<string> ParseCategories(string categories)
+	{
+		if (string.IsNullOrEmpty(categories)) return null;
+		return categories.Split(";", StringSplitOptions.RemoveEmptyEntries).ToList();
 	}
 
 	private static List<DesktopFileAction> ParseActions(IniConfiguration configuration)

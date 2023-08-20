@@ -2,6 +2,8 @@ using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Fluxor;
+using Gdk;
+using Gtk;
 using GtkNetPanel.Services;
 using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;
@@ -16,13 +18,15 @@ public class ApplicationBarController
 	private readonly ILogger<ApplicationBarController> _logger;
 	private readonly IDisplayServer _displayServer;
 	private readonly FreeDesktopService _freeDesktopService;
+	private readonly IDispatcher _dispatcher;
 	private readonly BehaviorSubject<ApplicationBarViewModel> _viewModelSubject;
 
 	public ApplicationBarController(
 		IState<RootState> state,
 		ILogger<ApplicationBarController> logger,
 		IDisplayServer displayServer,
-		FreeDesktopService freeDesktopService)
+		FreeDesktopService freeDesktopService,
+		IDispatcher dispatcher)
 	{
 		_viewModelSubject = new BehaviorSubject<ApplicationBarViewModel>(new());
 
@@ -30,6 +34,7 @@ public class ApplicationBarController
 		_logger = logger;
 		_displayServer = displayServer;
 		_freeDesktopService = freeDesktopService;
+		_dispatcher = dispatcher;
 
 		state.ToObservable().Select(s => s.Groups).DistinctUntilChanged().Subscribe(s =>
 		{
@@ -83,5 +88,15 @@ public class ApplicationBarController
 		{
 			_displayServer.StartMoving(focusedWindow.WindowRef);
 		}
+	}
+
+	public void Launch(ApplicationBarGroupViewModel viewModel)
+	{
+		_freeDesktopService.Run(viewModel.DesktopFile.Exec.FullExec);
+	}
+
+	public void TogglePinning(ApplicationBarGroupViewModel viewModel)
+	{
+		_dispatcher.Dispatch(new TogglePinningAction() { ApplicationName = viewModel.ApplicationName });
 	}
 }

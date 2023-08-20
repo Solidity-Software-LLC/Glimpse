@@ -80,6 +80,7 @@ public class X11DisplayServer : IDisplayServer
 	{
 		var allowedX11WindowActions = _xService.GetAtomArray(windowRef, XAtoms.NetWmAllowedActions);
 		var windowActions = ParseWindowActions(allowedX11WindowActions);
+		var desktopFile = _freeDesktopService.FindAppDesktopFile(_xService.GetClassHint(windowRef).res_name);
 
 		return new TaskState()
 		{
@@ -87,8 +88,8 @@ public class X11DisplayServer : IDisplayServer
 			WindowRef = new GenericWindowRef() { Id = $"{windowRef.Display}_{windowRef.Window}", InternalRef = windowRef },
 			Icons = _xService.GetIcons(windowRef),
 			State = _xService.GetAtomArray(windowRef, XAtoms.NetWmState).ToList(),
-			ApplicationName = _xService.GetClassHint(windowRef).res_name,
-			DesktopFile = _freeDesktopService.FindAppDesktopFile(_xService.GetClassHint(windowRef).res_name),
+			ApplicationName = desktopFile.Name,
+			DesktopFile = desktopFile,
 			AllowedActions = windowActions,
 			Screenshot = _xService.CaptureWindowScreenshot(windowRef)
 		};

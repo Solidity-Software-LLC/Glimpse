@@ -32,21 +32,22 @@ public class FreeDesktopService
 	public DesktopFile FindAppDesktopFile(string applicationName)
 	{
 		var lowerCaseAppName = applicationName.ToLower();
-		var match = _desktopFiles.Where(f => f.Exec.ToLower().Contains(lowerCaseAppName)).ToList().FirstOrDefault();
 
-		if (match == null)
-		{
-			match = _desktopFiles.Where(f => f.StartupWmClass.ToLower().Contains(lowerCaseAppName)).ToList().FirstOrDefault();
-		}
-
-		return match;
+		return _desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower() == lowerCaseAppName)
+				?? _desktopFiles.FirstOrDefault(f => f.Name.ToLower().Contains(lowerCaseAppName))
+				?? _desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower().Contains(lowerCaseAppName))
+				?? _desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower().Contains(lowerCaseAppName))
+				?? _desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower() == lowerCaseAppName);
 	}
 
 	private IniConfiguration ReadIniFile(string filePath)
 	{
 		try
 		{
-			return IniConfiguration.Read(File.OpenRead(filePath));
+			var iniFile = File.OpenRead(filePath);
+			var iniConfig = IniConfiguration.Read(iniFile);
+			iniConfig.FilePath = filePath;
+			return iniConfig;
 		}
 		catch (Exception e)
 		{
@@ -56,13 +57,18 @@ public class FreeDesktopService
 		return null;
 	}
 
-	public void Run(DesktopFileAction action)
+	public void Run(string exec)
 	{
-		var parts = action.Exec.Split(" ");
+		var parts = exec.Split(" ");
 		var executable = parts.FirstOrDefault();
 		if (string.IsNullOrEmpty(executable)) return;
 		var startInfo = new ProcessStartInfo(executable, string.Join(" ", parts[1..]));
 		startInfo.WorkingDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
 		Process.Start(startInfo);
+	}
+
+	public void Run(DesktopFileAction action)
+	{
+		Run(action.Exec);
 	}
 }

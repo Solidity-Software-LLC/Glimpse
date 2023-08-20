@@ -45,7 +45,18 @@ public class ApplicationGroupIcon : EventBox
 			_currentViewModel = group;
 			Pixbuf imageBuffer;
 
-			if (group.Tasks.Count > 0)
+			if (!string.IsNullOrEmpty(group.DesktopFile.IconName))
+			{
+				if (group.DesktopFile.IconName.StartsWith("/"))
+				{
+					imageBuffer = new Pixbuf(File.ReadAllBytes(group.DesktopFile.IconName));
+				}
+				else
+				{
+					imageBuffer = IconTheme.GetForScreen(Screen).LoadIcon(group.DesktopFile.IconName, 26, IconLookupFlags.DirLtr);
+				}
+			}
+			else if (group.Tasks.Count > 0)
 			{
 				var task = group.Tasks.First();
 				var biggestIcon = task.Icons.MaxBy(i => i.Width);
@@ -53,7 +64,7 @@ public class ApplicationGroupIcon : EventBox
 			}
 			else
 			{
-				imageBuffer = IconTheme.GetForScreen(Screen).LoadIcon(group.DesktopFile.IconName, 26, IconLookupFlags.DirLtr);
+				imageBuffer = IconTheme.GetForScreen(Screen).LoadIcon("application-default-icon", 26, IconLookupFlags.DirLtr);
 			}
 
 			var image = new Image(imageBuffer.ScaleSimple(26, 26, InterpType.Bilinear));

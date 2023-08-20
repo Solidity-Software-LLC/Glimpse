@@ -6,6 +6,24 @@ using GtkNetPanel.Services;
 
 namespace GtkNetPanel.Components.ApplicationBar;
 
+public class If : Box
+{
+	public If(IObservable<bool> conditionObservable, Widget widget)
+	{
+		conditionObservable.DistinctUntilChanged().Subscribe(show =>
+		{
+			if (show)
+			{
+				Add(widget);
+			}
+			else
+			{
+				Children.ToList().ForEach(Remove);
+			}
+		});
+	}
+}
+
 public class ApplicationBarView : Box
 {
 	public ApplicationBarView(Application application, ApplicationBarController controller)
@@ -28,6 +46,11 @@ public class ApplicationBarView : Box
 
 			Observable.FromEventPattern<ButtonReleaseEventArgs>(groupIcon, nameof(ButtonReleaseEvent))
 				.WithLatestFrom(viewModelObservable)
+				.Where(t => t.First.EventArgs.Event.Button == 1 && t.Second.Tasks.Count == 0)
+				.Subscribe(t => controller.Launch(t.Second));
+
+			Observable.FromEventPattern<ButtonReleaseEventArgs>(groupIcon, nameof(ButtonReleaseEvent))
+				.WithLatestFrom(viewModelObservable)
 				.Where(t => t.First.EventArgs.Event.Button == 1 && t.Second.Tasks.Count == 1)
 				.Subscribe(t => controller.ToggleWindowVisibility(t.Second.Tasks.First().WindowRef));
 
@@ -43,6 +66,10 @@ public class ApplicationBarView : Box
 			contextMenu.DesktopFileAction
 				.WithLatestFrom(viewModelObservable)
 				.Subscribe(t => controller.HandleDesktopFileAction(t.First, t.Second));
+
+			contextMenu.Pin
+				.WithLatestFrom(viewModelObservable)
+				.Subscribe(t => controller.TogglePinning(t.Second));
 
 			return groupIcon;
 		});
