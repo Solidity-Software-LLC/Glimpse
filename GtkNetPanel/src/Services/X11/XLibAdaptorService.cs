@@ -373,7 +373,7 @@ public class XLibAdaptorService : IDisposable
 		message.window = windowRef.Window;
 		message.format = 32;
 		message.type = (int) Event.ClientMessage;
-		message.message_type = XAtoms.NetWmMoveresize;
+		message.message_type = messageType;
 		message.send_event = 1;
 
 		if (data.Length >= 1) message.ptr1 = (IntPtr) data[0];

@@ -11,15 +11,14 @@ namespace GtkNetPanel.Components.ApplicationBar;
 
 public class ApplicationBarController
 {
-	private readonly IState<TasksState> _state;
+	private readonly IState<RootState> _state;
 	private readonly ILogger<ApplicationBarController> _logger;
-	private readonly BehaviorSubject<ApplicationBarViewModel> _viewModelSubject;
 	private readonly IDisplayServer _displayServer;
 	private readonly FreeDesktopService _freeDesktopService;
 	private ApplicationBarViewModel _currentViewModel = new();
 
 	public ApplicationBarController(
-		IState<TasksState> state,
+		IState<RootState> state,
 		ILogger<ApplicationBarController> logger,
 		BehaviorSubject<ApplicationBarViewModel> viewModelSubject,
 		IDisplayServer displayServer,
@@ -27,25 +26,24 @@ public class ApplicationBarController
 	{
 		_state = state;
 		_logger = logger;
-		_viewModelSubject = viewModelSubject;
 		_displayServer = displayServer;
 		_freeDesktopService = freeDesktopService;
 
 		viewModelSubject.Subscribe(s => _currentViewModel = s);
 
-		state.ToObservable().Select(s => s.Tasks).Unbundle(kv => kv.Value.ApplicationName).Subscribe(groupedObservable =>
+		state.ToObservable().Select(s => s.Groups).UnbundleMany(t => t.ApplicationName).Subscribe(groupedObservable =>
 		{
-			groupedObservable.UnbundleMany(t => t.Value.WindowRef.Id).Subscribe(taskObservable =>
+			groupedObservable.Select(g => g.Tasks).UnbundleMany(g => g.WindowRef.Id).Subscribe(taskObservable =>
 			{
-				taskObservable.Select(t => t.Value).DistinctUntilChanged().Subscribe(
-					t => _viewModelSubject.OnNext(_currentViewModel.UpdateTaskInGroup(groupedObservable.Key, t)),
+				taskObservable.DistinctUntilChanged().Subscribe(
+					t => viewModelSubject.OnNext(_currentViewModel.UpdateTaskInGroup(groupedObservable.Key, t)),
 					e => { },
-					() => _viewModelSubject.OnNext(_currentViewModel.RemoveTaskFromGroup(groupedObservable.Key, taskObservable.Key)));
+					() => viewModelSubject.OnNext(_currentViewModel.RemoveTaskFromGroup(groupedObservable.Key, taskObservable.Key)));
 			},
 			e => { },
 			() =>
 			{
-				_viewModelSubject.OnNext(_currentViewModel with { Groups = _currentViewModel.Groups.Remove(groupedObservable.Key) });
+				viewModelSubject.OnNext(_currentViewModel with { Groups = _currentViewModel.Groups.Remove(groupedObservable.Key) });
 			});
 		});
 	}

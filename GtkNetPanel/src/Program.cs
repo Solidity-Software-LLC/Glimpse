@@ -6,6 +6,7 @@ using GLib;
 using GtkNetPanel.Components;
 using GtkNetPanel.Components.ApplicationBar;
 using GtkNetPanel.Components.SystemTray;
+using GtkNetPanel.Services.Configuration;
 using GtkNetPanel.Services.DBus.Introspection;
 using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;
@@ -44,6 +45,7 @@ public static class Program
 				containerBuilder.RegisterType<X11DisplayServer>().As<X11DisplayServer>().As<IDisplayServer>().SingleInstance();
 				containerBuilder.RegisterType<DBusSystemTrayService>();
 				containerBuilder.RegisterType<IntrospectionService>();
+				containerBuilder.RegisterType<ConfigurationService>().SingleInstance();
 				containerBuilder.RegisterType<XLibAdaptorService>().SingleInstance();
 				containerBuilder.RegisterInstance(Connection.Session).ExternallyOwned();
 				containerBuilder.Register(_ => new Application("org.SharpPanel", ApplicationFlags.None)).SingleInstance();
@@ -61,6 +63,9 @@ public static class Program
 
 		var fdService = host.Services.GetRequiredService<FreeDesktopService>();
 		fdService.Init();
+
+		var configService = host.Services.GetRequiredService<ConfigurationService>();
+		configService.Initialize();
 
 		var xService = host.Services.GetRequiredService<XLibAdaptorService>();
 		xService.Initialize();
