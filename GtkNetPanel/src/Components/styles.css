@@ -38,3 +38,14 @@
 label {
 	font: 12px Sans;
 }
+
+.header-menu-item {
+	background-color: transparent;
+	margin-left: 14px;
+}
+
+.header-menu-item-label {
+	font-size: 9px;
+	font-weight: bold;
+	color: #AAAAAA;
+}

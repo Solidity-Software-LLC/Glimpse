@@ -44,11 +44,17 @@ public class ApplicationGroupContextMenu : Menu
 	{
 		if (barGroup.Tasks.Count == 0)
 		{
-			CreateDesktopFileContextMenu(barGroup);
+			CreateDesktopFileActions(barGroup).ForEach(Add);
+			Add(CreateLaunchMenuItem(barGroup));
+			Add(CreatePinMenuItem(barGroup));
 		}
 		else
 		{
-			CreateRunningTaskContextMenu(barGroup);
+			CreateDesktopFileActions(barGroup).ForEach(Add);
+			Add(CreateLaunchMenuItem(barGroup));
+			Add(CreatePinMenuItem(barGroup));
+			var closeAction = CreateCloseAction(barGroup);
+			if (closeAction != null) Add(closeAction);
 		}
 
 		ShowAll();
@@ -70,50 +76,48 @@ public class ApplicationGroupContextMenu : Menu
 		return pinMenuItem;
 	}
 
-	private void CreateRunningTaskContextMenu(ApplicationBarGroupViewModel barGroup)
+	private MenuItem CreateCloseAction(ApplicationBarGroupViewModel barGroup)
 	{
 		var allowedActions = barGroup.Tasks.First().AllowedActions;
-		var desktopFile = barGroup.Tasks.First().DesktopFile;
-
-		if (desktopFile != null && desktopFile.Actions.Count > 0)
-		{
-			foreach (var action in desktopFile.Actions)
-			{
-				var menuItem = CreateMenuItem(action.ActionName, action.IconName);
-				menuItem.ButtonReleaseEvent += (o, args) => _desktopFileAction.OnNext(action);
-				Add(menuItem);
-			}
-
-			Add(new SeparatorMenuItem());
-		}
-
-		Add(CreateLaunchMenuItem(barGroup));
-		Add(CreatePinMenuItem(barGroup));
 
 		if (allowedActions.Contains(AllowedWindowActions.Close))
 		{
 			var menuItem = CreateMenuItem("Close", s_close);
 			menuItem.ButtonReleaseEvent += (o, args) => _windowAction.OnNext(AllowedWindowActions.Close);
-			Add(menuItem);
+			return menuItem;
 		}
+
+		return null;
 	}
 
-	private void CreateDesktopFileContextMenu(ApplicationBarGroupViewModel barGroup)
+	private List<MenuItem> CreateDesktopFileActions(ApplicationBarGroupViewModel barGroup)
 	{
-		foreach (var action in barGroup.DesktopFile.Actions)
+		var results = new List<MenuItem>();
+		var desktopFile = barGroup.DesktopFile;
+
+		if (desktopFile != null && desktopFile.Actions.Count > 0)
 		{
-			var menuItem = CreateMenuItem(action.ActionName, action.IconName);
-			menuItem.ButtonReleaseEvent += (o, args) => _desktopFileAction.OnNext(action);
-			Add(menuItem);
+			var headerLabel = new Label("Tasks");
+			headerLabel.Halign = Align.Start;
+			headerLabel.StyleContext.AddClass("header-menu-item-label");
+
+			var header = new SeparatorMenuItem();
+			header.StyleContext.AddClass("header-menu-item");
+			header.Add(headerLabel);
+
+			results.Add(header);
+
+			foreach (var action in desktopFile.Actions)
+			{
+				var menuItem = CreateMenuItem(action.ActionName, action.IconName);
+				menuItem.ButtonReleaseEvent += (o, args) => _desktopFileAction.OnNext(action);
+				results.Add(menuItem);
+			}
+
+			results.Add(new SeparatorMenuItem());
 		}
 
-		if (barGroup.DesktopFile.Actions.Count > 0)
-		{
-			Add(new SeparatorMenuItem());
-		}
-
-		Add(CreateLaunchMenuItem(barGroup));
-		Add(CreatePinMenuItem(barGroup));
+		return results;
 	}
 
 	private MenuItem CreateMenuItem(string label, string iconName)
