@@ -53,8 +53,7 @@ public class ApplicationGroupContextMenu : Menu
 			CreateDesktopFileActions(barGroup).ForEach(Add);
 			Add(CreateLaunchMenuItem(barGroup));
 			Add(CreatePinMenuItem(barGroup));
-			var closeAction = CreateCloseAction(barGroup);
-			if (closeAction != null) Add(closeAction);
+			if (CreateCloseAction(barGroup) is { } closeAction) Add(closeAction);
 		}
 
 		ShowAll();

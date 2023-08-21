@@ -34,7 +34,6 @@ public class GtkApplicationHostedService : IHostedService
 					args.ExitApplication = false;
 				};
 
-				SynchronizationContext.SetSynchronizationContext(new GLibSynchronizationContext());
 				Application.Init();
 				_application.Register(Cancellable.Current);
 
@@ -44,7 +43,7 @@ public class GtkApplicationHostedService : IHostedService
 				StyleContext.AddProviderForScreen(Display.Default.DefaultScreen, cssProvider, uint.MaxValue);
 
 				var panels = Display.Default
-					.GetMonitors()
+					.GetMonitors().Take(1)
 					.Select(m =>
 					{
 						var panel = _serviceProvider.BeginLifetimeScope("panel").Resolve<App>();
