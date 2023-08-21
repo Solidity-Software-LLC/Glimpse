@@ -14,6 +14,7 @@ public record ApplicationBarGroupViewModel
 	public ImmutableList<TaskState> Tasks { get; set; } = ImmutableList<TaskState>.Empty;
 	public string ApplicationName { get; set; }
 	public DesktopFile DesktopFile { get; set; }
+	public bool IsPinned { get; set; }
 
 	public virtual bool Equals(ApplicationBarGroupViewModel other) => ReferenceEquals(this, other);
 }

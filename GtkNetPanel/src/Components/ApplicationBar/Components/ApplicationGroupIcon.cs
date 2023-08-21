@@ -47,7 +47,6 @@ public class ApplicationGroupIcon : EventBox
 
 		viewModel.DistinctUntilChanged(x => x.Tasks.Count).Subscribe(group =>
 		{
-			Console.WriteLine(group.ApplicationName + " " + group.Tasks.Count);
 			_currentViewModel = group;
 			Pixbuf imageBuffer;
 

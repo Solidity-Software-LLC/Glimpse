@@ -8,6 +8,7 @@
 	</PropertyGroup>
 	
 	<ItemGroup>
+		<EmbeddedResource Include="src/Assets/*" LogicalName="$(TargetName).%(Filename)%(Extension)" />
 		<EmbeddedResource Include="src/Components/styles.css">
 			<LogicalName>$(TargetName).styles.css</LogicalName>
 		</EmbeddedResource>
@@ -22,8 +23,5 @@
 		<PackageReference Include="System.Reactive" Version="6.0.0"/>
 		<PackageReference Include="Tmds.DBus" Version="0.15.0"/>
 	</ItemGroup>
-
-
-
 
 </Project>

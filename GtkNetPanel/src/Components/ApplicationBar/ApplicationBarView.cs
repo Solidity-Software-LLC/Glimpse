@@ -6,24 +6,6 @@ using GtkNetPanel.Services;
 
 namespace GtkNetPanel.Components.ApplicationBar;
 
-public class If : Box
-{
-	public If(IObservable<bool> conditionObservable, Widget widget)
-	{
-		conditionObservable.DistinctUntilChanged().Subscribe(show =>
-		{
-			if (show)
-			{
-				Add(widget);
-			}
-			else
-			{
-				Children.ToList().ForEach(Remove);
-			}
-		});
-	}
-}
-
 public class ApplicationBarView : Box
 {
 	public ApplicationBarView(Application application, ApplicationBarController controller)
@@ -70,6 +52,10 @@ public class ApplicationBarView : Box
 			contextMenu.Pin
 				.WithLatestFrom(viewModelObservable)
 				.Subscribe(t => controller.TogglePinning(t.Second));
+
+			contextMenu.Launch
+				.WithLatestFrom(viewModelObservable)
+				.Subscribe(t => controller.Launch(t.Second));
 
 			return groupIcon;
 		});

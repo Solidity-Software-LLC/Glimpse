@@ -21,7 +21,6 @@ namespace GtkNetPanel;
 
 public static class Program
 {
-	[STAThread]
 	public static async Task<int> Main(string[] args)
 	{
 		AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) => Console.WriteLine(eventArgs.ExceptionObject);

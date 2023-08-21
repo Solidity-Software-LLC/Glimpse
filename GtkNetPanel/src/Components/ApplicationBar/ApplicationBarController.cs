@@ -36,11 +36,14 @@ public class ApplicationBarController
 
 		state.ToObservable().Select(s => s.Groups).DistinctUntilChanged().Subscribe(s =>
 		{
-			_viewModelSubject.OnNext(new ApplicationBarViewModel()
+			Gtk.Application.Invoke((_, _) =>
 			{
-				Groups = s
-					.Select(g => new ApplicationBarGroupViewModel() { ApplicationName = g.ApplicationName, DesktopFile = g.DesktopFile, Tasks = g.Tasks })
-					.ToImmutableList()
+				_viewModelSubject.OnNext(new ApplicationBarViewModel()
+				{
+					Groups = s
+						.Select(g => new ApplicationBarGroupViewModel() { ApplicationName = g.ApplicationName, DesktopFile = g.DesktopFile, Tasks = g.Tasks, IsPinned = g.IsPinned })
+						.ToImmutableList()
+				});
 			});
 		});
 	}
