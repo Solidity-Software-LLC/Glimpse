@@ -10,14 +10,14 @@ namespace GtkNetPanel.Components.ApplicationBar;
 
 public class ApplicationBarView : Box
 {
-	public ApplicationBarView(Gtk.Application application, ApplicationBarController controller)
+	public ApplicationBarView(ApplicationBarController controller)
 	{
 		var forEachObs = controller.ViewModel.Select(g => g.Groups).DistinctUntilChanged().UnbundleMany(g => g.ApplicationName);
 		var forEachGroup = new ForEach<ApplicationBarGroupViewModel>(forEachObs, viewModelObservable =>
 		{
 			var replayLatestViewModelObservable = viewModelObservable.Replay(1);
 			var contextMenu = new ApplicationGroupContextMenu(viewModelObservable);
-			var windowPicker = new WindowPicker(viewModelObservable, application);
+			var windowPicker = new WindowPicker(viewModelObservable);
 			var groupIcon = new ApplicationGroupIcon(viewModelObservable);
 
 			Observable.FromEventPattern(windowPicker, nameof(windowPicker.VisibilityNotifyEvent))
@@ -26,8 +26,8 @@ public class ApplicationBarView : Box
 			windowPicker.PreviewWindowClicked
 				.Subscribe(w => controller.MakeWindowVisible(w));
 
-			groupIcon.ContextMenuOpened
-				.Subscribe(_ => contextMenu.Popup());
+			windowPicker.CloseWindow
+				.Subscribe(w => controller.CloseWindow(w));
 
 			Observable.FromEventPattern<EnterNotifyEventArgs>(groupIcon, nameof(EnterNotifyEvent))
 				.WithLatestFrom(replayLatestViewModelObservable)
@@ -35,21 +35,25 @@ public class ApplicationBarView : Box
 				.Delay(TimeSpan.FromMilliseconds(250), new SynchronizationContextScheduler(new GLibSynchronizationContext()))
 				.TakeUntil(Observable.FromEventPattern<LeaveNotifyEventArgs>(groupIcon, nameof(LeaveNotifyEvent)))
 				.Repeat()
-				.Subscribe(_ => windowPicker.Popup(), e => Console.WriteLine(e), () => Console.WriteLine("DONE"));
+				.Where(_ => !windowPicker.Visible)
+				.Subscribe(_ => windowPicker.Popup(), e => Console.WriteLine(e), () => { });
 
-			Observable.FromEventPattern<ButtonReleaseEventArgs>(groupIcon, nameof(ButtonReleaseEvent))
+			groupIcon.ContextMenuOpened
+				.Subscribe(_ => contextMenu.Popup());
+
+			groupIcon.ButtonRelease
 				.WithLatestFrom(viewModelObservable)
-				.Where(t => t.First.EventArgs.Event.Button == 1 && t.Second.Tasks.Count == 0)
+				.Where(t => t.First.Button == 1 && t.Second.Tasks.Count == 0)
 				.Subscribe(t => controller.Launch(t.Second));
 
-			Observable.FromEventPattern<ButtonReleaseEventArgs>(groupIcon, nameof(ButtonReleaseEvent))
+			groupIcon.ButtonRelease
 				.WithLatestFrom(viewModelObservable)
-				.Where(t => t.First.EventArgs.Event.Button == 1 && t.Second.Tasks.Count == 1)
+				.Where(t => t.First.Button == 1 && t.Second.Tasks.Count == 1)
 				.Subscribe(t => controller.ToggleWindowVisibility(t.Second.Tasks.First().WindowRef));
 
-			Observable.FromEventPattern<ButtonReleaseEventArgs>(groupIcon, nameof(ButtonReleaseEvent))
+			groupIcon.ButtonRelease
 				.WithLatestFrom(viewModelObservable)
-				.Where(t => t.First.EventArgs.Event.Button == 1 && t.Second.Tasks.Count > 1)
+				.Where(t => t.First.Button == 1 && t.Second.Tasks.Count > 1 && !windowPicker.Visible)
 				.Subscribe(_ => windowPicker.Popup());
 
 			contextMenu.WindowAction

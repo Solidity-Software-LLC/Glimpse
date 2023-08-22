@@ -21,7 +21,7 @@ public static class Extensions
 		widget.TranslateCoordinates(widget.Toplevel, 0, 0, out var x, out _);
 
 		var windowX = x + widget.Window.Width / 2 - window.Window.Width / 2;
-		var windowY = y - window.Window.Height - 8;
+		var windowY = y - window.Window.Height - 16;
 		if (windowX < 8) windowX = 8;
 
 		window.Move(windowX, windowY);

@@ -4,6 +4,7 @@ using GtkNetPanel.Components.ApplicationBar;
 using GtkNetPanel.Components.ApplicationMenuButton;
 using GtkNetPanel.Components.SystemTray;
 using Window = Gtk.Window;
+using WindowType = Gtk.WindowType;
 
 namespace GtkNetPanel.Components;
 
@@ -11,14 +12,15 @@ public class App : Window
 {
 	private const int PanelHeight = 52;
 
-	public App(SystemTrayBox systemTrayBox, ApplicationBarView applicationBarView) : base("Null")
+	public App(SystemTrayBox systemTrayBox, ApplicationBarView applicationBarView) : base(WindowType.Toplevel)
 	{
 		Decorated = false;
 		Resizable = false;
-		CanFocus = false;
 		TypeHint = WindowTypeHint.Dock;
 		AppPaintable = true;
 		Visual = Screen.RgbaVisual;
+
+		ButtonReleaseEvent += (_, _) => Window.Focus(0);
 
 		var centerBox = new Box(Orientation.Horizontal, 0);
 		centerBox.PackStart(new AppMenu(), false, false, 0);

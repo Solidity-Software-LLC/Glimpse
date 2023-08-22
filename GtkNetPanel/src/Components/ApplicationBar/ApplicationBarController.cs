@@ -65,13 +65,18 @@ public class ApplicationBarController
 		_freeDesktopService.Run(action);
 	}
 
+	public void CloseWindow(GenericWindowRef windowRef)
+	{
+		_displayServer.CloseWindow(windowRef);
+	}
+
 	public void HandleWindowAction(AllowedWindowActions action, ApplicationBarGroupViewModel barGroup)
 	{
 		var focusedWindow = barGroup.Tasks.FirstOrDefault(t => t.WindowRef.Id == _state.Value.FocusedWindow.Id) ?? barGroup.Tasks.First();
 
 		if (action == AllowedWindowActions.Close)
 		{
-			barGroup.Tasks.ForEach(t => _displayServer.CloseWindow(t));
+			barGroup.Tasks.ForEach(t => _displayServer.CloseWindow(t.WindowRef));
 		}
 		else if (action == AllowedWindowActions.Maximize)
 		{

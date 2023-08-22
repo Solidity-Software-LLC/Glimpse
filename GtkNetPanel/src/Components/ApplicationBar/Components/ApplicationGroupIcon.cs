@@ -12,6 +12,7 @@ public class ApplicationGroupIcon : EventBox
 {
 	private ApplicationBarGroupViewModel _currentViewModel;
 	private readonly Subject<bool> _contextMenuObservable = new();
+	private readonly Subject<EventButton> _buttonRelease = new();
 
 	public ApplicationGroupIcon(IObservable<ApplicationBarGroupViewModel> viewModel)
 	{
@@ -79,7 +80,14 @@ public class ApplicationGroupIcon : EventBox
 		});
 	}
 
+	protected override bool OnButtonReleaseEvent(EventButton evnt)
+	{
+		_buttonRelease.OnNext(evnt);
+		return true;
+	}
+
 	public IObservable<bool> ContextMenuOpened => _contextMenuObservable;
+	public IObservable<EventButton> ButtonRelease => _buttonRelease;
 
 	protected override bool OnDrawn(Context cr)
 	{

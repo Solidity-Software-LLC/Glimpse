@@ -29,9 +29,9 @@ public class X11DisplayServer : IDisplayServer
 		_xService.MakeWindowVisible((XWindowRef)windowRef.InternalRef);
 	}
 
-	public void CloseWindow(TaskState taskState)
+	public void CloseWindow(GenericWindowRef windowRef)
 	{
-		_xService.CloseWindow((XWindowRef)taskState.WindowRef.InternalRef);
+		_xService.CloseWindow((XWindowRef)windowRef.InternalRef);
 	}
 
 	public void MaximizeWindow(GenericWindowRef windowRef)

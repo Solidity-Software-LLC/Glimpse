@@ -8,17 +8,6 @@ namespace GtkNetPanel.Components.ApplicationBar.Components;
 
 public class ApplicationGroupContextMenu : Menu
 {
-	private static readonly Pixbuf s_unpinIcon;
-	private static readonly Pixbuf s_pinIcon;
-	private static readonly Pixbuf s_close;
-
-	static ApplicationGroupContextMenu()
-	{
-		s_unpinIcon = Pixbuf.LoadFromResource("GtkNetPanel.unpin.png");
-		s_pinIcon = Pixbuf.LoadFromResource("GtkNetPanel.pin.png");
-		s_close = Pixbuf.LoadFromResource("GtkNetPanel.close.png");
-	}
-
 	private readonly Subject<bool> _pinSubject = new();
 	private readonly Subject<AllowedWindowActions> _windowAction = new();
 	private readonly Subject<DesktopFileAction> _desktopFileAction = new();
@@ -62,7 +51,7 @@ public class ApplicationGroupContextMenu : Menu
 	private MenuItem CreatePinMenuItem(ApplicationBarGroupViewModel group)
 	{
 		var pinLabel = group.IsPinned ? "Unpin from taskbar" : "Pin to taskbar";
-		var icon = group.IsPinned ? s_unpinIcon : s_pinIcon;
+		var icon = group.IsPinned ? Assets.UnpinIcon : Assets.PinIcon;
 		var pinMenuItem = CreateMenuItem(pinLabel, icon);
 		pinMenuItem.ButtonReleaseEvent += (o, args) => _pinSubject.OnNext(true);
 		return pinMenuItem;
@@ -81,7 +70,7 @@ public class ApplicationGroupContextMenu : Menu
 
 		if (allowedActions.Contains(AllowedWindowActions.Close))
 		{
-			var menuItem = CreateMenuItem("Close", s_close);
+			var menuItem = CreateMenuItem("Close", Assets.Close);
 			menuItem.ButtonReleaseEvent += (o, args) => _windowAction.OnNext(AllowedWindowActions.Close);
 			return menuItem;
 		}
