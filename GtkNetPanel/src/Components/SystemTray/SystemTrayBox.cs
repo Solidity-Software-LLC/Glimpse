@@ -1,71 +1,34 @@
 using System.Reactive.Linq;
 using Fluxor;
+using GLib;
 using Gtk;
+using GtkNetPanel.Services;
 using GtkNetPanel.State;
 
 namespace GtkNetPanel.Components.SystemTray;
 
 public class SystemTrayBox : Box
 {
-	private readonly IState<SystemTrayState> _trayState;
-	private readonly IDispatcher _dispatcher;
-	private readonly Dictionary<string, SystemTrayIcon> _icons = new();
-
 	public SystemTrayBox(IState<SystemTrayState> trayState, IDispatcher dispatcher) : base(Orientation.Horizontal, 3)
 	{
-		_trayState = trayState;
-		_dispatcher = dispatcher;
-		trayState.ToObservable().Subscribe(s =>
+		trayState.ToObservable().ObserveOn(new GLibSynchronizationContext()).Select(x => x.Items).DistinctUntilChanged().UnbundleMany(i => i.Key).Subscribe(obs =>
 		{
-			OnItemsChanged(s.Items);
-		});
-	}
+			var itemObservable = obs.Select(s => s.Value).DistinctUntilChanged();
+			var systemTrayIcon = new SystemTrayIcon(itemObservable);
+			PackStart(systemTrayIcon, false, false, 3);
+			ShowAll();
 
-	private void OnItemsChanged(IDictionary<string, SystemTrayItemState> items)
-	{
-		foreach (var i in items)
-		{
-			if (!_icons.ContainsKey(i.Key))
+			systemTrayIcon.MenuItemActivated.WithLatestFrom(itemObservable).Subscribe(t =>
 			{
-				AddSystemTrayIcon(i);
-			}
-		}
+				dispatcher.Dispatch(new ActivateMenuItemAction() { DbusObjectDescription = t.Second.DbusMenuDescription, MenuItemId = t.First });
+			});
 
-		foreach (var iconServiceName in _icons.Keys)
-		{
-			if (!items.ContainsKey(iconServiceName))
+			systemTrayIcon.ApplicationActivated.WithLatestFrom(itemObservable).Subscribe(t =>
 			{
-				RemoveSystemTrayIcon(iconServiceName);
-			}
-		}
+				dispatcher.Dispatch(new ActivateApplicationAction() { DbusObjectDescription = t.Second.StatusNotifierItemDescription, X = t.First.Item1, Y = t.First.Item2 });
+			});
 
-		ShowAll();
-	}
-
-	private void RemoveSystemTrayIcon(string iconServiceName)
-	{
-		var icon = _icons[iconServiceName];
-		_icons.Remove(iconServiceName);
-		Remove(icon);
-	}
-
-	private void AddSystemTrayIcon(KeyValuePair<string, SystemTrayItemState> kv)
-	{
-		var trayIconRemoveObservable = _trayState.ToObservable().Where(s => !s.Items.ContainsKey(kv.Key)).Take(1);
-		var rootMenuObservable = _trayState.ToObservable().TakeUntil(trayIconRemoveObservable).Select(s => s.Items[kv.Key]);
-		var systemTrayIcon = new SystemTrayIcon(rootMenuObservable);
-
-		systemTrayIcon.MenuItemActivated.TakeUntil(trayIconRemoveObservable).Subscribe(id =>
-		{
-			_dispatcher.Dispatch(new ActivateMenuItemAction() { DbusObjectDescription = kv.Value.DbusMenuDescription, MenuItemId = id });
+			itemObservable.Subscribe(_ => { }, _ => { }, () => Remove(systemTrayIcon));
 		});
-
-		systemTrayIcon.ApplicationActivated.TakeUntil(trayIconRemoveObservable).Subscribe(t =>
-		{
-			_dispatcher.Dispatch(new ActivateApplicationAction() { DbusObjectDescription = kv.Value.StatusNotifierItemDescription, X = t.Item1, Y = t.Item2 });
-		});
-
-		PackStart(systemTrayIcon, false, false, 3);
-		_icons.Add(kv.Key, systemTrayIcon);
 	}
 }

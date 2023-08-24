@@ -7,6 +7,7 @@ using GtkNetPanel.Services.DBus.StatusNotifierItem;
 using GtkNetPanel.Services.GtkSharp;
 using GtkNetPanel.Services.SystemTray;
 using GtkNetPanel.State;
+using Menu = Gtk.Menu;
 
 namespace GtkNetPanel.Components.SystemTray;
 
@@ -17,9 +18,8 @@ public class SystemTrayIcon : EventBox
 	private readonly ContextMenuHelper _helper;
 	private readonly Subject<int> _menuItemActivatedSubject = new();
 	private readonly Subject<(int, int)> _applicationActivated = new();
-	private Image _icon;
 
-	public SystemTrayIcon(IObservable<SystemTrayItemState> trayItemStateObservable)
+	public SystemTrayIcon(IObservable<SystemTrayItemState> viewModelObservable)
 	{
 		_contextMenu = new Menu();
 		_helper = new ContextMenuHelper(this);
@@ -29,21 +29,22 @@ public class SystemTrayIcon : EventBox
 		var hasActivateMethod = false;
 
 		_disposables.AddLast(
-			trayItemStateObservable.Select(s => s.Properties).DistinctUntilChanged().Subscribe(properties =>
+			viewModelObservable.Select(s => s.Properties).Take(1).Subscribe(properties =>
 			{
-				CreateTrayIcon(properties);
 				TooltipText = properties.Category;
 				HasTooltip = !string.IsNullOrEmpty(TooltipText);
+				Add(new Image(properties.CreateIcon(IconTheme.GetForScreen(Screen)).ScaleSimple(24, 24, InterpType.Bilinear)));
+				ShowAll();
 			}));
 
 		_disposables.AddLast(
-			trayItemStateObservable.Select(s => s.StatusNotifierItemDescription).DistinctUntilChanged().Subscribe(desc =>
+			viewModelObservable.Select(s => s.StatusNotifierItemDescription).DistinctUntilChanged().Subscribe(desc =>
 			{
 				hasActivateMethod = desc.InterfaceHasMethod(IStatusNotifierItem.DbusInterfaceName, "Activate");
 			}));
 
 		_disposables.AddLast(
-			trayItemStateObservable.Select(s => s.RootSystemTrayMenuItem).DistinctUntilChanged().Subscribe(menuState =>
+			viewModelObservable.Select(s => s.RootSystemTrayMenuItem).DistinctUntilChanged().Subscribe(menuState =>
 			{
 				_contextMenu.RemoveAllChildren();
 				DbusContextMenuHelpers.PopulateMenu(_contextMenu, menuState);
@@ -71,28 +72,17 @@ public class SystemTrayIcon : EventBox
 	public IObservable<int> MenuItemActivated => _menuItemActivatedSubject;
 	public IObservable<(int, int)> ApplicationActivated => _applicationActivated;
 
-	private void CreateTrayIcon(StatusNotifierItemProperties properties)
-	{
-		if (_icon != null)
-		{
-			Remove(_icon);
-		}
-
-		_icon = new Image(properties
-			.CreateIcon(IconTheme.GetForScreen(Screen))
-			.ScaleSimple(24, 24, InterpType.Bilinear));
-
-		Add(_icon);
-	}
-
 	protected override void Dispose(bool disposing)
 	{
 		base.Dispose(disposing);
+
 		foreach (var d in _disposables)
 		{
 			d.Dispose();
 		}
 
+		_menuItemActivatedSubject.OnCompleted();
+		_applicationActivated.OnCompleted();
 		_contextMenu.Destroy();
 	}
 }

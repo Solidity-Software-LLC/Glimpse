@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Fluxor;
+using GLib;
 using GtkNetPanel.Services;
 using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;
@@ -34,17 +35,14 @@ public class ApplicationBarController
 		_freeDesktopService = freeDesktopService;
 		_dispatcher = dispatcher;
 
-		state.ToObservable().Select(s => s.Groups).DistinctUntilChanged().Subscribe(s =>
+		state.ToObservable().Select(s => s.Groups).DistinctUntilChanged().ObserveOn(new GLibSynchronizationContext()).Subscribe(s =>
 		{
-			Gtk.Application.Invoke((_, _) =>
+			_viewModelSubject.OnNext(new ApplicationBarViewModel()
 			{
-				_viewModelSubject.OnNext(new ApplicationBarViewModel()
-				{
-					Groups = s
-						.Select(g => new ApplicationBarGroupViewModel() { ApplicationName = g.ApplicationName, DesktopFile = g.DesktopFile, Tasks = g.Tasks, IsPinned = g.IsPinned })
-						.ToImmutableList()
-				});
-			});
+				Groups = s
+					.Select(g => new ApplicationBarGroupViewModel() { ApplicationName = g.ApplicationName, DesktopFile = g.DesktopFile, Tasks = g.Tasks, IsPinned = g.IsPinned })
+					.ToImmutableList()
+			});;
 		});
 	}
 

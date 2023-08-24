@@ -11,6 +11,7 @@ namespace GtkNetPanel.Components;
 public class App : Window
 {
 	private const int PanelHeight = 52;
+	private const string ClockFormat = "h:mm tt\ndddd\nM/d/yyyy";
 
 	public App(SystemTrayBox systemTrayBox, ApplicationBarView applicationBarView) : base(WindowType.Toplevel)
 	{
@@ -27,9 +28,11 @@ public class App : Window
 		centerBox.PackStart(applicationBarView, false, false, 0);
 		centerBox.Halign = Align.Center;
 
+		var clock = CreateClock();
+
 		var rightBox = new Box(Orientation.Horizontal, 0);
 		rightBox.PackStart(systemTrayBox, false, false, 4);
-		rightBox.PackStart(CreateClock(), false, false, 5);
+		rightBox.PackStart(clock, false, false, 5);
 		rightBox.Halign = Align.End;
 
 		var grid = new Grid();
@@ -44,33 +47,27 @@ public class App : Window
 		Add(grid);
 		ShowAll();
 
-		// var helper = new ContextMenuHelper(this);
-		// helper.ContextMenu += (o, a) =>
-		// {
-		// 	var popup = new Menu();
-		// 	popup.Add(new MenuItem("Open Task Manager"));
-		// 	popup.ShowAll();
-		// 	popup.Popup();
-		// };
+		StartClockAsync(clock);
 	}
 
-	private Widget CreateClock()
+	private Label CreateClock()
 	{
-		var clockFormat = "h:mm tt\ndddd\nM/d/yyyy";
-		var clock = new Label(DateTime.Now.ToString(clockFormat));
+		var clock = new Label(DateTime.Now.ToString(ClockFormat));
 		clock.Justify = Justification.Center;
-		var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
-
-		Task.Run(async () =>
-		{
-			while (await timer.WaitForNextTickAsync())
-			{
-				clock.Text = DateTime.Now.ToString(clockFormat);
-				clock.QueueDraw();
-			}
-		});
-
 		return clock;
+	}
+
+	private async Task StartClockAsync(Label clock)
+	{
+		await Task.Yield();
+
+		var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(1));
+
+		while (await timer.WaitForNextTickAsync())
+		{
+			clock.Text = DateTime.Now.ToString(ClockFormat);
+			clock.QueueDraw();
+		}
 	}
 
 	public void DockToBottom(Gdk.Monitor monitor)
