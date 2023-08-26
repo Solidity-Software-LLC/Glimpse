@@ -9,9 +9,7 @@
 	
 	<ItemGroup>
 		<EmbeddedResource Include="src/Assets/*" LogicalName="$(TargetName).%(Filename)%(Extension)" />
-		<EmbeddedResource Include="src/Components/styles.css">
-			<LogicalName>$(TargetName).styles.css</LogicalName>
-		</EmbeddedResource>
+		<EmbeddedResource Include="src/Components/**/*.css" LogicalName="%(Filename)%(Extension)" />
 	</ItemGroup>
 
 	<ItemGroup>

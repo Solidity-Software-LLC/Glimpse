@@ -26,4 +26,32 @@ public static class Extensions
 
 		window.Move(windowX, windowY);
 	}
+
+	public static void CenterOnScreenAboveWidget(this Window window, Widget widget)
+	{
+		if (!window.Visible) return;
+
+		var monitor = window.Display.GetMonitorAtWindow(window.Window);
+		var monitorDimensions = monitor.Geometry;
+
+		widget.Window.GetOrigin(out _, out var y);
+
+		var windowX = monitorDimensions.Width / 2 - window.Window.Width / 2;
+		var windowY = y - window.Window.Height - 16;
+
+		window.Move(windowX, windowY);
+	}
+
+	public static void AutoPopulateGrid(this Grid grid, IEnumerable<Widget> widgets, int rowSize)
+	{
+		var rows = widgets.Chunk(rowSize).ToList();
+
+		for (var i = 0; i < rows.Count; i++)
+		{
+			for (var j = 0; j < rows[i].Length; j++)
+			{
+				grid.Attach(rows[i][j], j, i, 1, 1);
+			}
+		}
+	}
 }

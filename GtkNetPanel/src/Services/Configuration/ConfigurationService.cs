@@ -45,7 +45,7 @@ public class ConfigurationService
 		foreach (var applicationName in config.Launchers)
 		{
 			var desktopFile = _freeDesktopService.FindAppDesktopFile(applicationName);
-			_dispatcher.Dispatch(new AddDesktopFileAction() { DesktopFile = desktopFile });
+			_dispatcher.Dispatch(new AddPinnedDesktopFileAction() { DesktopFile = desktopFile });
 		}
 
 		_rootState

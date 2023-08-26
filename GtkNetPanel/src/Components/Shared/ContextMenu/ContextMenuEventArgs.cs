@@ -1,6 +1,6 @@
 using Gtk;
 
-namespace GtkNetPanel.Components.ContextMenu;
+namespace GtkNetPanel.Components.Shared.ContextMenu;
 
 public class ContextMenuEventArgs : EventArgs
 {

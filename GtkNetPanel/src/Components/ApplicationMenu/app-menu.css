@@ -1,0 +1,32 @@
+.app-menu__launch-icon {
+	border-radius: 5px;
+}
+
+.app-menu__launch-icon:hover {
+	background-color: rgba(255, 255, 255, 0.3);
+}
+
+.app-menu__window {
+	background-color: rgba(48, 48, 48, 1);
+}
+
+.app-menu__action-bar {
+	background-color: rgba(33, 33, 33, 1);
+}
+
+.app-menu__label-pinned {
+	font-weight: bold;
+	font-size: 12px;
+}
+
+.app-menu__search-input text {
+	color: black;
+	background-color: white;
+	border: 0;
+	border-radius: 15px;
+}
+
+.app-menu__app-icon:hover {
+	background-color: rgba(255, 255, 255, 0.3);
+	border-radius: 4px;
+}

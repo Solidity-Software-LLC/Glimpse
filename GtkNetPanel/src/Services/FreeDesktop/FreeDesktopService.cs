@@ -1,11 +1,21 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Reactive.Subjects;
+using Fluxor;
+using GtkNetPanel.State;
 using SearchOption = System.IO.SearchOption;
 
 namespace GtkNetPanel.Services.FreeDesktop;
 
 public class FreeDesktopService
 {
-	private List<DesktopFile> _desktopFiles;
+	private readonly IDispatcher _dispatcher;
+	private ImmutableList<DesktopFile> _desktopFiles;
+
+	public FreeDesktopService(IDispatcher dispatcher)
+	{
+		_dispatcher = dispatcher;
+	}
 
 	public void Init()
 	{
@@ -26,7 +36,9 @@ public class FreeDesktopService
 			.SelectMany(d => Directory.EnumerateFiles(d, "*.desktop", SearchOption.AllDirectories))
 			.Select(d => DesktopFile.From(ReadIniFile(d)))
 			.Where(t => t != null)
-			.ToList();
+			.ToImmutableList();
+
+		_dispatcher.Dispatch(new UpdateDesktopFilesAction() { DesktopFiles = _desktopFiles });
 	}
 
 	public DesktopFile FindAppDesktopFile(string applicationName)

@@ -1,3 +1,4 @@
+using System.Text;
 using Autofac;
 using Gdk;
 using GLib;
@@ -37,10 +38,18 @@ public class GtkApplicationHostedService : IHostedService
 				Application.Init();
 				_application.Register(Cancellable.Current);
 
-				var assemblyName = typeof(GtkApplicationHostedService).Assembly.GetName().Name;
-				var cssProvider = new CssProvider();
-				cssProvider.LoadFromResource($"{assemblyName}.styles.css");
-				StyleContext.AddProviderForScreen(Display.Default.DefaultScreen, cssProvider, uint.MaxValue);
+				var assembly = typeof(GtkApplicationHostedService).Assembly;
+				var allCss = new StringBuilder();
+
+				foreach (var cssFile in assembly.GetManifestResourceNames().Where(n => n.EndsWith(".css")))
+				{
+					using var cssFileStream = new StreamReader(assembly.GetManifestResourceStream(cssFile));
+					allCss.AppendLine(cssFileStream.ReadToEnd());
+				}
+
+				var screenCss = new CssProvider();
+				screenCss.LoadFromData(allCss.ToString());
+				StyleContext.AddProviderForScreen(Display.Default.DefaultScreen, screenCss, uint.MaxValue);
 
 				var panels = Display.Default
 					.GetMonitors().Take(1)

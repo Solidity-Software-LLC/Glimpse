@@ -16,6 +16,7 @@ public static class GtkExtensions
 
 	public static void RemoveAllChildren(this Container widget)
 	{
-		widget.Children.ToList().ForEach(widget.Remove);
+		var widgets = widget.Children.ToList();
+		widgets.ForEach(widget.Remove);
 	}
 }

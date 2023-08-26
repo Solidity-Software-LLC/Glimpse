@@ -11,6 +11,7 @@ public record RootState
 {
 	public ImmutableList<ApplicationGroupState> Groups = ImmutableList<ApplicationGroupState>.Empty;
 	public GenericWindowRef FocusedWindow = new();
+	public ImmutableList<DesktopFile> DesktopFiles = ImmutableList<DesktopFile>.Empty;
 
 	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
 }
@@ -74,7 +75,7 @@ public class UpdateFocusAction
 	public GenericWindowRef WindowRef { get; set; }
 }
 
-public class AddDesktopFileAction
+public class AddPinnedDesktopFileAction
 {
 	public DesktopFile DesktopFile { get; set; }
 }
@@ -84,8 +85,19 @@ public class TogglePinningAction
 	public string ApplicationName { get; set; }
 }
 
+public class UpdateDesktopFilesAction
+{
+	public ImmutableList<DesktopFile> DesktopFiles { get; set; }
+}
+
 public class TasksStateReducers
 {
+	[ReducerMethod]
+	public static RootState ReduceUpdateDesktopFilesAction(RootState state, UpdateDesktopFilesAction action)
+	{
+		return state with { DesktopFiles = action.DesktopFiles };
+	}
+
 	[ReducerMethod]
 	public static RootState ReduceTogglePinningAction(RootState state, TogglePinningAction action)
 	{
@@ -96,7 +108,7 @@ public class TasksStateReducers
 	}
 
 	[ReducerMethod]
-	public static RootState ReduceAddDesktopFile(RootState state, AddDesktopFileAction action)
+	public static RootState ReduceAddDesktopFile(RootState state, AddPinnedDesktopFileAction action)
 	{
 		var groups = state.Groups;
 		var groupToReplace = groups.FirstOrDefault(t => t.ApplicationName == action.DesktopFile.Name);

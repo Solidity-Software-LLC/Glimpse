@@ -2,7 +2,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
 using Gtk;
-using GtkNetPanel.Components.ContextMenu;
+using GtkNetPanel.Components.Shared.ContextMenu;
 using GtkNetPanel.Services.DBus.StatusNotifierItem;
 using GtkNetPanel.Services.GtkSharp;
 using GtkNetPanel.Services.SystemTray;

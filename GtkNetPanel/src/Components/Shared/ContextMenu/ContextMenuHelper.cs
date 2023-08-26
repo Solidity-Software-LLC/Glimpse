@@ -3,7 +3,7 @@ using GLib;
 using Gtk;
 using Global = Gtk.Global;
 
-namespace GtkNetPanel.Components.ContextMenu;
+namespace GtkNetPanel.Components.Shared.ContextMenu;
 
 public class ContextMenuHelper : IDisposable
 {

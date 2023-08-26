@@ -3,8 +3,8 @@ using System.Reactive.Subjects;
 using Cairo;
 using Gdk;
 using Gtk;
-using GtkNetPanel.Components.ContextMenu;
 using GtkNetPanel.Components.Shared;
+using GtkNetPanel.Components.Shared.ContextMenu;
 
 namespace GtkNetPanel.Components.ApplicationBar.Components;
 
