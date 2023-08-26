@@ -7,11 +7,13 @@ public class Assets
 	public static readonly Pixbuf UnpinIcon;
 	public static readonly Pixbuf PinIcon;
 	public static readonly Pixbuf Close;
+	public static readonly Pixbuf Ubuntu;
 
 	static Assets()
 	{
-		UnpinIcon = Pixbuf.LoadFromResource("GtkNetPanel.unpin.png");
-		PinIcon = Pixbuf.LoadFromResource("GtkNetPanel.pin.png");
-		Close = Pixbuf.LoadFromResource("GtkNetPanel.close.png");
+		UnpinIcon = Pixbuf.LoadFromResource("unpin.png");
+		PinIcon = Pixbuf.LoadFromResource("pin.png");
+		Close = Pixbuf.LoadFromResource("close.png");
+		Ubuntu = Pixbuf.LoadFromResource("ubuntu.png");
 	}
 }

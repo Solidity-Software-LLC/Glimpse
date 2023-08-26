@@ -1,3 +1,4 @@
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
@@ -50,7 +51,7 @@ public class ApplicationMenuWindow : Window
 		_searchEntry.HeightRequest = 30;
 		_searchEntry.Halign = Align.Fill;
 		_searchEntry.PrimaryIconStock = Stock.Find;
-		_searchEntry.PlaceholderText = "Search applications";
+		_searchEntry.PlaceholderText = "Search all applications";
 
 		var pinnedLabel = new Label("Pinned");
 		pinnedLabel.Halign = Align.Start;
@@ -96,12 +97,28 @@ public class ApplicationMenuWindow : Window
 				.ToList())
 			.Publish();
 
-		appsObservable.Subscribe(newAppList => UpdateGrid(pinnedAppsGrid, _searchEntry.Text, newAppList));
-
-		Observable.FromEventPattern<EventArgs>(_searchEntry, nameof(_searchEntry.TextInserted))
+		var searchEntryUpdated = Observable.Return(new EventPattern<EventArgs>(null, EventArgs.Empty))
+			.Merge(Observable.FromEventPattern<EventArgs>(_searchEntry, nameof(_searchEntry.TextInserted)))
 			.Merge(Observable.FromEventPattern<EventArgs>(_searchEntry, nameof(_searchEntry.TextDeleted)))
-			.WithLatestFrom(appsObservable)
-			.Subscribe(t => UpdateGrid(pinnedAppsGrid, _searchEntry.Text, t.Second));
+			.Select(_ => _searchEntry.Text);
+
+		var pinnedFilesObservable = viewModelObservable
+			.Select(vm => vm.PinnedFiles)
+			.DistinctUntilChanged()
+			.CombineLatest(appsObservable)
+			.Select(t => t.First.Select(pinnedFile => t.Second.First(app => app.i == pinnedFile)).ToList());
+
+		appsObservable
+			.CombineLatest(pinnedFilesObservable, searchEntryUpdated)
+			.Select(t => string.IsNullOrEmpty(t.Third)
+				? t.Second
+				: t.First.Where(d => d.i.Name.Contains(t.Third, StringComparison.InvariantCultureIgnoreCase)).ToList())
+			.Subscribe(filteredApps =>
+			{
+				pinnedAppsGrid.RemoveAllChildren();
+				pinnedAppsGrid.AutoPopulateGrid(filteredApps.Select(t => t.Item2), NumColumns);
+				pinnedAppsGrid.ShowAll();
+			});
 
 		appsObservable.Connect();
 
@@ -142,17 +159,6 @@ public class ApplicationMenuWindow : Window
 		}
 
 		return base.OnKeyPressEvent(evnt);
-	}
-
-	private void UpdateGrid(Grid grid, string filter, List<(DesktopFile, ApplicationMenuAppIcon)> apps)
-	{
-		var filteredApps = !string.IsNullOrEmpty(filter)
-			? apps.Where(a => a.Item1.Name.Contains(filter, StringComparison.InvariantCultureIgnoreCase))
-			: apps;
-
-		grid.RemoveAllChildren();
-		grid.AutoPopulateGrid(filteredApps.Select(t => t.Item2), NumColumns);
-		grid.ShowAll();
 	}
 
 	public void Popup()

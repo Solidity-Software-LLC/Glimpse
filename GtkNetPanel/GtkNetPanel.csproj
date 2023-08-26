@@ -6,9 +6,9 @@
 		<OutputType>Exe</OutputType>
 		<GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
 	</PropertyGroup>
-	
+
 	<ItemGroup>
-		<EmbeddedResource Include="src/Assets/*" LogicalName="$(TargetName).%(Filename)%(Extension)" />
+		<EmbeddedResource Include="src/Assets/*" LogicalName="%(Filename)%(Extension)" />
 		<EmbeddedResource Include="src/Components/**/*.css" LogicalName="%(Filename)%(Extension)" />
 	</ItemGroup>
 

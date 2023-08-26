@@ -16,11 +16,19 @@ public class ApplicationMenuLaunchIcon : EventBox
 
 	public ApplicationMenuLaunchIcon(IState<RootState> stateObservable, FreeDesktopService freeDesktopService)
 	{
-		var viewModelObservable = stateObservable
+		var pinnedAppsObservable = stateObservable
+			.ToObservable()
+			.Select(s => s.AppMenuPinnedDesktopFiles)
+			.DistinctUntilChanged();
+
+		var allAppsObservable = stateObservable
 			.ToObservable()
 			.Select(s => s.DesktopFiles)
-			.DistinctUntilChanged()
-			.Select(s => new ApplicationMenuViewModel() { DesktopFiles = s })
+			.DistinctUntilChanged();
+
+		var viewModelObservable = pinnedAppsObservable
+			.CombineLatest(allAppsObservable)
+			.Select(t => new ApplicationMenuViewModel() { PinnedFiles = t.First, DesktopFiles = t.Second })
 			.ObserveOn(new GLibSynchronizationContext());
 
 		Expand = false;
@@ -31,7 +39,7 @@ public class ApplicationMenuLaunchIcon : EventBox
 		SetSizeRequest(42, 42);
 		this.AddHoverHighlighting();
 
-		var imageBuffer = IconTheme.GetForScreen(Screen).LoadIcon("ubuntu-logo-icon", 28, IconLookupFlags.DirLtr);
+		var imageBuffer = Assets.Ubuntu;
 		imageBuffer = imageBuffer.ScaleSimple(28, 28, InterpType.Bilinear);
 		Add(new Image(imageBuffer));
 

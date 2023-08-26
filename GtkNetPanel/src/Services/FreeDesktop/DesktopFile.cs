@@ -93,3 +93,17 @@ public class DesktopFile
 		return results;
 	}
 }
+
+public static class DesktopFileExtensions
+{
+	public static DesktopFile FindByApplicationName(this IEnumerable<DesktopFile> files, string applicationName)
+	{
+		var lowerCaseAppName = applicationName.ToLower();
+
+		return files.FirstOrDefault(f => f.StartupWmClass.ToLower() == lowerCaseAppName)
+			?? files.FirstOrDefault(f => f.Name.ToLower().Contains(lowerCaseAppName))
+			?? files.FirstOrDefault(f => f.StartupWmClass.ToLower().Contains(lowerCaseAppName))
+			?? files.FirstOrDefault(f => f.Exec.Executable.ToLower().Contains(lowerCaseAppName))
+			?? files.FirstOrDefault(f => f.Exec.Executable.ToLower() == lowerCaseAppName);
+	}
+}

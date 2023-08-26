@@ -12,6 +12,7 @@ public record RootState
 	public ImmutableList<ApplicationGroupState> Groups = ImmutableList<ApplicationGroupState>.Empty;
 	public GenericWindowRef FocusedWindow = new();
 	public ImmutableList<DesktopFile> DesktopFiles = ImmutableList<DesktopFile>.Empty;
+	public ImmutableList<DesktopFile> AppMenuPinnedDesktopFiles = ImmutableList<DesktopFile>.Empty;
 
 	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
 }
@@ -81,6 +82,11 @@ public class AddAppBarPinnedDesktopFileAction
 	public DesktopFile DesktopFile { get; set; }
 }
 
+public class AddAppMenuPinnedDesktopFileAction
+{
+	public DesktopFile DesktopFile { get; set; }
+}
+
 public class TogglePinningAction
 {
 	public string ApplicationName { get; set; }
@@ -106,6 +112,12 @@ public class TasksStateReducers
 		if (group == null) return state;
 		var newGroup = group with { IsPinnedToApplicationBar = !group.IsPinnedToApplicationBar };
 		return state with { Groups = state.Groups.Replace(group, newGroup) };
+	}
+
+	[ReducerMethod]
+	public static RootState ReduceAddAppMenuPinnedDesktopFileAction(RootState state, AddAppMenuPinnedDesktopFileAction action)
+	{
+		return state with { AppMenuPinnedDesktopFiles = state.AppMenuPinnedDesktopFiles.Add(action.DesktopFile) };
 	}
 
 	[ReducerMethod]

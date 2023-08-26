@@ -50,6 +50,7 @@ public class ConfigurationService
 			File.WriteAllText(configFile, JsonSerializer.Serialize(new Configuration()));
 		}
 
+		// Add file watcher
 		var config = JsonSerializer.Deserialize<Configuration>(
 			File.ReadAllText(configFile),
 			new JsonSerializerOptions(JsonSerializerDefaults.General) { PropertyNameCaseInsensitive = true });
@@ -58,6 +59,12 @@ public class ConfigurationService
 		{
 			var desktopFile = _freeDesktopService.FindAppDesktopFile(applicationName);
 			_dispatcher.Dispatch(new AddAppBarPinnedDesktopFileAction() { DesktopFile = desktopFile });
+		}
+
+		foreach (var applicationName in config.ApplicationMenu.PinnedLaunchers)
+		{
+			var desktopFile = _freeDesktopService.FindAppDesktopFile(applicationName);
+			_dispatcher.Dispatch(new AddAppMenuPinnedDesktopFileAction() { DesktopFile = desktopFile });
 		}
 
 		var groupComparer = new FuncEqualityComparer<ApplicationGroupState>((x, y) => x.ApplicationName == y.ApplicationName);

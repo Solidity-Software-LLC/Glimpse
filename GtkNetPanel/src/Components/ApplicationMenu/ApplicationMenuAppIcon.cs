@@ -1,5 +1,4 @@
 using Gdk;
-using GLib;
 using Gtk;
 using GtkNetPanel.Components.Shared;
 using GtkNetPanel.Services.FreeDesktop;
