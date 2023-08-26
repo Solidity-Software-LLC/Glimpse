@@ -21,7 +21,8 @@ public record ApplicationGroupState
 	public ImmutableList<TaskState> Tasks { get; set; } = ImmutableList<TaskState>.Empty;
 	public DesktopFile DesktopFile { get; set; }
 	public string ApplicationName { get; set; }
-	public bool IsPinned { get; set; }
+	public bool IsPinnedToApplicationBar { get; set; }
+	public bool IsPinnedToApplicationMenu { get; set; }
 
 	public virtual bool Equals(ApplicationGroupState other) => ReferenceEquals(this, other);
 
@@ -29,7 +30,7 @@ public record ApplicationGroupState
 	{
 		ApplicationName = file.Name;
 		DesktopFile = file;
-		IsPinned = true;
+		IsPinnedToApplicationBar = true;
 	}
 
 	public ApplicationGroupState(TaskState task)
@@ -37,7 +38,7 @@ public record ApplicationGroupState
 		ApplicationName = task.ApplicationName;
 		DesktopFile = task.DesktopFile;
 		Tasks = Tasks.Add(task);
-		IsPinned = false;
+		IsPinnedToApplicationBar = false;
 	}
 }
 
@@ -75,7 +76,7 @@ public class UpdateFocusAction
 	public GenericWindowRef WindowRef { get; set; }
 }
 
-public class AddPinnedDesktopFileAction
+public class AddAppBarPinnedDesktopFileAction
 {
 	public DesktopFile DesktopFile { get; set; }
 }
@@ -103,12 +104,12 @@ public class TasksStateReducers
 	{
 		var group = state.Groups.FirstOrDefault(g => g.ApplicationName == action.ApplicationName);
 		if (group == null) return state;
-		var newGroup = group with { IsPinned = !group.IsPinned };
+		var newGroup = group with { IsPinnedToApplicationBar = !group.IsPinnedToApplicationBar };
 		return state with { Groups = state.Groups.Replace(group, newGroup) };
 	}
 
 	[ReducerMethod]
-	public static RootState ReduceAddDesktopFile(RootState state, AddPinnedDesktopFileAction action)
+	public static RootState ReducerAddAppBarPinnedDesktopFileAction(RootState state, AddAppBarPinnedDesktopFileAction action)
 	{
 		var groups = state.Groups;
 		var groupToReplace = groups.FirstOrDefault(t => t.ApplicationName == action.DesktopFile.Name);
@@ -143,7 +144,7 @@ public class TasksStateReducers
 
 		if (group == null) return state;
 
-		if (group.Tasks.Count == 1 && !group.IsPinned)
+		if (group.Tasks.Count == 1 && !group.IsPinnedToApplicationBar)
 		{
 			return state with { Groups = state.Groups.Remove(group) };
 		}

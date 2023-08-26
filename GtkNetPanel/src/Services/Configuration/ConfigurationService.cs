@@ -8,7 +8,18 @@ namespace GtkNetPanel.Services.Configuration;
 
 public class Configuration
 {
-	public List<string> Launchers { get; set; } = new();
+	public ApplicationBarConfiguration ApplicationBar { get; set; } = new();
+	public ApplicationMenuConfiguration ApplicationMenu { get; set; } = new();
+}
+
+public class ApplicationMenuConfiguration
+{
+	public List<string> PinnedLaunchers { get; set; } = new();
+}
+
+public class ApplicationBarConfiguration
+{
+	public List<string> PinnedLaunchers { get; set; } = new();
 }
 
 public class ConfigurationService
@@ -23,6 +34,7 @@ public class ConfigurationService
 		_dispatcher = dispatcher;
 		_rootState = rootState;
 	}
+
 	public void Initialize()
 	{
 		var dataDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SharpPanel");
@@ -42,36 +54,36 @@ public class ConfigurationService
 			File.ReadAllText(configFile),
 			new JsonSerializerOptions(JsonSerializerDefaults.General) { PropertyNameCaseInsensitive = true });
 
-		foreach (var applicationName in config.Launchers)
+		foreach (var applicationName in config.ApplicationBar.PinnedLaunchers)
 		{
 			var desktopFile = _freeDesktopService.FindAppDesktopFile(applicationName);
-			_dispatcher.Dispatch(new AddPinnedDesktopFileAction() { DesktopFile = desktopFile });
+			_dispatcher.Dispatch(new AddAppBarPinnedDesktopFileAction() { DesktopFile = desktopFile });
 		}
 
-		_rootState
+		var groupComparer = new FuncEqualityComparer<ApplicationGroupState>((x, y) => x.ApplicationName == y.ApplicationName);
+
+		var pinnedAppBarObs = _rootState
 			.ToObservable()
-			.Select(s => s.Groups.Where(g => g.IsPinned))
-			.Select(s => s.Select(g => g.ApplicationName))
-			.DistinctUntilChanged(new EnumerableEqualityComparer<string>())
+			.Select(s => s.Groups)
+			.Select(s => s.Where(g => g.IsPinnedToApplicationBar))
+			.DistinctUntilChanged((x, y) => x.SequenceEqual(y, groupComparer));
+
+		var pinnedAppMenuObs = _rootState
+			.ToObservable()
+			.Select(s => s.Groups)
+			.Select(s => s.Where(g => g.IsPinnedToApplicationMenu))
+			.DistinctUntilChanged((x, y) => x.SequenceEqual(y, groupComparer));
+
+		pinnedAppBarObs
+			.CombineLatest(pinnedAppMenuObs)
 			.Skip(1)
-			.Subscribe(pinnedGroups =>
+			.Subscribe(t =>
 			{
 				Console.WriteLine("Writing");
-				var newConfig = new Configuration() { Launchers = pinnedGroups.ToList() };
+				var newConfig = new Configuration();
+				newConfig.ApplicationBar.PinnedLaunchers.AddRange(t.First.Select(g => g.ApplicationName));
+				newConfig.ApplicationMenu.PinnedLaunchers.AddRange(t.Second.Select(g => g.ApplicationName));
 				File.WriteAllText(configFile, JsonSerializer.Serialize(newConfig, new JsonSerializerOptions(JsonSerializerDefaults.General) { WriteIndented = true }));
 			});
 	}
-}
-
-public class EnumerableEqualityComparer<T> : IEqualityComparer<IEnumerable<T>>
-{
-	public bool Equals(IEnumerable<T> x, IEnumerable<T> y)
-	{
-		if (x == null && y == null) return true;
-		if (x == null || y == null) return false;
-		if (ReferenceEquals(x, y)) return true;
-		return x.SequenceEqual(y);
-	}
-
-	public int GetHashCode(IEnumerable<T> obj) => obj.GetHashCode();
 }

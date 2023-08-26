@@ -5,6 +5,11 @@ namespace GtkNetPanel.Services;
 
 public static class ReactiveExtensions
 {
+	public static IObservable<T> DistinctUntilChanged<T>(this IObservable<T> obs, Func<T, T, bool> comparison)
+	{
+		return obs.DistinctUntilChanged(new FuncEqualityComparer<T>(comparison));
+	}
+
 	public static IObservable<IGroupedObservable<TKey, IEnumerable<TValue>>> Unbundle<TValue, TKey>(this IObservable<IEnumerable<TValue>> source, Func<TValue, TKey> keySelector) where TKey : IEquatable<TKey>
 	{
 		return Observable.Create<IGroupedObservable<TKey, IEnumerable<TValue>>>(obs =>

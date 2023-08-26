@@ -40,7 +40,7 @@ public class ApplicationBarController
 			_viewModelSubject.OnNext(new ApplicationBarViewModel()
 			{
 				Groups = s
-					.Select(g => new ApplicationBarGroupViewModel() { ApplicationName = g.ApplicationName, DesktopFile = g.DesktopFile, Tasks = g.Tasks, IsPinned = g.IsPinned })
+					.Select(g => new ApplicationBarGroupViewModel() { ApplicationName = g.ApplicationName, DesktopFile = g.DesktopFile, Tasks = g.Tasks, IsPinned = g.IsPinnedToApplicationBar })
 					.ToImmutableList()
 			});;
 		});

@@ -36,6 +36,7 @@ public class ApplicationMenuLaunchIcon : EventBox
 		Add(new Image(imageBuffer));
 
 		var appMenuWindow = new ApplicationMenuWindow(viewModelObservable);
+
 		appMenuWindow.AppLaunch.Subscribe(f =>
 		{
 			appMenuWindow.Hide();
