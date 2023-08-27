@@ -1,8 +1,8 @@
 using Gdk;
 using Gtk;
-using GtkNetPanel.Components.ApplicationBar;
 using GtkNetPanel.Components.StartMenu;
 using GtkNetPanel.Components.SystemTray;
+using GtkNetPanel.Components.Taskbar;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
 
@@ -13,7 +13,7 @@ public class App : Window
 	private const int PanelHeight = 52;
 	private const string ClockFormat = "h:mm tt\ndddd\nM/d/yyyy";
 
-	public App(SystemTrayBox systemTrayBox, ApplicationBarView applicationBarView, StartMenuLaunchIcon startMenuLaunchIcon) : base(WindowType.Toplevel)
+	public App(SystemTrayBox systemTrayBox, TaskbarView taskbarView, StartMenuLaunchIcon startMenuLaunchIcon) : base(WindowType.Toplevel)
 	{
 		Decorated = false;
 		Resizable = false;
@@ -25,7 +25,7 @@ public class App : Window
 
 		var centerBox = new Box(Orientation.Horizontal, 0);
 		centerBox.PackStart(startMenuLaunchIcon, false, false, 0);
-		centerBox.PackStart(applicationBarView, false, false, 0);
+		centerBox.PackStart(taskbarView, false, false, 0);
 		centerBox.Halign = Align.Center;
 
 		var clock = CreateClock();

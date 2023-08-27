@@ -58,7 +58,7 @@ public class ConfigurationService
 		foreach (var applicationName in config.ApplicationBar.PinnedLaunchers)
 		{
 			var desktopFile = _freeDesktopService.FindAppDesktopFile(applicationName);
-			_dispatcher.Dispatch(new AddAppBarPinnedDesktopFileAction() { DesktopFile = desktopFile });
+			_dispatcher.Dispatch(new AddTaskbarPinnedDesktopFileAction() { DesktopFile = desktopFile });
 		}
 
 		foreach (var applicationName in config.StartMenu.PinnedLaunchers)

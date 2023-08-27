@@ -8,14 +8,14 @@ using Pango;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
 
-namespace GtkNetPanel.Components.ApplicationBar.Components;
+namespace GtkNetPanel.Components.Taskbar.Components;
 
-public class WindowPicker : Window
+public class TaskbarWindowPicker : Window
 {
 	private readonly Subject<GenericWindowRef> _previewWindowClicked = new();
 	private readonly Subject<GenericWindowRef> _closeWindow = new();
 
-	public WindowPicker(IObservable<ApplicationBarGroupViewModel> viewModelObservable) : base(WindowType.Toplevel)
+	public TaskbarWindowPicker(IObservable<ApplicationBarGroupViewModel> viewModelObservable) : base(WindowType.Toplevel)
 	{
 		SkipPagerHint = true;
 		SkipTaskbarHint = true;

@@ -2,9 +2,9 @@ using System.Collections.Immutable;
 using GtkNetPanel.Services.FreeDesktop;
 using GtkNetPanel.State;
 
-namespace GtkNetPanel.Components.ApplicationBar;
+namespace GtkNetPanel.Components.Taskbar;
 
-public record ApplicationBarViewModel
+public record TaskbarViewModel
 {
 	public ImmutableList<ApplicationBarGroupViewModel> Groups = ImmutableList<ApplicationBarGroupViewModel>.Empty;
 }

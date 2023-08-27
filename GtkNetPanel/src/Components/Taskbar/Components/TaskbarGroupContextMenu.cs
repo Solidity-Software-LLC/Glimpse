@@ -4,16 +4,16 @@ using Gtk;
 using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;
 
-namespace GtkNetPanel.Components.ApplicationBar.Components;
+namespace GtkNetPanel.Components.Taskbar.Components;
 
-public class ApplicationGroupContextMenu : Menu
+public class TaskbarGroupContextMenu : Menu
 {
 	private readonly Subject<bool> _pinSubject = new();
 	private readonly Subject<AllowedWindowActions> _windowAction = new();
 	private readonly Subject<DesktopFileAction> _desktopFileAction = new();
 	private readonly Subject<DesktopFile> _launch = new();
 
-	public ApplicationGroupContextMenu(IObservable<ApplicationBarGroupViewModel> viewModel)
+	public TaskbarGroupContextMenu(IObservable<ApplicationBarGroupViewModel> viewModel)
 	{
 		ReserveToggleSize = false;
 

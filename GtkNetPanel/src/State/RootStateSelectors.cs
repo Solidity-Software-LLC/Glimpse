@@ -23,7 +23,7 @@ public class RootStateSelectors
 
 		PinnedAppBar = RootState
 			.DistinctUntilChanged()
-			.Select(s => s.Groups)
+			.Select(s => s.TaskbarGroups)
 			.DistinctUntilChanged()
 			.Select(g => g.Where(a => a.IsPinnedToApplicationBar).Select(g => g.DesktopFile).ToImmutableList())
 			.DistinctUntilChanged((x, y) => x.SequenceEqual(y));

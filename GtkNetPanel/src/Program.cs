@@ -4,9 +4,9 @@ using Autofac.Extensions.DependencyInjection;
 using Fluxor;
 using GLib;
 using GtkNetPanel.Components;
-using GtkNetPanel.Components.ApplicationBar;
 using GtkNetPanel.Components.StartMenu;
 using GtkNetPanel.Components.SystemTray;
+using GtkNetPanel.Components.Taskbar;
 using GtkNetPanel.Services.Configuration;
 using GtkNetPanel.Services.DBus.Introspection;
 using GtkNetPanel.Services.DisplayServer;
@@ -32,9 +32,9 @@ public static class Program
 			{
 				containerBuilder.RegisterType<App>();
 				containerBuilder.RegisterType<SystemTrayBox>();
-				containerBuilder.RegisterType<ApplicationBarView>();
-				containerBuilder.RegisterType<ApplicationBarController>();
-				containerBuilder.RegisterType<ApplicationBarViewModel>();
+				containerBuilder.RegisterType<TaskbarView>();
+				containerBuilder.RegisterType<TaskbarController>();
+				containerBuilder.RegisterType<TaskbarViewModel>();
 				containerBuilder.RegisterType<StartMenuLaunchIcon>();
 				containerBuilder.RegisterType<FreeDesktopService>().SingleInstance();
 				containerBuilder.RegisterType<X11DisplayServer>().As<X11DisplayServer>().As<IDisplayServer>().SingleInstance();

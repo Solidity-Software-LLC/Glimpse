@@ -9,25 +9,25 @@ using GtkNetPanel.Services.FreeDesktop;
 using GtkNetPanel.State;
 using Microsoft.Extensions.Logging;
 
-namespace GtkNetPanel.Components.ApplicationBar;
+namespace GtkNetPanel.Components.Taskbar;
 
-public class ApplicationBarController
+public class TaskbarController
 {
 	private readonly IState<RootState> _state;
-	private readonly ILogger<ApplicationBarController> _logger;
+	private readonly ILogger<TaskbarController> _logger;
 	private readonly IDisplayServer _displayServer;
 	private readonly FreeDesktopService _freeDesktopService;
 	private readonly IDispatcher _dispatcher;
-	private readonly BehaviorSubject<ApplicationBarViewModel> _viewModelSubject;
+	private readonly BehaviorSubject<TaskbarViewModel> _viewModelSubject;
 
-	public ApplicationBarController(
+	public TaskbarController(
 		IState<RootState> state,
-		ILogger<ApplicationBarController> logger,
+		ILogger<TaskbarController> logger,
 		IDisplayServer displayServer,
 		FreeDesktopService freeDesktopService,
 		IDispatcher dispatcher)
 	{
-		_viewModelSubject = new BehaviorSubject<ApplicationBarViewModel>(new());
+		_viewModelSubject = new BehaviorSubject<TaskbarViewModel>(new());
 
 		_state = state;
 		_logger = logger;
@@ -35,9 +35,9 @@ public class ApplicationBarController
 		_freeDesktopService = freeDesktopService;
 		_dispatcher = dispatcher;
 
-		state.ToObservable().Select(s => s.Groups).DistinctUntilChanged().ObserveOn(new GLibSynchronizationContext()).Subscribe(s =>
+		state.ToObservable().Select(s => s.TaskbarGroups).DistinctUntilChanged().ObserveOn(new GLibSynchronizationContext()).Subscribe(s =>
 		{
-			_viewModelSubject.OnNext(new ApplicationBarViewModel()
+			_viewModelSubject.OnNext(new TaskbarViewModel()
 			{
 				Groups = s
 					.Select(g => new ApplicationBarGroupViewModel() { ApplicationName = g.ApplicationName, DesktopFile = g.DesktopFile, Tasks = g.Tasks, IsPinned = g.IsPinnedToApplicationBar })
@@ -46,7 +46,7 @@ public class ApplicationBarController
 		});
 	}
 
-	public IObservable<ApplicationBarViewModel> ViewModel => _viewModelSubject;
+	public IObservable<TaskbarViewModel> ViewModel => _viewModelSubject;
 
 	public void MakeWindowVisible(GenericWindowRef windowRef)
 	{

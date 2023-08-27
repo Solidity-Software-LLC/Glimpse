@@ -6,15 +6,15 @@ using Gtk;
 using GtkNetPanel.Components.Shared;
 using GtkNetPanel.Components.Shared.ContextMenu;
 
-namespace GtkNetPanel.Components.ApplicationBar.Components;
+namespace GtkNetPanel.Components.Taskbar.Components;
 
-public class ApplicationGroupIcon : EventBox
+public class TaskbarGroupIcon : EventBox
 {
 	private ApplicationBarGroupViewModel _currentViewModel;
 	private readonly Subject<bool> _contextMenuObservable = new();
 	private readonly Subject<EventButton> _buttonRelease = new();
 
-	public ApplicationGroupIcon(IObservable<ApplicationBarGroupViewModel> viewModel)
+	public TaskbarGroupIcon(IObservable<ApplicationBarGroupViewModel> viewModel)
 	{
 		Visible = false;
 		Vexpand = false;

@@ -2,23 +2,23 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using GLib;
 using Gtk;
-using GtkNetPanel.Components.ApplicationBar.Components;
 using GtkNetPanel.Components.Shared;
+using GtkNetPanel.Components.Taskbar.Components;
 using GtkNetPanel.Services;
 
-namespace GtkNetPanel.Components.ApplicationBar;
+namespace GtkNetPanel.Components.Taskbar;
 
-public class ApplicationBarView : Box
+public class TaskbarView : Box
 {
-	public ApplicationBarView(ApplicationBarController controller)
+	public TaskbarView(TaskbarController controller)
 	{
 		var forEachObs = controller.ViewModel.Select(g => g.Groups).DistinctUntilChanged().UnbundleMany(g => g.ApplicationName);
 		var forEachGroup = new ForEach<ApplicationBarGroupViewModel>(forEachObs, viewModelObservable =>
 		{
 			var replayLatestViewModelObservable = viewModelObservable.Replay(1);
-			var contextMenu = new ApplicationGroupContextMenu(viewModelObservable);
-			var windowPicker = new WindowPicker(viewModelObservable);
-			var groupIcon = new ApplicationGroupIcon(viewModelObservable);
+			var contextMenu = new TaskbarGroupContextMenu(viewModelObservable);
+			var windowPicker = new TaskbarWindowPicker(viewModelObservable);
+			var groupIcon = new TaskbarGroupIcon(viewModelObservable);
 
 			Observable.FromEventPattern(windowPicker, nameof(windowPicker.VisibilityNotifyEvent))
 				.Subscribe(_ => windowPicker.CenterAbove(groupIcon));
