@@ -1,3 +1,5 @@
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using Gdk;
 using Gtk;
 using GtkNetPanel.Components.Shared;
@@ -10,6 +12,8 @@ namespace GtkNetPanel.Components.ApplicationMenu;
 
 public class ApplicationMenuAppIcon : EventBox
 {
+	private readonly Subject<DesktopFile> _contextMenuRequested = new();
+
 	public ApplicationMenuAppIcon(IObservable<DesktopFile> desktopFileObservable)
 	{
 		var name = new Label();
@@ -34,20 +38,23 @@ public class ApplicationMenuAppIcon : EventBox
 		SetSizeRequest(82, 76);
 		StyleContext.AddClass("app-menu__app-icon");
 
-		var contextMenu = new Menu();
-		contextMenu.Add(new MenuItem("Pin to Start"));
-		contextMenu.Add(new MenuItem("Pin to taskbar"));
-		contextMenu.ShowAll();
-
 		var helper = new ContextMenuHelper(this);
-		helper.ContextMenu += (sender, args) => contextMenu.Popup();
 
-		desktopFileObservable.Subscribe(desktopFile =>
-		{
-			name.Text = desktopFile.Name;
-			image.Pixbuf = CreateAppIcon(desktopFile.IconName).ScaleSimple(36, 36, InterpType.Bilinear);
-		});
+		Observable.FromEventPattern(helper, nameof(helper.ContextMenu))
+			.WithLatestFrom(desktopFileObservable)
+			.TakeUntilDestroyed(this)
+			.Subscribe(t => _contextMenuRequested.OnNext(t.Second));
+
+		desktopFileObservable
+			.TakeUntilDestroyed(this)
+			.Subscribe(desktopFile =>
+			{
+				name.Text = desktopFile.Name;
+				image.Pixbuf = CreateAppIcon(desktopFile.IconName).ScaleSimple(36, 36, InterpType.Bilinear);
+			});
 	}
+
+	public IObservable<DesktopFile> ContextMenuRequested => _contextMenuRequested;
 
 	private Pixbuf CreateAppIcon(string iconName)
 	{

@@ -1,3 +1,4 @@
+using System.Reactive.Linq;
 using Gdk;
 using Gtk;
 using Window = Gtk.Window;
@@ -40,5 +41,10 @@ public static class Extensions
 		var windowY = y - window.Window.Height - 16;
 
 		window.Move(windowX, windowY);
+	}
+
+	public static IObservable<T> TakeUntilDestroyed<T>(this IObservable<T> obs, Widget source)
+	{
+		return obs.TakeUntil(Observable.FromEventPattern(source, nameof(source.Destroyed)).Take(1));
 	}
 }
