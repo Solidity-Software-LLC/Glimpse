@@ -26,13 +26,13 @@ public class ConfigurationService
 {
 	private readonly FreeDesktopService _freeDesktopService;
 	private readonly IDispatcher _dispatcher;
-	private readonly IState<RootState> _rootState;
+	private readonly RootStateSelectors _rootStateSelectors;
 
-	public ConfigurationService(FreeDesktopService freeDesktopService, IDispatcher dispatcher, IState<RootState> rootState)
+	public ConfigurationService(FreeDesktopService freeDesktopService, IDispatcher dispatcher, RootStateSelectors rootStateSelectors)
 	{
 		_freeDesktopService = freeDesktopService;
 		_dispatcher = dispatcher;
-		_rootState = rootState;
+		_rootStateSelectors = rootStateSelectors;
 	}
 
 	public void Initialize()
@@ -67,29 +67,15 @@ public class ConfigurationService
 			_dispatcher.Dispatch(new AddAppMenuPinnedDesktopFileAction() { DesktopFile = desktopFile });
 		}
 
-		var groupComparer = new FuncEqualityComparer<ApplicationGroupState>((x, y) => x.ApplicationName == y.ApplicationName);
-
-		var pinnedAppBarObs = _rootState
-			.ToObservable()
-			.Select(s => s.Groups)
-			.Select(s => s.Where(g => g.IsPinnedToApplicationBar))
-			.DistinctUntilChanged((x, y) => x.SequenceEqual(y, groupComparer));
-
-		var pinnedAppMenuObs = _rootState
-			.ToObservable()
-			.Select(s => s.Groups)
-			.Select(s => s.Where(g => g.IsPinnedToApplicationMenu))
-			.DistinctUntilChanged((x, y) => x.SequenceEqual(y, groupComparer));
-
-		pinnedAppBarObs
-			.CombineLatest(pinnedAppMenuObs)
+		_rootStateSelectors.PinnedAppBar
+			.CombineLatest(_rootStateSelectors.PinnedAppMenu)
 			.Skip(1)
 			.Subscribe(t =>
 			{
 				Console.WriteLine("Writing");
 				var newConfig = new Configuration();
-				newConfig.ApplicationBar.PinnedLaunchers.AddRange(t.First.Select(g => g.ApplicationName));
-				newConfig.ApplicationMenu.PinnedLaunchers.AddRange(t.Second.Select(g => g.ApplicationName));
+				newConfig.ApplicationBar.PinnedLaunchers.AddRange(t.First.Select(d => d.Name));
+				newConfig.ApplicationMenu.PinnedLaunchers.AddRange(t.Second.Select(d => d.Name));
 				File.WriteAllText(configFile, JsonSerializer.Serialize(newConfig, new JsonSerializerOptions(JsonSerializerDefaults.General) { WriteIndented = true }));
 			});
 	}

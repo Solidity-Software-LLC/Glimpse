@@ -30,7 +30,7 @@ public class ApplicationMenuWindow : Window
 		: base(WindowType.Toplevel)
 	{
 		var iconCache = new Dictionary<string, ApplicationMenuAppIcon>();
-		var allAppsObservable = viewModelObservable.Select(vm => vm.DesktopFiles).DistinctUntilChanged().UnbundleMany(a => a.Name);
+		var allAppsObservable = viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged().UnbundleMany(a => a.Name);
 		var displayedAppsObservable = viewModelObservable.Select(vm => vm.AppsToDisplay).DistinctUntilChanged().UnbundleMany(a => a.Name);
 
 		allAppsObservable.Subscribe(file =>

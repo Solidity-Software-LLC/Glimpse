@@ -13,6 +13,7 @@ using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;
 using GtkNetPanel.Services.SystemTray;
 using GtkNetPanel.Services.X11;
+using GtkNetPanel.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tmds.DBus;
@@ -41,6 +42,8 @@ public static class Program
 				containerBuilder.RegisterType<IntrospectionService>();
 				containerBuilder.RegisterType<ConfigurationService>().SingleInstance();
 				containerBuilder.RegisterType<XLibAdaptorService>().SingleInstance();
+				containerBuilder.RegisterType<RootStateSelectors>().SingleInstance();
+				containerBuilder.RegisterType<ApplicationMenuSelectors>().SingleInstance();
 				containerBuilder.RegisterInstance(Connection.Session).ExternallyOwned();
 				containerBuilder.Register(_ => new Application("org.SharpPanel", ApplicationFlags.None)).SingleInstance();
 			}))
