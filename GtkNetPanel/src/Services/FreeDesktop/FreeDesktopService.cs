@@ -41,6 +41,11 @@ public class FreeDesktopService
 		_dispatcher.Dispatch(new UpdateDesktopFilesAction() { DesktopFiles = _desktopFiles });
 	}
 
+	public DesktopFile FindAppDesktopFileByPath(string filePath)
+	{
+		return _desktopFiles.FirstOrDefault(f => f.IniConfiguration.FilePath.Equals(filePath, StringComparison.InvariantCultureIgnoreCase));
+	}
+
 	public DesktopFile FindAppDesktopFile(string applicationName)
 	{
 		var lowerCaseAppName = applicationName.ToLower();

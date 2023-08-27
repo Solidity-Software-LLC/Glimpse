@@ -10,9 +10,9 @@ public class RootStateSelectors
 {
 	public IObservable<RootState> RootState { get; }
 	public IObservable<StartMenuState> StartMenuState { get; }
-	public IObservable<ImmutableList<DesktopFile>> PinnedAppBar { get; }
-	public IObservable<ImmutableList<DesktopFile>> PinnedStartMenu { get; }
-	public IObservable<ImmutableList<DesktopFile>> ValidDesktopFiles { get; }
+	public IObservable<ImmutableList<DesktopFile>> PinnedTaskbarApps { get; }
+	public IObservable<ImmutableList<DesktopFile>> PinnedStartMenuApps { get; }
+	public IObservable<ImmutableList<DesktopFile>> AllDesktopFiles { get; }
 	public IObservable<string> SearchText { get; }
 
 	public RootStateSelectors(IState<RootState> rootState)
@@ -21,21 +21,21 @@ public class RootStateSelectors
 			.ToObservable()
 			.DistinctUntilChanged();
 
-		PinnedAppBar = RootState
+		PinnedTaskbarApps = RootState
 			.DistinctUntilChanged()
 			.Select(s => s.TaskbarGroups)
 			.DistinctUntilChanged()
 			.Select(g => g.Where(a => a.IsPinnedToApplicationBar).Select(g => g.DesktopFile).ToImmutableList())
 			.DistinctUntilChanged((x, y) => x.SequenceEqual(y));
 
-		PinnedStartMenu = RootState
+		PinnedStartMenuApps = RootState
 			.DistinctUntilChanged()
 			.Select(s => s.StartMenuState)
 			.DistinctUntilChanged()
 			.Select(s => s.PinnedDesktopFiles)
 			.DistinctUntilChanged((x, y) => x.SequenceEqual(y));
 
-		ValidDesktopFiles = RootState
+		AllDesktopFiles = RootState
 			.Select(s => s.DesktopFiles)
 			.DistinctUntilChanged()
 			.Select(s => s.OrderBy(f => f.Name).Where(f => !string.IsNullOrEmpty(f.Name) && !string.IsNullOrEmpty(f.Exec.FullExec)).ToImmutableList());

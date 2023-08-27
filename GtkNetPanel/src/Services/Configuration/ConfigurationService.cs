@@ -8,7 +8,7 @@ namespace GtkNetPanel.Services.Configuration;
 
 public class Configuration
 {
-	public ApplicationBarConfiguration ApplicationBar { get; set; } = new();
+	public TaskbarConfiguration Taskbar { get; set; } = new();
 	public StartMenuConfiguration StartMenu { get; set; } = new();
 }
 
@@ -17,7 +17,7 @@ public class StartMenuConfiguration
 	public List<string> PinnedLaunchers { get; set; } = new();
 }
 
-public class ApplicationBarConfiguration
+public class TaskbarConfiguration
 {
 	public List<string> PinnedLaunchers { get; set; } = new();
 }
@@ -55,27 +55,27 @@ public class ConfigurationService
 			File.ReadAllText(configFile),
 			new JsonSerializerOptions(JsonSerializerDefaults.General) { PropertyNameCaseInsensitive = true });
 
-		foreach (var applicationName in config.ApplicationBar.PinnedLaunchers)
+		foreach (var filePath in config.Taskbar.PinnedLaunchers)
 		{
-			var desktopFile = _freeDesktopService.FindAppDesktopFile(applicationName);
+			var desktopFile = _freeDesktopService.FindAppDesktopFileByPath(filePath);
 			_dispatcher.Dispatch(new AddTaskbarPinnedDesktopFileAction() { DesktopFile = desktopFile });
 		}
 
-		foreach (var applicationName in config.StartMenu.PinnedLaunchers)
+		foreach (var filePath in config.StartMenu.PinnedLaunchers)
 		{
-			var desktopFile = _freeDesktopService.FindAppDesktopFile(applicationName);
+			var desktopFile = _freeDesktopService.FindAppDesktopFileByPath(filePath);
 			_dispatcher.Dispatch(new AddStartMenuPinnedDesktopFileAction() { DesktopFile = desktopFile });
 		}
 
-		_rootStateSelectors.PinnedAppBar
-			.CombineLatest(_rootStateSelectors.PinnedStartMenu)
+		_rootStateSelectors.PinnedTaskbarApps
+			.CombineLatest(_rootStateSelectors.PinnedStartMenuApps)
 			.Skip(1)
 			.Subscribe(t =>
 			{
 				Console.WriteLine("Writing");
 				var newConfig = new Configuration();
-				newConfig.ApplicationBar.PinnedLaunchers.AddRange(t.First.Select(d => d.Name));
-				newConfig.StartMenu.PinnedLaunchers.AddRange(t.Second.Select(d => d.Name));
+				newConfig.Taskbar.PinnedLaunchers.AddRange(t.First.Select(d => d.IniConfiguration.FilePath));
+				newConfig.StartMenu.PinnedLaunchers.AddRange(t.Second.Select(d => d.IniConfiguration.FilePath));
 				File.WriteAllText(configFile, JsonSerializer.Serialize(newConfig, new JsonSerializerOptions(JsonSerializerDefaults.General) { WriteIndented = true }));
 			});
 	}

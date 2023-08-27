@@ -13,16 +13,16 @@ public class StartMenuSelectors
 	public StartMenuSelectors(RootStateSelectors rootStateSelectors)
 	{
 		var appsToDisplayObservable = rootStateSelectors.SearchText
-			.CombineLatest(rootStateSelectors.PinnedStartMenu, rootStateSelectors.ValidDesktopFiles)
+			.CombineLatest(rootStateSelectors.PinnedStartMenuApps, rootStateSelectors.AllDesktopFiles)
 			.Select(t => string.IsNullOrEmpty(t.First) ? t.Second : t.Third.Where(d => d.Name.Contains(t.First, StringComparison.InvariantCultureIgnoreCase)).ToImmutableList())
 			.Do(_ => { }, e => Console.WriteLine(e));
 
-		ViewModel = rootStateSelectors.PinnedStartMenu
+		ViewModel = rootStateSelectors.PinnedStartMenuApps
 			.CombineLatest(
-				rootStateSelectors.ValidDesktopFiles,
+				rootStateSelectors.AllDesktopFiles,
 				rootStateSelectors.SearchText,
 				appsToDisplayObservable,
-				rootStateSelectors.PinnedAppBar)
+				rootStateSelectors.PinnedTaskbarApps)
 			.Select(t => new StartMenuViewModel()
 			{
 				PinnedStartApps = t.First,
