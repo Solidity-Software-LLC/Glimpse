@@ -41,17 +41,4 @@ public static class Extensions
 
 		window.Move(windowX, windowY);
 	}
-
-	public static void AutoPopulateGrid(this Grid grid, IEnumerable<Widget> widgets, int rowSize)
-	{
-		var rows = widgets.Chunk(rowSize).ToList();
-
-		for (var i = 0; i < rows.Count; i++)
-		{
-			for (var j = 0; j < rows[i].Length; j++)
-			{
-				grid.Attach(rows[i][j], j, i, 1, 1);
-			}
-		}
-	}
 }

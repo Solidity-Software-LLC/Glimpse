@@ -7,10 +7,14 @@
 }
 
 .app-menu__window {
+	border: 1px solid #555555;
+	border-radius: 10px;
 	background-color: rgba(48, 48, 48, 1);
 }
 
 .app-menu__action-bar {
+	border-bottom-right-radius: 10px;
+	border-bottom-left-radius: 10px;
 	background-color: rgba(33, 33, 33, 1);
 }
 

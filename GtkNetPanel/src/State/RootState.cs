@@ -12,9 +12,17 @@ public record RootState
 	public ImmutableList<ApplicationGroupState> Groups = ImmutableList<ApplicationGroupState>.Empty;
 	public GenericWindowRef FocusedWindow = new();
 	public ImmutableList<DesktopFile> DesktopFiles = ImmutableList<DesktopFile>.Empty;
-	public ImmutableList<DesktopFile> AppMenuPinnedDesktopFiles = ImmutableList<DesktopFile>.Empty;
+	public ApplicationMenuState ApplicationMenuState { get; set; } = new();
 
 	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
+}
+
+public record ApplicationMenuState
+{
+	public ImmutableList<DesktopFile> PinnedDesktopFiles = ImmutableList<DesktopFile>.Empty;
+	public string SearchText { get; set; }
+
+	public virtual bool Equals(ApplicationMenuState other) => ReferenceEquals(this, other);
 }
 
 public record ApplicationGroupState
@@ -87,6 +95,11 @@ public class AddAppMenuPinnedDesktopFileAction
 	public DesktopFile DesktopFile { get; set; }
 }
 
+public class UpdateAppMenuSearchTextAction
+{
+	public string SearchText { get; set; }
+}
+
 public class TogglePinningAction
 {
 	public string ApplicationName { get; set; }
@@ -117,7 +130,13 @@ public class TasksStateReducers
 	[ReducerMethod]
 	public static RootState ReduceAddAppMenuPinnedDesktopFileAction(RootState state, AddAppMenuPinnedDesktopFileAction action)
 	{
-		return state with { AppMenuPinnedDesktopFiles = state.AppMenuPinnedDesktopFiles.Add(action.DesktopFile) };
+		return state with
+		{
+			ApplicationMenuState = state.ApplicationMenuState with
+			{
+				PinnedDesktopFiles = state.ApplicationMenuState.PinnedDesktopFiles.Add(action.DesktopFile)
+			}
+		};
 	}
 
 	[ReducerMethod]
@@ -170,5 +189,11 @@ public class TasksStateReducers
 	public static RootState ReduceUpdateFocusAction(RootState state, UpdateFocusAction action)
 	{
 		return state with { FocusedWindow = action.WindowRef };
+	}
+
+	[ReducerMethod]
+	public static RootState ReduceUpdateAppMenuSearchTextAction(RootState state, UpdateAppMenuSearchTextAction action)
+	{
+		return state with { ApplicationMenuState = state.ApplicationMenuState with { SearchText = action.SearchText } };
 	}
 }

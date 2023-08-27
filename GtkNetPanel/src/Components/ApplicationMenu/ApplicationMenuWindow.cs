@@ -1,23 +1,25 @@
-using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
 using GLib;
 using Gtk;
 using GtkNetPanel.Components.Shared;
+using GtkNetPanel.Services;
 using GtkNetPanel.Services.FreeDesktop;
-using GtkNetPanel.Services.GtkSharp;
+using Key = Gdk.Key;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
 
 namespace GtkNetPanel.Components.ApplicationMenu;
 
+// Need to redo how focus out works so that the context menu can be open and clicked without closing the menu
+// Pinning app to menu shouldn't close it either
+
 public class ApplicationMenuWindow : Window
 {
-	private const int NumColumns = 6;
-
 	private readonly Entry _hiddenEntry;
 	private readonly Subject<DesktopFile> _appLaunch = new();
+	private readonly Subject<string> _searchTextUpdatedSubject = new();
 	private readonly Entry _searchEntry;
 	private readonly List<(int, int)> _keyCodeRanges = new()
 	{
@@ -26,8 +28,32 @@ public class ApplicationMenuWindow : Window
 		(186, 222)
 	};
 
-	public ApplicationMenuWindow(IObservable<ApplicationMenuViewModel> viewModelObservable) : base(WindowType.Toplevel)
+	private readonly Grid _layout;
+
+	public ApplicationMenuWindow(IObservable<ApplicationMenuViewModel> viewModelObservable)
+		: base(WindowType.Toplevel)
 	{
+		var iconCache = new Dictionary<string, ApplicationMenuAppIcon>();
+		var allAppsObservable = viewModelObservable.Select(vm => vm.DesktopFiles).DistinctUntilChanged().UnbundleMany(a => a.Name);
+		var displayedAppsObservable = viewModelObservable.Select(vm => vm.AppsToDisplay).DistinctUntilChanged().UnbundleMany(a => a.Name);
+
+		allAppsObservable.Subscribe(file =>
+		{
+			var appIcon = new ApplicationMenuAppIcon(file);
+			appIcon.Halign = Align.Start;
+			appIcon.Valign = Align.Start;
+			appIcon.Expand = false;
+
+			Observable.FromEventPattern<ButtonReleaseEventArgs>(appIcon, nameof(ButtonReleaseEvent))
+				.TakeUntil(Observable.FromEventPattern<EventArgs>(appIcon, nameof(appIcon.Destroyed)))
+				.Where(e => e.EventArgs.Event.Button == 1)
+				.WithLatestFrom(file)
+				.Subscribe(t => _appLaunch.OnNext(t.Second));
+
+			iconCache.Add(file.Key, appIcon);
+			file.Subscribe(_ => { }, _ => { }, () => iconCache.Remove(file.Key));
+		});
+
 		SkipPagerHint = true;
 		SkipTaskbarHint = true;
 		Decorated = false;
@@ -35,7 +61,7 @@ public class ApplicationMenuWindow : Window
 		CanFocus = false;
 		TypeHint = WindowTypeHint.Dialog;
 		Visual = Screen.RgbaVisual;
-		StyleContext.AddClass("app-menu__window");
+		AppPaintable = true;
 		Visible = false;
 
 		SetSizeRequest(640, 725);
@@ -43,7 +69,7 @@ public class ApplicationMenuWindow : Window
 		_hiddenEntry = new Entry();
 		_hiddenEntry.IsEditable = false;
 
-		_searchEntry = new Entry();
+		_searchEntry = new Entry("");
 		_searchEntry.Expand = true;
 		_searchEntry.IsEditable = true;
 		_searchEntry.Valign = Align.Center;
@@ -53,18 +79,40 @@ public class ApplicationMenuWindow : Window
 		_searchEntry.PrimaryIconStock = Stock.Find;
 		_searchEntry.PlaceholderText = "Search all applications";
 
-		var pinnedLabel = new Label("Pinned");
-		pinnedLabel.Halign = Align.Start;
-		pinnedLabel.Valign = Align.End;
-		pinnedLabel.MarginStart = 58;
-		pinnedLabel.MarginBottom = 16;
-		pinnedLabel.Expand = true;
-		pinnedLabel.StyleContext.AddClass("app-menu__label-pinned");
+		Observable.Return("")
+			.Merge(Observable.FromEventPattern<TextInsertedArgs>(_searchEntry, nameof(_searchEntry.TextInserted)).Select(a => _searchEntry.Text))
+			.Merge(Observable.FromEventPattern<TextDeletedArgs>(_searchEntry, nameof(_searchEntry.TextDeleted)).Select(a => _searchEntry.Text))
+			.TakeUntil(Observable.FromEventPattern<EventArgs>(_searchEntry, nameof(_searchEntry.Destroyed)))
+			.DistinctUntilChanged()
+			.Subscribe(s => _searchTextUpdatedSubject.OnNext(s));
 
-		var pinnedAppsGrid = new Grid();
+		var label = new Label("Pinned");
+		label.Halign = Align.Start;
+		label.Valign = Align.End;
+		label.MarginStart = 58;
+		label.MarginBottom = 16;
+		label.Expand = true;
+		label.StyleContext.AddClass("app-menu__label-pinned");
+
+		viewModelObservable
+			.Select(s => s.SearchText)
+			.Where(s => s != null)
+			.DistinctUntilChanged()
+			.Subscribe(s => label.Text = s.Length > 0 ? "Search results" : "Pinned");
+
+		var pinnedAppsGrid = new FlowBox();
 		pinnedAppsGrid.MarginStart = 32;
 		pinnedAppsGrid.MarginEnd = 32;
-		pinnedAppsGrid.RowSpacing = 16;
+		pinnedAppsGrid.RowSpacing = 0;
+		pinnedAppsGrid.ColumnSpacing = 0;
+		pinnedAppsGrid.MaxChildrenPerLine = 6;
+		pinnedAppsGrid.MinChildrenPerLine = 6;
+		pinnedAppsGrid.SelectionMode = SelectionMode.None;
+		pinnedAppsGrid.Orientation = Orientation.Horizontal;
+		pinnedAppsGrid.Homogeneous = false;
+		pinnedAppsGrid.Valign = Align.Start;
+		pinnedAppsGrid.Halign = Align.Start;
+		pinnedAppsGrid.ForEach(displayedAppsObservable, i => iconCache[i.Key]);
 
 		var pinnedAppsScrolledWindow = new ScrolledWindow();
 		pinnedAppsScrolledWindow.Add(pinnedAppsGrid);
@@ -76,77 +124,38 @@ public class ApplicationMenuWindow : Window
 		actionBar.StyleContext.AddClass("app-menu__action-bar");
 		actionBar.Add(new Label("Test") { Expand = true });
 
-		var layout = new Grid();
-		layout.Expand = true;
-		layout.ColumnHomogeneous = true;
-		layout.Attach(_searchEntry, 2, 0, 4, 1);
-		layout.Attach(_hiddenEntry, 1, 0, 1, 1);
-		layout.Attach(pinnedLabel, 1, 1, 6, 1);
-		layout.Attach(pinnedAppsScrolledWindow, 1, 2, 6, 8);
-		layout.Attach(actionBar, 1, 10, 6, 1);
+		_layout = new Grid();
+		_layout.Expand = true;
+		_layout.ColumnHomogeneous = true;
+		_layout.Attach(_searchEntry, 2, 0, 4, 1);
+		_layout.Attach(_hiddenEntry, 1, 0, 1, 1);
+		_layout.Attach(label, 1, 1, 6, 1);
+		_layout.Attach(pinnedAppsScrolledWindow, 1, 2, 6, 8);
+		_layout.Attach(actionBar, 1, 10, 6, 1);
+		_layout.StyleContext.AddClass("app-menu__window");
 
-		Add(layout);
-
-		var appsObservable = viewModelObservable
-			.Select(v => v.DesktopFiles)
-			.DistinctUntilChanged()
-			.Select(files => files
-				.OrderBy(f => f.Name)
-				.Where(f => !string.IsNullOrEmpty(f.Name) && !string.IsNullOrEmpty(f.Exec.FullExec))
-				.Select(i => (i, CreateAppIcon(i)))
-				.ToList())
-			.Publish();
-
-		var searchEntryUpdated = Observable.Return(new EventPattern<EventArgs>(null, EventArgs.Empty))
-			.Merge(Observable.FromEventPattern<EventArgs>(_searchEntry, nameof(_searchEntry.TextInserted)))
-			.Merge(Observable.FromEventPattern<EventArgs>(_searchEntry, nameof(_searchEntry.TextDeleted)))
-			.Select(_ => _searchEntry.Text);
-
-		var pinnedFilesObservable = viewModelObservable
-			.Select(vm => vm.PinnedFiles)
-			.DistinctUntilChanged()
-			.CombineLatest(appsObservable)
-			.Select(t => t.First.Select(pinnedFile => t.Second.First(app => app.i == pinnedFile)).ToList());
-
-		appsObservable
-			.CombineLatest(pinnedFilesObservable, searchEntryUpdated)
-			.Select(t => string.IsNullOrEmpty(t.Third)
-				? t.Second
-				: t.First.Where(d => d.i.Name.Contains(t.Third, StringComparison.InvariantCultureIgnoreCase)).ToList())
-			.Subscribe(filteredApps =>
-			{
-				pinnedAppsGrid.RemoveAllChildren();
-				pinnedAppsGrid.AutoPopulateGrid(filteredApps.Select(t => t.Item2), NumColumns);
-				pinnedAppsGrid.ShowAll();
-			});
-
-		appsObservable.Connect();
-
-		FocusOutEvent += (_, _) =>
-		{
-			_hiddenEntry.GrabFocus();
-			Visible = false;
-		};
+		Add(_layout);
+		ShowAll();
+		Hide();
+		_hiddenEntry.Hide();
 	}
 
+	public IObservable<string> SearchTextUpdated => _searchTextUpdatedSubject;
 	public IObservable<DesktopFile> AppLaunch => _appLaunch;
 
-	private ApplicationMenuAppIcon CreateAppIcon(DesktopFile desktopFile)
+	protected override bool OnFocusOutEvent(EventFocus evnt)
 	{
-		var appIcon = new ApplicationMenuAppIcon(desktopFile);
-
-		Observable.FromEventPattern<ButtonReleaseEventArgs>(appIcon, nameof(ButtonReleaseEvent))
-				.TakeUntil(Observable.FromEventPattern<EventArgs>(appIcon, nameof(appIcon.Destroyed)))
-				.Where(e => e.EventArgs.Event.Button == 1)
-				.Subscribe(t => _appLaunch.OnNext(desktopFile));
-
-		return appIcon;
+		_hiddenEntry.GrabFocus();
+		Visible = false;
+		_searchEntry.Text = "";
+		_layout.StyleContext.RemoveClass("app-menu__window--state-visible");
+		return base.OnFocusOutEvent(evnt);
 	}
 
 	[ConnectBefore]
 	protected override bool OnKeyPressEvent(EventKey evnt)
 	{
-		if (evnt.Key == Gdk.Key.Escape)
+		if (evnt.Key == Key.Escape)
 		{
 			_hiddenEntry.GrabFocus();
 			_searchEntry.Text = "";
@@ -163,8 +172,8 @@ public class ApplicationMenuWindow : Window
 
 	public void Popup()
 	{
+		Window.SetShadowWidth(0, 0, 0, 0);
 		Visible = true;
-		ShowAll();
 		_hiddenEntry.Hide();
 	}
 }
