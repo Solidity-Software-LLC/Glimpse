@@ -9,9 +9,9 @@ namespace GtkNetPanel.State;
 public class RootStateSelectors
 {
 	public IObservable<RootState> RootState { get; }
-	public IObservable<ApplicationMenuState> ApplicationMenuState { get; }
+	public IObservable<StartMenuState> StartMenuState { get; }
 	public IObservable<ImmutableList<DesktopFile>> PinnedAppBar { get; }
-	public IObservable<ImmutableList<DesktopFile>> PinnedAppMenu { get; }
+	public IObservable<ImmutableList<DesktopFile>> PinnedStartMenu { get; }
 	public IObservable<ImmutableList<DesktopFile>> ValidDesktopFiles { get; }
 	public IObservable<string> SearchText { get; }
 
@@ -28,9 +28,9 @@ public class RootStateSelectors
 			.Select(g => g.Where(a => a.IsPinnedToApplicationBar).Select(g => g.DesktopFile).ToImmutableList())
 			.DistinctUntilChanged((x, y) => x.SequenceEqual(y));
 
-		PinnedAppMenu = RootState
+		PinnedStartMenu = RootState
 			.DistinctUntilChanged()
-			.Select(s => s.ApplicationMenuState)
+			.Select(s => s.StartMenuState)
 			.DistinctUntilChanged()
 			.Select(s => s.PinnedDesktopFiles)
 			.DistinctUntilChanged((x, y) => x.SequenceEqual(y));
@@ -40,11 +40,11 @@ public class RootStateSelectors
 			.DistinctUntilChanged()
 			.Select(s => s.OrderBy(f => f.Name).Where(f => !string.IsNullOrEmpty(f.Name) && !string.IsNullOrEmpty(f.Exec.FullExec)).ToImmutableList());
 
-		ApplicationMenuState = RootState
-			.Select(s => s.ApplicationMenuState)
+		StartMenuState = RootState
+			.Select(s => s.StartMenuState)
 			.DistinctUntilChanged();
 
-		SearchText = ApplicationMenuState
+		SearchText = StartMenuState
 			.Select(s => s.SearchText)
 			.DistinctUntilChanged();
 	}

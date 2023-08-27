@@ -9,10 +9,10 @@ namespace GtkNetPanel.Services.Configuration;
 public class Configuration
 {
 	public ApplicationBarConfiguration ApplicationBar { get; set; } = new();
-	public ApplicationMenuConfiguration ApplicationMenu { get; set; } = new();
+	public StartMenuConfiguration StartMenu { get; set; } = new();
 }
 
-public class ApplicationMenuConfiguration
+public class StartMenuConfiguration
 {
 	public List<string> PinnedLaunchers { get; set; } = new();
 }
@@ -61,21 +61,21 @@ public class ConfigurationService
 			_dispatcher.Dispatch(new AddAppBarPinnedDesktopFileAction() { DesktopFile = desktopFile });
 		}
 
-		foreach (var applicationName in config.ApplicationMenu.PinnedLaunchers)
+		foreach (var applicationName in config.StartMenu.PinnedLaunchers)
 		{
 			var desktopFile = _freeDesktopService.FindAppDesktopFile(applicationName);
-			_dispatcher.Dispatch(new AddAppMenuPinnedDesktopFileAction() { DesktopFile = desktopFile });
+			_dispatcher.Dispatch(new AddStartMenuPinnedDesktopFileAction() { DesktopFile = desktopFile });
 		}
 
 		_rootStateSelectors.PinnedAppBar
-			.CombineLatest(_rootStateSelectors.PinnedAppMenu)
+			.CombineLatest(_rootStateSelectors.PinnedStartMenu)
 			.Skip(1)
 			.Subscribe(t =>
 			{
 				Console.WriteLine("Writing");
 				var newConfig = new Configuration();
 				newConfig.ApplicationBar.PinnedLaunchers.AddRange(t.First.Select(d => d.Name));
-				newConfig.ApplicationMenu.PinnedLaunchers.AddRange(t.Second.Select(d => d.Name));
+				newConfig.StartMenu.PinnedLaunchers.AddRange(t.Second.Select(d => d.Name));
 				File.WriteAllText(configFile, JsonSerializer.Serialize(newConfig, new JsonSerializerOptions(JsonSerializerDefaults.General) { WriteIndented = true }));
 			});
 	}

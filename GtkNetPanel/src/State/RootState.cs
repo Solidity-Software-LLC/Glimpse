@@ -12,17 +12,17 @@ public record RootState
 	public ImmutableList<ApplicationGroupState> Groups = ImmutableList<ApplicationGroupState>.Empty;
 	public GenericWindowRef FocusedWindow = new();
 	public ImmutableList<DesktopFile> DesktopFiles = ImmutableList<DesktopFile>.Empty;
-	public ApplicationMenuState ApplicationMenuState { get; set; } = new();
+	public StartMenuState StartMenuState { get; set; } = new();
 
 	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
 }
 
-public record ApplicationMenuState
+public record StartMenuState
 {
 	public ImmutableList<DesktopFile> PinnedDesktopFiles = ImmutableList<DesktopFile>.Empty;
 	public string SearchText { get; set; }
 
-	public virtual bool Equals(ApplicationMenuState other) => ReferenceEquals(this, other);
+	public virtual bool Equals(StartMenuState other) => ReferenceEquals(this, other);
 }
 
 public record ApplicationGroupState
@@ -31,7 +31,6 @@ public record ApplicationGroupState
 	public DesktopFile DesktopFile { get; set; }
 	public string ApplicationName { get; set; }
 	public bool IsPinnedToApplicationBar { get; set; }
-	public bool IsPinnedToApplicationMenu { get; set; }
 
 	public virtual bool Equals(ApplicationGroupState other) => ReferenceEquals(this, other);
 
@@ -90,12 +89,12 @@ public class AddAppBarPinnedDesktopFileAction
 	public DesktopFile DesktopFile { get; set; }
 }
 
-public class AddAppMenuPinnedDesktopFileAction
+public class AddStartMenuPinnedDesktopFileAction
 {
 	public DesktopFile DesktopFile { get; set; }
 }
 
-public class UpdateAppMenuSearchTextAction
+public class UpdateStartMenuSearchTextAction
 {
 	public string SearchText { get; set; }
 }
@@ -128,13 +127,13 @@ public class TasksStateReducers
 	}
 
 	[ReducerMethod]
-	public static RootState ReduceAddAppMenuPinnedDesktopFileAction(RootState state, AddAppMenuPinnedDesktopFileAction action)
+	public static RootState ReduceAddStartMenuPinnedDesktopFileAction(RootState state, AddStartMenuPinnedDesktopFileAction action)
 	{
 		return state with
 		{
-			ApplicationMenuState = state.ApplicationMenuState with
+			StartMenuState = state.StartMenuState with
 			{
-				PinnedDesktopFiles = state.ApplicationMenuState.PinnedDesktopFiles.Add(action.DesktopFile)
+				PinnedDesktopFiles = state.StartMenuState.PinnedDesktopFiles.Add(action.DesktopFile)
 			}
 		};
 	}
@@ -192,8 +191,8 @@ public class TasksStateReducers
 	}
 
 	[ReducerMethod]
-	public static RootState ReduceUpdateAppMenuSearchTextAction(RootState state, UpdateAppMenuSearchTextAction action)
+	public static RootState ReduceUpdateStartMenuSearchTextAction(RootState state, UpdateStartMenuSearchTextAction action)
 	{
-		return state with { ApplicationMenuState = state.ApplicationMenuState with { SearchText = action.SearchText } };
+		return state with { StartMenuState = state.StartMenuState with { SearchText = action.SearchText } };
 	}
 }

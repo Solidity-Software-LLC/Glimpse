@@ -35,7 +35,7 @@ public class StartMenuLaunchIcon : EventBox
 		_startMenuWindow
 			.SearchTextUpdated
 			.TakeUntilDestroyed(this)
-			.Subscribe(text => dispatcher.Dispatch(new UpdateAppMenuSearchTextAction() { SearchText = text }));
+			.Subscribe(text => dispatcher.Dispatch(new UpdateStartMenuSearchTextAction() { SearchText = text }));
 
 		_startMenuWindow
 			.AppLaunch
