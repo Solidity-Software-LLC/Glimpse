@@ -16,7 +16,10 @@ namespace GtkNetPanel.Components.ApplicationMenu;
 
 public class ApplicationMenuLaunchIcon : EventBox
 {
+	private readonly FreeDesktopService _freeDesktopService;
 	private readonly Subject<EventButton> _buttonRelease = new();
+	private readonly ApplicationMenuWindow _appMenuWindow;
+	private readonly Menu _contextMenu;
 
 	public ApplicationMenuLaunchIcon(FreeDesktopService freeDesktopService, IDispatcher dispatcher, ApplicationMenuSelectors selectors)
 	{
@@ -25,48 +28,41 @@ public class ApplicationMenuLaunchIcon : EventBox
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));
 
-		var contextMenu = new Menu();
-		var appMenuWindow = new ApplicationMenuWindow(viewModelObservable);
+		_freeDesktopService = freeDesktopService;
+		_contextMenu = new Menu();
+		_appMenuWindow = new ApplicationMenuWindow(viewModelObservable);
 
-		appMenuWindow
+		_appMenuWindow
 			.SearchTextUpdated
 			.TakeUntilDestroyed(this)
 			.Subscribe(text => dispatcher.Dispatch(new UpdateAppMenuSearchTextAction() { SearchText = text }));
 
-		appMenuWindow
+		_appMenuWindow
 			.AppLaunch
 			.TakeUntilDestroyed(this)
-			.Subscribe(f =>
-			{
-				appMenuWindow.Hide();
-				freeDesktopService.Run(f.Exec.FullExec);
-			});
+			.Subscribe(LaunchApp);
 
 		Observable
-			.FromEventPattern(appMenuWindow, nameof(appMenuWindow.FocusOutEvent))
+			.FromEventPattern(_appMenuWindow, nameof(_appMenuWindow.FocusOutEvent))
 			.TakeUntilDestroyed(this)
-			.Where(c => !contextMenu.Visible)
-			.Subscribe(_ => appMenuWindow.ClosePopup());
+			.Where(c => !_contextMenu.Visible)
+			.Subscribe(_ => _appMenuWindow.ClosePopup());
 
-		appMenuWindow
+		_appMenuWindow
 			.ContextMenuRequested
 			.TakeUntilDestroyed(this)
 			.WithLatestFrom(viewModelObservable)
-			.Subscribe(t =>
-			{
-				PopulateContextMenu(contextMenu, t.First, t.Second);
-				contextMenu.Popup();
-			});
+			.Subscribe(t => OpenContextMenu(t.First, t.Second));
 
 		_buttonRelease
 			.TakeUntilDestroyed(this)
-			.Where(_ => !appMenuWindow.Visible)
-			.Subscribe(_ => appMenuWindow.Popup(), e => Console.WriteLine(e), () => { });
+			.Where(_ => !_appMenuWindow.Visible)
+			.Subscribe(_ => _appMenuWindow.Popup());
 
 		Observable
-			.FromEventPattern(appMenuWindow, nameof(appMenuWindow.VisibilityNotifyEvent))
+			.FromEventPattern(_appMenuWindow, nameof(_appMenuWindow.VisibilityNotifyEvent))
 			.TakeUntilDestroyed(this)
-			.Subscribe(_ => appMenuWindow.CenterOnScreenAboveWidget(this));
+			.Subscribe(_ => _appMenuWindow.CenterOnScreenAboveWidget(this));
 
 		Expand = false;
 		Valign = Align.Center;
@@ -78,14 +74,21 @@ public class ApplicationMenuLaunchIcon : EventBox
 		Add(new Image(Assets.Ubuntu.ScaleSimple(28, 28, InterpType.Bilinear)));
 	}
 
-	private void PopulateContextMenu(Menu contextMenu, DesktopFile desktopFile, ApplicationMenuViewModel applicationMenuViewModel)
+	private void LaunchApp(DesktopFile desktopFile)
+	{
+		_appMenuWindow.Hide();
+		_freeDesktopService.Run(desktopFile.Exec.FullExec);
+	}
+
+	private void OpenContextMenu(DesktopFile desktopFile, ApplicationMenuViewModel applicationMenuViewModel)
 	{
 		var isPinnedToStart = applicationMenuViewModel.PinnedApps.Any(f => f == desktopFile);
 		var isPinnedToTaskbar = applicationMenuViewModel.PinnedTaskbarApps.Any(f => f == desktopFile);
-		contextMenu.RemoveAllChildren();
-		contextMenu.Add(new MenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start"));
-		contextMenu.Add(new MenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar"));
-		contextMenu.ShowAll();
+		_contextMenu.RemoveAllChildren();
+		_contextMenu.Add(new MenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start"));
+		_contextMenu.Add(new MenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar"));
+		_contextMenu.ShowAll();
+		_contextMenu.Popup();
 	}
 
 	protected override bool OnButtonReleaseEvent(EventButton evnt)
