@@ -4,13 +4,13 @@ using System.Reactive.Linq;
 using GLib;
 using GtkNetPanel.State;
 
-namespace GtkNetPanel.Components.ApplicationMenu;
+namespace GtkNetPanel.Components.StartMenu;
 
-public class ApplicationMenuSelectors
+public class StartMenuSelectors
 {
-	public IObservable<ApplicationMenuViewModel> ViewModel { get; }
+	public IObservable<StartMenuViewModel> ViewModel { get; }
 
-	public ApplicationMenuSelectors(RootStateSelectors rootStateSelectors)
+	public StartMenuSelectors(RootStateSelectors rootStateSelectors)
 	{
 		var appsToDisplayObservable = rootStateSelectors.SearchText
 			.CombineLatest(rootStateSelectors.PinnedAppMenu, rootStateSelectors.ValidDesktopFiles)
@@ -23,9 +23,9 @@ public class ApplicationMenuSelectors
 				rootStateSelectors.SearchText,
 				appsToDisplayObservable,
 				rootStateSelectors.PinnedAppBar)
-			.Select(t => new ApplicationMenuViewModel()
+			.Select(t => new StartMenuViewModel()
 			{
-				PinnedApps = t.First,
+				PinnedStartApps = t.First,
 				AllApps = t.Second,
 				SearchText = t.Third,
 				AppsToDisplay = t.Fourth,

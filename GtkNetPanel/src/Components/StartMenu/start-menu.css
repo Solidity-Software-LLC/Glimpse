@@ -1,36 +1,36 @@
-.app-menu__launch-icon {
+.start-menu__launch-icon {
 	border-radius: 5px;
 }
 
-.app-menu__launch-icon:hover {
+.start-menu__launch-icon:hover {
 	background-color: rgba(255, 255, 255, 0.3);
 }
 
-.app-menu__window {
+.start-menu__window {
 	border: 1px solid #555555;
 	border-radius: 10px;
 	background-color: rgba(48, 48, 48, 1);
 }
 
-.app-menu__action-bar {
+.start-menu__action-bar {
 	border-bottom-right-radius: 10px;
 	border-bottom-left-radius: 10px;
 	background-color: rgba(33, 33, 33, 1);
 }
 
-.app-menu__label-pinned {
+.start-menu__label-pinned {
 	font-weight: bold;
 	font-size: 12px;
 }
 
-.app-menu__search-input text {
+.start-menu__search-input text {
 	color: black;
 	background-color: white;
 	border: 0;
 	border-radius: 15px;
 }
 
-.app-menu__app-icon:hover {
+.start-menu__app-icon:hover {
 	background-color: rgba(255, 255, 255, 0.3);
 	border-radius: 4px;
 }

@@ -12,16 +12,16 @@ using GtkNetPanel.State;
 using Menu = Gtk.Menu;
 using MenuItem = Gtk.MenuItem;
 
-namespace GtkNetPanel.Components.ApplicationMenu;
+namespace GtkNetPanel.Components.StartMenu;
 
-public class ApplicationMenuLaunchIcon : EventBox
+public class StartMenuLaunchIcon : EventBox
 {
 	private readonly FreeDesktopService _freeDesktopService;
 	private readonly Subject<EventButton> _buttonRelease = new();
-	private readonly ApplicationMenuWindow _appMenuWindow;
+	private readonly StartMenuWindow _startMenuWindow;
 	private readonly Menu _contextMenu;
 
-	public ApplicationMenuLaunchIcon(FreeDesktopService freeDesktopService, IDispatcher dispatcher, ApplicationMenuSelectors selectors)
+	public StartMenuLaunchIcon(FreeDesktopService freeDesktopService, IDispatcher dispatcher, StartMenuSelectors selectors)
 	{
 		var viewModelObservable = selectors
 			.ViewModel
@@ -30,25 +30,25 @@ public class ApplicationMenuLaunchIcon : EventBox
 
 		_freeDesktopService = freeDesktopService;
 		_contextMenu = new Menu();
-		_appMenuWindow = new ApplicationMenuWindow(viewModelObservable);
+		_startMenuWindow = new StartMenuWindow(viewModelObservable);
 
-		_appMenuWindow
+		_startMenuWindow
 			.SearchTextUpdated
 			.TakeUntilDestroyed(this)
 			.Subscribe(text => dispatcher.Dispatch(new UpdateAppMenuSearchTextAction() { SearchText = text }));
 
-		_appMenuWindow
+		_startMenuWindow
 			.AppLaunch
 			.TakeUntilDestroyed(this)
 			.Subscribe(LaunchApp);
 
 		Observable
-			.FromEventPattern(_appMenuWindow, nameof(_appMenuWindow.FocusOutEvent))
+			.FromEventPattern(_startMenuWindow, nameof(_startMenuWindow.FocusOutEvent))
 			.TakeUntilDestroyed(this)
 			.Where(c => !_contextMenu.Visible)
-			.Subscribe(_ => _appMenuWindow.ClosePopup());
+			.Subscribe(_ => _startMenuWindow.ClosePopup());
 
-		_appMenuWindow
+		_startMenuWindow
 			.ContextMenuRequested
 			.TakeUntilDestroyed(this)
 			.WithLatestFrom(viewModelObservable)
@@ -56,19 +56,19 @@ public class ApplicationMenuLaunchIcon : EventBox
 
 		_buttonRelease
 			.TakeUntilDestroyed(this)
-			.Where(_ => !_appMenuWindow.Visible)
-			.Subscribe(_ => _appMenuWindow.Popup());
+			.Where(_ => !_startMenuWindow.Visible)
+			.Subscribe(_ => _startMenuWindow.Popup());
 
 		Observable
-			.FromEventPattern(_appMenuWindow, nameof(_appMenuWindow.VisibilityNotifyEvent))
+			.FromEventPattern(_startMenuWindow, nameof(_startMenuWindow.VisibilityNotifyEvent))
 			.TakeUntilDestroyed(this)
-			.Subscribe(_ => _appMenuWindow.CenterOnScreenAboveWidget(this));
+			.Subscribe(_ => _startMenuWindow.CenterOnScreenAboveWidget(this));
 
 		Expand = false;
 		Valign = Align.Center;
 		Halign = Align.Center;
 		CanFocus = false;
-		StyleContext.AddClass("app-menu__launch-icon");
+		StyleContext.AddClass("start-menu__launch-icon");
 		SetSizeRequest(42, 42);
 		this.AddHoverHighlighting();
 		Add(new Image(Assets.Ubuntu.ScaleSimple(28, 28, InterpType.Bilinear)));
@@ -76,14 +76,14 @@ public class ApplicationMenuLaunchIcon : EventBox
 
 	private void LaunchApp(DesktopFile desktopFile)
 	{
-		_appMenuWindow.Hide();
+		_startMenuWindow.Hide();
 		_freeDesktopService.Run(desktopFile.Exec.FullExec);
 	}
 
-	private void OpenContextMenu(DesktopFile desktopFile, ApplicationMenuViewModel applicationMenuViewModel)
+	private void OpenContextMenu(DesktopFile desktopFile, StartMenuViewModel startMenuViewModel)
 	{
-		var isPinnedToStart = applicationMenuViewModel.PinnedApps.Any(f => f == desktopFile);
-		var isPinnedToTaskbar = applicationMenuViewModel.PinnedTaskbarApps.Any(f => f == desktopFile);
+		var isPinnedToStart = startMenuViewModel.PinnedStartApps.Any(f => f == desktopFile);
+		var isPinnedToTaskbar = startMenuViewModel.PinnedTaskbarApps.Any(f => f == desktopFile);
 		_contextMenu.RemoveAllChildren();
 		_contextMenu.Add(new MenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start"));
 		_contextMenu.Add(new MenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar"));

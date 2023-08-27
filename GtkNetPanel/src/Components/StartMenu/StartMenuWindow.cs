@@ -10,9 +10,9 @@ using Key = Gdk.Key;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
 
-namespace GtkNetPanel.Components.ApplicationMenu;
+namespace GtkNetPanel.Components.StartMenu;
 
-public class ApplicationMenuWindow : Window
+public class StartMenuWindow : Window
 {
 	private readonly Entry _hiddenEntry;
 	private readonly Subject<DesktopFile> _appLaunch = new();
@@ -26,16 +26,16 @@ public class ApplicationMenuWindow : Window
 		(186, 222)
 	};
 
-	public ApplicationMenuWindow(IObservable<ApplicationMenuViewModel> viewModelObservable)
+	public StartMenuWindow(IObservable<StartMenuViewModel> viewModelObservable)
 		: base(WindowType.Toplevel)
 	{
-		var iconCache = new Dictionary<string, ApplicationMenuAppIcon>();
+		var iconCache = new Dictionary<string, StartMenuAppIcon>();
 		var allAppsObservable = viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged().UnbundleMany(a => a.Name);
 		var displayedAppsObservable = viewModelObservable.Select(vm => vm.AppsToDisplay).DistinctUntilChanged().UnbundleMany(a => a.Name);
 
 		allAppsObservable.Subscribe(file =>
 		{
-			var appIcon = new ApplicationMenuAppIcon(file);
+			var appIcon = new StartMenuAppIcon(file);
 			appIcon.Halign = Align.Start;
 			appIcon.Valign = Align.Start;
 			appIcon.Expand = false;
@@ -73,7 +73,7 @@ public class ApplicationMenuWindow : Window
 		_searchEntry.Expand = true;
 		_searchEntry.IsEditable = true;
 		_searchEntry.Valign = Align.Center;
-		_searchEntry.StyleContext.AddClass("app-menu__search-input");
+		_searchEntry.StyleContext.AddClass("start-menu__search-input");
 		_searchEntry.HeightRequest = 30;
 		_searchEntry.Halign = Align.Fill;
 		_searchEntry.PrimaryIconStock = Stock.Find;
@@ -92,7 +92,7 @@ public class ApplicationMenuWindow : Window
 		label.MarginStart = 58;
 		label.MarginBottom = 16;
 		label.Expand = true;
-		label.StyleContext.AddClass("app-menu__label-pinned");
+		label.StyleContext.AddClass("start-menu__label-pinned");
 
 		viewModelObservable
 			.Select(s => s.SearchText)
@@ -122,7 +122,7 @@ public class ApplicationMenuWindow : Window
 
 		var actionBar = new Box(Orientation.Horizontal, 0);
 		actionBar.Expand = true;
-		actionBar.StyleContext.AddClass("app-menu__action-bar");
+		actionBar.StyleContext.AddClass("start-menu__action-bar");
 		actionBar.Add(new Label("Test") { Expand = true });
 
 		var layout = new Grid();
@@ -133,7 +133,7 @@ public class ApplicationMenuWindow : Window
 		layout.Attach(label, 1, 1, 6, 1);
 		layout.Attach(pinnedAppsScrolledWindow, 1, 2, 6, 8);
 		layout.Attach(actionBar, 1, 10, 6, 1);
-		layout.StyleContext.AddClass("app-menu__window");
+		layout.StyleContext.AddClass("start-menu__window");
 
 		Add(layout);
 		ShowAll();

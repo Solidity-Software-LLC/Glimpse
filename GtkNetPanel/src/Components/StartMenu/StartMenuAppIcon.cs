@@ -8,13 +8,13 @@ using GtkNetPanel.Services.FreeDesktop;
 using Pango;
 using WrapMode = Pango.WrapMode;
 
-namespace GtkNetPanel.Components.ApplicationMenu;
+namespace GtkNetPanel.Components.StartMenu;
 
-public class ApplicationMenuAppIcon : EventBox
+public class StartMenuAppIcon : EventBox
 {
 	private readonly Subject<DesktopFile> _contextMenuRequested = new();
 
-	public ApplicationMenuAppIcon(IObservable<DesktopFile> desktopFileObservable)
+	public StartMenuAppIcon(IObservable<DesktopFile> desktopFileObservable)
 	{
 		var name = new Label();
 		name.SetSizeRequest(76, 16);
@@ -36,7 +36,7 @@ public class ApplicationMenuAppIcon : EventBox
 		Add(appIconContainer);
 		this.AddHoverHighlighting();
 		SetSizeRequest(82, 76);
-		StyleContext.AddClass("app-menu__app-icon");
+		StyleContext.AddClass("start-menu__app-icon");
 
 		var helper = new ContextMenuHelper(this);
 
