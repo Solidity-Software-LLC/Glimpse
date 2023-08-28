@@ -15,6 +15,7 @@ public class RootStateSelectors
 	public IObservable<ImmutableList<DesktopFile>> PinnedStartMenuApps { get; }
 	public IObservable<ImmutableList<DesktopFile>> AllDesktopFiles { get; }
 	public IObservable<string> SearchText { get; }
+	public IObservable<ImmutableList<TaskState>> Tasks { get; }
 
 	public RootStateSelectors(IState<RootState> rootState)
 	{
@@ -23,8 +24,11 @@ public class RootStateSelectors
 			.DistinctUntilChanged();
 
 		TaskbarState = RootState
-			.DistinctUntilChanged()
 			.Select(s => s.TaskbarState)
+			.DistinctUntilChanged();
+
+		Tasks = TaskbarState
+			.Select(s => s.Tasks)
 			.DistinctUntilChanged();
 
 		PinnedTaskbarApps = TaskbarState
@@ -32,7 +36,6 @@ public class RootStateSelectors
 			.DistinctUntilChanged((x, y) => x.SequenceEqual(y));
 
 		PinnedStartMenuApps = RootState
-			.DistinctUntilChanged()
 			.Select(s => s.StartMenuState)
 			.DistinctUntilChanged()
 			.Select(s => s.PinnedDesktopFiles)

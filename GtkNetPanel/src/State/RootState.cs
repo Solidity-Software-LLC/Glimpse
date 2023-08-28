@@ -19,8 +19,8 @@ public record RootState
 
 public record TaskbarState
 {
-	public ImmutableList<TaskbarGroupState> Groups { get; set; } = ImmutableList<TaskbarGroupState>.Empty;
 	public ImmutableList<DesktopFile> PinnedDesktopFiles { get; set; } = ImmutableList<DesktopFile>.Empty;
+	public ImmutableList<TaskState> Tasks { get; set; } = ImmutableList<TaskState>.Empty;
 
 	public virtual bool Equals(TaskbarState other) => ReferenceEquals(this, other);
 }
@@ -31,28 +31,6 @@ public record StartMenuState
 	public string SearchText { get; set; }
 
 	public virtual bool Equals(StartMenuState other) => ReferenceEquals(this, other);
-}
-
-public record TaskbarGroupState
-{
-	public ImmutableList<TaskState> Tasks { get; set; } = ImmutableList<TaskState>.Empty;
-	public DesktopFile DesktopFile { get; set; }
-	public string ApplicationName { get; set; }
-
-	public virtual bool Equals(TaskbarGroupState other) => ReferenceEquals(this, other);
-
-	public TaskbarGroupState(DesktopFile file)
-	{
-		ApplicationName = file.Name;
-		DesktopFile = file;
-	}
-
-	public TaskbarGroupState(TaskState task)
-	{
-		ApplicationName = task.ApplicationName;
-		DesktopFile = task.DesktopFile;
-		Tasks = Tasks.Add(task);
-	}
 }
 
 public class TaskState
@@ -130,16 +108,7 @@ public class TasksStateReducers
 	[ReducerMethod]
 	public static RootState ReduceAddTaskbarPinnedDesktopFileAction(RootState state, AddTaskbarPinnedDesktopFileAction action)
 	{
-		var groups = state.TaskbarState.Groups;
-		var matchingGroup = groups.FirstOrDefault(g => g.DesktopFile.IniConfiguration.FilePath == action.DesktopFile.IniConfiguration.FilePath);
-		var newState = state with { TaskbarState = state.TaskbarState with { PinnedDesktopFiles = state.TaskbarState.PinnedDesktopFiles.Add(action.DesktopFile), } };
-
-		if (matchingGroup == null)
-		{
-			newState = newState with { TaskbarState = newState.TaskbarState with { Groups = groups.Add(new TaskbarGroupState(action.DesktopFile)) } };
-		}
-
-		return newState;
+		return state with { TaskbarState = state.TaskbarState with { PinnedDesktopFiles = state.TaskbarState.PinnedDesktopFiles.Add(action.DesktopFile) } };
 	}
 
 	[ReducerMethod]
@@ -185,35 +154,15 @@ public class TasksStateReducers
 	[ReducerMethod]
 	public static RootState ReduceAddTaskAction(RootState state, AddTaskAction action)
 	{
-		var groups = state.TaskbarState.Groups;
-		var groupToReplace = groups.FirstOrDefault(t => t.ApplicationName == action.Task.ApplicationName);
-
-		if (groupToReplace == null)
-		{
-			return state with { TaskbarState = state.TaskbarState with { Groups = groups.Add(new TaskbarGroupState(action.Task)) } };
-		}
-
-		var updatedGroup = groupToReplace with { Tasks = groupToReplace.Tasks.Add(action.Task) };
-		return state with { TaskbarState = state.TaskbarState with { Groups = groups.Replace(groupToReplace, updatedGroup) } };
+		return state with { TaskbarState = state.TaskbarState with { Tasks = state.TaskbarState.Tasks.Add(action.Task) } };
 	}
 
 	[ReducerMethod]
 	public static RootState ReduceRemoveTaskAction(RootState state, RemoveTaskAction action)
 	{
-		var group = state.TaskbarState.Groups.FirstOrDefault(g => g.Tasks.Any(t => t.WindowRef.Id == action.WindowId));
-
-		if (group == null) return state;
-
-		var isPinned = state.TaskbarState.PinnedDesktopFiles.Any(f => f.IniConfiguration.FilePath == group.DesktopFile.IniConfiguration.FilePath);
-
-		if (group.Tasks.Count == 1 && !isPinned)
-		{
-			return state with { TaskbarState = state.TaskbarState with { Groups = state.TaskbarState.Groups.Remove(group) } };
-		}
-
-		var taskToRemove = group.Tasks.FirstOrDefault(t => t.WindowRef.Id == action.WindowId);
-		var updatedGroup = group with { Tasks = group.Tasks.Remove(taskToRemove) };
-		return state with { TaskbarState = state.TaskbarState with { Groups = state.TaskbarState.Groups.Replace(group, updatedGroup) } };
+		var taskToRemove = state.TaskbarState.Tasks.FirstOrDefault(t => t.WindowRef.Id == action.WindowId);
+		if (taskToRemove == null) return state;
+		return state with { TaskbarState = state.TaskbarState with { Tasks = state.TaskbarState.Tasks.Remove(taskToRemove) } };
 	}
 
 	[ReducerMethod]

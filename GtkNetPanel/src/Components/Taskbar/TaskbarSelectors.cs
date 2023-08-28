@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Reactive.Linq;
 using GtkNetPanel.State;
 
@@ -9,32 +10,44 @@ public class TaskbarSelectors
 
 	public TaskbarSelectors(RootStateSelectors rootStateSelectors)
 	{
-		var groupsObservable = rootStateSelectors
-			.TaskbarState.Select(s => s.Groups)
-			.DistinctUntilChanged();
-
-		ViewModel = groupsObservable
+		ViewModel = rootStateSelectors.Tasks
 			.CombineLatest(rootStateSelectors.PinnedTaskbarApps)
 			.Select(t =>
 			{
-				var groups = t.First;
-				var pinnedApps = t.Second;
-				var viewModel = new TaskbarViewModel();
+				var allGroups = ImmutableList<ApplicationBarGroupViewModel>.Empty;
 
-				foreach (var g in groups)
+				foreach (var pinned in t.Second)
 				{
-					var groupViewModel = new ApplicationBarGroupViewModel()
+					allGroups = allGroups.Add(new ApplicationBarGroupViewModel()
 					{
-						ApplicationName = g.ApplicationName,
-						DesktopFile = g.DesktopFile,
-						Tasks = g.Tasks,
-						IsPinned = pinnedApps.Any(f => f.IniConfiguration.FilePath == g.DesktopFile.IniConfiguration.FilePath)
-					};
-
-					viewModel.Groups = viewModel.Groups.Add(groupViewModel);
+						ApplicationName = pinned.Name,
+						DesktopFile = pinned,
+						IsPinned = true
+					});
 				}
 
-				return viewModel;
+				foreach (var task in t.First)
+				{
+					var desktopFile = task.DesktopFile;
+					var matchingGroup = allGroups.FirstOrDefault(g => g.DesktopFile.IniConfiguration.FilePath == task.DesktopFile.IniConfiguration.FilePath);
+
+					if (matchingGroup == null)
+					{
+						allGroups = allGroups.Add(new ApplicationBarGroupViewModel()
+						{
+							ApplicationName = desktopFile.Name,
+							DesktopFile = desktopFile,
+							IsPinned = false,
+							Tasks = ImmutableList<TaskState>.Empty.Add(task)
+						});
+					}
+					else
+					{
+						matchingGroup.Tasks = matchingGroup.Tasks.Add(task);
+					}
+				}
+
+				return new TaskbarViewModel() { Groups = allGroups };
 			});
 	}
 }
