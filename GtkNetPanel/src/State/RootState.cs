@@ -9,12 +9,20 @@ namespace GtkNetPanel.State;
 [FeatureState]
 public record RootState
 {
-	public ImmutableList<TaskbarGroupState> TaskbarGroups = ImmutableList<TaskbarGroupState>.Empty;
+	public TaskbarState TaskbarState { get; set; } = new();
 	public GenericWindowRef FocusedWindow = new();
 	public ImmutableList<DesktopFile> DesktopFiles = ImmutableList<DesktopFile>.Empty;
 	public StartMenuState StartMenuState { get; set; } = new();
 
 	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
+}
+
+public record TaskbarState
+{
+	public ImmutableList<TaskbarGroupState> Groups { get; set; } = ImmutableList<TaskbarGroupState>.Empty;
+	public ImmutableList<DesktopFile> PinnedDesktopFiles { get; set; } = ImmutableList<DesktopFile>.Empty;
+
+	public virtual bool Equals(TaskbarState other) => ReferenceEquals(this, other);
 }
 
 public record StartMenuState
@@ -30,7 +38,6 @@ public record TaskbarGroupState
 	public ImmutableList<TaskState> Tasks { get; set; } = ImmutableList<TaskState>.Empty;
 	public DesktopFile DesktopFile { get; set; }
 	public string ApplicationName { get; set; }
-	public bool IsPinnedToApplicationBar { get; set; }
 
 	public virtual bool Equals(TaskbarGroupState other) => ReferenceEquals(this, other);
 
@@ -38,7 +45,6 @@ public record TaskbarGroupState
 	{
 		ApplicationName = file.Name;
 		DesktopFile = file;
-		IsPinnedToApplicationBar = true;
 	}
 
 	public TaskbarGroupState(TaskState task)
@@ -46,7 +52,6 @@ public record TaskbarGroupState
 		ApplicationName = task.ApplicationName;
 		DesktopFile = task.DesktopFile;
 		Tasks = Tasks.Add(task);
-		IsPinnedToApplicationBar = false;
 	}
 }
 
@@ -99,9 +104,14 @@ public class UpdateStartMenuSearchTextAction
 	public string SearchText { get; set; }
 }
 
-public class TogglePinningAction
+public class ToggleTaskbarPinningAction
 {
-	public string ApplicationName { get; set; }
+	public DesktopFile DesktopFile { get; set; }
+}
+
+public class ToggleStartMenuPinningAction
+{
+	public DesktopFile DesktopFile { get; set; }
 }
 
 public class UpdateDesktopFilesAction
@@ -118,12 +128,18 @@ public class TasksStateReducers
 	}
 
 	[ReducerMethod]
-	public static RootState ReduceTogglePinningAction(RootState state, TogglePinningAction action)
+	public static RootState ReduceAddTaskbarPinnedDesktopFileAction(RootState state, AddTaskbarPinnedDesktopFileAction action)
 	{
-		var group = state.TaskbarGroups.FirstOrDefault(g => g.ApplicationName == action.ApplicationName);
-		if (group == null) return state;
-		var newGroup = group with { IsPinnedToApplicationBar = !group.IsPinnedToApplicationBar };
-		return state with { TaskbarGroups = state.TaskbarGroups.Replace(group, newGroup) };
+		var groups = state.TaskbarState.Groups;
+		var matchingGroup = groups.FirstOrDefault(g => g.DesktopFile.IniConfiguration.FilePath == action.DesktopFile.IniConfiguration.FilePath);
+		var newState = state with { TaskbarState = state.TaskbarState with { PinnedDesktopFiles = state.TaskbarState.PinnedDesktopFiles.Add(action.DesktopFile), } };
+
+		if (matchingGroup == null)
+		{
+			newState = newState with { TaskbarState = newState.TaskbarState with { Groups = groups.Add(new TaskbarGroupState(action.DesktopFile)) } };
+		}
+
+		return newState;
 	}
 
 	[ReducerMethod]
@@ -139,49 +155,65 @@ public class TasksStateReducers
 	}
 
 	[ReducerMethod]
-	public static RootState ReduceAddTaskbarPinnedDesktopFileAction(RootState state, AddTaskbarPinnedDesktopFileAction action)
+	public static RootState ReduceToggleTaskbarPinningAction(RootState state, ToggleTaskbarPinningAction action)
 	{
-		var groups = state.TaskbarGroups;
-		var groupToReplace = groups.FirstOrDefault(t => t.ApplicationName == action.DesktopFile.Name);
+		var pinnedApps = state.TaskbarState.PinnedDesktopFiles;
+		var desktopFileToRemove = pinnedApps.FirstOrDefault(a => a.IniConfiguration.FilePath == action.DesktopFile.IniConfiguration.FilePath);
 
-		if (groupToReplace == null)
+		if (desktopFileToRemove != null)
 		{
-			return state with { TaskbarGroups = groups.Add(new TaskbarGroupState(action.DesktopFile)) };
+			return state with { TaskbarState = state.TaskbarState with { PinnedDesktopFiles = pinnedApps.Remove(desktopFileToRemove) } };
 		}
 
-		return state;
+		return state with { TaskbarState = state.TaskbarState with { PinnedDesktopFiles = pinnedApps.Add(action.DesktopFile) } };
+	}
+
+	[ReducerMethod]
+	public static RootState ReduceToggleStartMenuPinningAction(RootState state, ToggleStartMenuPinningAction action)
+	{
+		var pinnedApps = state.StartMenuState.PinnedDesktopFiles;
+		var desktopFileToRemove = pinnedApps.FirstOrDefault(a => a.IniConfiguration.FilePath == action.DesktopFile.IniConfiguration.FilePath);
+
+		if (desktopFileToRemove != null)
+		{
+			return state with { StartMenuState = state.StartMenuState with { PinnedDesktopFiles = pinnedApps.Remove(desktopFileToRemove) } };
+		}
+
+		return state with { StartMenuState = state.StartMenuState with { PinnedDesktopFiles = pinnedApps.Add(action.DesktopFile) } };
 	}
 
 	[ReducerMethod]
 	public static RootState ReduceAddTaskAction(RootState state, AddTaskAction action)
 	{
-		var groups = state.TaskbarGroups;
+		var groups = state.TaskbarState.Groups;
 		var groupToReplace = groups.FirstOrDefault(t => t.ApplicationName == action.Task.ApplicationName);
 
 		if (groupToReplace == null)
 		{
-			return state with { TaskbarGroups = groups.Add(new TaskbarGroupState(action.Task)) };
+			return state with { TaskbarState = state.TaskbarState with { Groups = groups.Add(new TaskbarGroupState(action.Task)) } };
 		}
 
 		var updatedGroup = groupToReplace with { Tasks = groupToReplace.Tasks.Add(action.Task) };
-		return state with { TaskbarGroups = groups.Replace(groupToReplace, updatedGroup) };
+		return state with { TaskbarState = state.TaskbarState with { Groups = groups.Replace(groupToReplace, updatedGroup) } };
 	}
 
 	[ReducerMethod]
 	public static RootState ReduceRemoveTaskAction(RootState state, RemoveTaskAction action)
 	{
-		var group = state.TaskbarGroups.FirstOrDefault(g => g.Tasks.Any(t => t.WindowRef.Id == action.WindowId));
+		var group = state.TaskbarState.Groups.FirstOrDefault(g => g.Tasks.Any(t => t.WindowRef.Id == action.WindowId));
 
 		if (group == null) return state;
 
-		if (group.Tasks.Count == 1 && !group.IsPinnedToApplicationBar)
+		var isPinned = state.TaskbarState.PinnedDesktopFiles.Any(f => f.IniConfiguration.FilePath == group.DesktopFile.IniConfiguration.FilePath);
+
+		if (group.Tasks.Count == 1 && !isPinned)
 		{
-			return state with { TaskbarGroups = state.TaskbarGroups.Remove(group) };
+			return state with { TaskbarState = state.TaskbarState with { Groups = state.TaskbarState.Groups.Remove(group) } };
 		}
 
 		var taskToRemove = group.Tasks.FirstOrDefault(t => t.WindowRef.Id == action.WindowId);
 		var updatedGroup = group with { Tasks = group.Tasks.Remove(taskToRemove) };
-		return state with { TaskbarGroups = state.TaskbarGroups.Replace(group, updatedGroup) };
+		return state with { TaskbarState = state.TaskbarState with { Groups = state.TaskbarState.Groups.Replace(group, updatedGroup) } };
 	}
 
 	[ReducerMethod]

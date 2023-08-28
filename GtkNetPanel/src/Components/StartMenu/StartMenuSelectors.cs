@@ -13,9 +13,11 @@ public class StartMenuSelectors
 	public StartMenuSelectors(RootStateSelectors rootStateSelectors)
 	{
 		var appsToDisplayObservable = rootStateSelectors.SearchText
-			.CombineLatest(rootStateSelectors.PinnedStartMenuApps, rootStateSelectors.AllDesktopFiles)
-			.Select(t => string.IsNullOrEmpty(t.First) ? t.Second : t.Third.Where(d => d.Name.Contains(t.First, StringComparison.InvariantCultureIgnoreCase)).ToImmutableList())
-			.Do(_ => { }, e => Console.WriteLine(e));
+			.CombineLatest(
+				rootStateSelectors.PinnedStartMenuApps,
+				rootStateSelectors.AllDesktopFiles)
+			.Select(t => string.IsNullOrEmpty(t.First) ? t.Second
+				: t.Third.Where(d => d.Name.Contains(t.First, StringComparison.InvariantCultureIgnoreCase)).ToImmutableList());
 
 		ViewModel = rootStateSelectors.PinnedStartMenuApps
 			.CombineLatest(

@@ -33,8 +33,7 @@ public static class Program
 				containerBuilder.RegisterType<App>();
 				containerBuilder.RegisterType<SystemTrayBox>();
 				containerBuilder.RegisterType<TaskbarView>();
-				containerBuilder.RegisterType<TaskbarController>();
-				containerBuilder.RegisterType<TaskbarViewModel>();
+				containerBuilder.RegisterType<TaskbarSelectors>().SingleInstance();
 				containerBuilder.RegisterType<StartMenuLaunchIcon>();
 				containerBuilder.RegisterType<FreeDesktopService>().SingleInstance();
 				containerBuilder.RegisterType<X11DisplayServer>().As<X11DisplayServer>().As<IDisplayServer>().SingleInstance();

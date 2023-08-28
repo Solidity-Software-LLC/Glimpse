@@ -17,6 +17,7 @@ namespace GtkNetPanel.Components.StartMenu;
 public class StartMenuLaunchIcon : EventBox
 {
 	private readonly FreeDesktopService _freeDesktopService;
+	private readonly IDispatcher _dispatcher;
 	private readonly Subject<EventButton> _buttonRelease = new();
 	private readonly StartMenuWindow _startMenuWindow;
 	private readonly Menu _contextMenu;
@@ -29,6 +30,7 @@ public class StartMenuLaunchIcon : EventBox
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));
 
 		_freeDesktopService = freeDesktopService;
+		_dispatcher = dispatcher;
 		_contextMenu = new Menu();
 		_startMenuWindow = new StartMenuWindow(viewModelObservable);
 
@@ -84,9 +86,20 @@ public class StartMenuLaunchIcon : EventBox
 	{
 		var isPinnedToStart = startMenuViewModel.PinnedStartApps.Any(f => f == desktopFile);
 		var isPinnedToTaskbar = startMenuViewModel.PinnedTaskbarApps.Any(f => f == desktopFile);
+		var pinStart = new MenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start");
+		var pinTaskbar = new MenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar");
+
+		Observable.FromEventPattern(pinStart, nameof(pinStart.ButtonPressEvent))
+			.TakeUntilDestroyed(pinStart)
+			.Subscribe(_ => _dispatcher.Dispatch(new ToggleStartMenuPinningAction() { DesktopFile = desktopFile }));
+
+		Observable.FromEventPattern(pinTaskbar, nameof(pinTaskbar.ButtonPressEvent))
+			.TakeUntilDestroyed(pinTaskbar)
+			.Subscribe(_ => _dispatcher.Dispatch(new ToggleTaskbarPinningAction() { DesktopFile = desktopFile }));
+
 		_contextMenu.RemoveAllChildren();
-		_contextMenu.Add(new MenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start"));
-		_contextMenu.Add(new MenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar"));
+		_contextMenu.Add(pinStart);
+		_contextMenu.Add(pinTaskbar);
 		_contextMenu.ShowAll();
 		_contextMenu.Popup();
 	}

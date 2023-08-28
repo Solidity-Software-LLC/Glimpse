@@ -1,18 +1,26 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using Fluxor;
 using GLib;
 using Gtk;
 using GtkNetPanel.Components.Shared;
 using GtkNetPanel.Components.Taskbar.Components;
 using GtkNetPanel.Services;
+using GtkNetPanel.Services.DisplayServer;
+using GtkNetPanel.Services.FreeDesktop;
+using GtkNetPanel.State;
 
 namespace GtkNetPanel.Components.Taskbar;
 
 public class TaskbarView : Box
 {
-	public TaskbarView(TaskbarController controller)
+	public TaskbarView(TaskbarSelectors selectors, IDisplayServer displayServer, FreeDesktopService freeDesktopService, IDispatcher dispatcher)
 	{
-		var forEachObs = controller.ViewModel.Select(g => g.Groups).DistinctUntilChanged().UnbundleMany(g => g.ApplicationName);
+		var viewModelSelector = selectors.ViewModel
+			.TakeUntilDestroyed(this)
+			.ObserveOn(new GLibSynchronizationContext());
+
+		var forEachObs = viewModelSelector.Select(g => g.Groups).DistinctUntilChanged().UnbundleMany(g => g.ApplicationName);
 		var forEachGroup = new ForEach<ApplicationBarGroupViewModel>(forEachObs, viewModelObservable =>
 		{
 			var replayLatestViewModelObservable = viewModelObservable.Replay(1);
@@ -24,10 +32,10 @@ public class TaskbarView : Box
 				.Subscribe(_ => windowPicker.CenterAbove(groupIcon));
 
 			windowPicker.PreviewWindowClicked
-				.Subscribe(w => controller.MakeWindowVisible(w));
+				.Subscribe(displayServer.MakeWindowVisible);
 
 			windowPicker.CloseWindow
-				.Subscribe(w => controller.CloseWindow(w));
+				.Subscribe(displayServer.CloseWindow);
 
 			Observable.FromEventPattern<EnterNotifyEventArgs>(groupIcon, nameof(EnterNotifyEvent))
 				.WithLatestFrom(replayLatestViewModelObservable)
@@ -36,7 +44,7 @@ public class TaskbarView : Box
 				.TakeUntil(Observable.FromEventPattern<LeaveNotifyEventArgs>(groupIcon, nameof(LeaveNotifyEvent)))
 				.Repeat()
 				.Where(_ => !windowPicker.Visible)
-				.Subscribe(_ => windowPicker.Popup(), e => Console.WriteLine(e), () => { });
+				.Subscribe(_ => windowPicker.Popup(), Console.WriteLine, () => { });
 
 			groupIcon.ContextMenuOpened
 				.Subscribe(_ => contextMenu.Popup());
@@ -44,12 +52,12 @@ public class TaskbarView : Box
 			groupIcon.ButtonRelease
 				.WithLatestFrom(viewModelObservable)
 				.Where(t => t.First.Button == 1 && t.Second.Tasks.Count == 0)
-				.Subscribe(t => controller.Launch(t.Second));
+				.Subscribe(t => freeDesktopService.Run(t.Second.DesktopFile.Exec.FullExec));
 
 			groupIcon.ButtonRelease
 				.WithLatestFrom(viewModelObservable)
 				.Where(t => t.First.Button == 1 && t.Second.Tasks.Count == 1)
-				.Subscribe(t => controller.ToggleWindowVisibility(t.Second.Tasks.First().WindowRef));
+				.Subscribe(t => displayServer.ToggleWindowVisibility(t.Second.Tasks.First().WindowRef));
 
 			groupIcon.ButtonRelease
 				.WithLatestFrom(viewModelObservable)
@@ -58,19 +66,19 @@ public class TaskbarView : Box
 
 			contextMenu.WindowAction
 				.WithLatestFrom(viewModelObservable)
-				.Subscribe(t => controller.HandleWindowAction(t.First, t.Second));
+				.Subscribe(t => t.Second.Tasks.ForEach(task => displayServer.CloseWindow(task.WindowRef)));
 
 			contextMenu.DesktopFileAction
 				.WithLatestFrom(viewModelObservable)
-				.Subscribe(t => controller.HandleDesktopFileAction(t.First, t.Second));
+				.Subscribe(t => freeDesktopService.Run(t.First));
 
 			contextMenu.Pin
 				.WithLatestFrom(viewModelObservable)
-				.Subscribe(t => controller.TogglePinning(t.Second));
+				.Subscribe(t => dispatcher.Dispatch(new ToggleTaskbarPinningAction() { DesktopFile = t.Second.DesktopFile }));
 
 			contextMenu.Launch
 				.WithLatestFrom(viewModelObservable)
-				.Subscribe(t => controller.Launch(t.Second));
+				.Subscribe(t => freeDesktopService.Run(t.Second.DesktopFile.Exec.FullExec));
 
 			replayLatestViewModelObservable.Connect();
 			return groupIcon;

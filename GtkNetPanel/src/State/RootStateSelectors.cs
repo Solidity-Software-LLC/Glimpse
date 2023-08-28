@@ -10,6 +10,7 @@ public class RootStateSelectors
 {
 	public IObservable<RootState> RootState { get; }
 	public IObservable<StartMenuState> StartMenuState { get; }
+	public IObservable<TaskbarState> TaskbarState { get; }
 	public IObservable<ImmutableList<DesktopFile>> PinnedTaskbarApps { get; }
 	public IObservable<ImmutableList<DesktopFile>> PinnedStartMenuApps { get; }
 	public IObservable<ImmutableList<DesktopFile>> AllDesktopFiles { get; }
@@ -21,11 +22,13 @@ public class RootStateSelectors
 			.ToObservable()
 			.DistinctUntilChanged();
 
-		PinnedTaskbarApps = RootState
+		TaskbarState = RootState
 			.DistinctUntilChanged()
-			.Select(s => s.TaskbarGroups)
-			.DistinctUntilChanged()
-			.Select(g => g.Where(a => a.IsPinnedToApplicationBar).Select(g => g.DesktopFile).ToImmutableList())
+			.Select(s => s.TaskbarState)
+			.DistinctUntilChanged();
+
+		PinnedTaskbarApps = TaskbarState
+			.Select(s => s.PinnedDesktopFiles)
 			.DistinctUntilChanged((x, y) => x.SequenceEqual(y));
 
 		PinnedStartMenuApps = RootState
