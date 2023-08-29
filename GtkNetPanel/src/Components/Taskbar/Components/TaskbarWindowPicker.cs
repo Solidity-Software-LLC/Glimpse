@@ -59,32 +59,13 @@ public class TaskbarWindowPicker : Window
 		GrabFocus();
 	}
 
-	// This is duplicated in multiple places
-	private Pixbuf LoadImage(ApplicationBarGroupViewModel group)
-	{
-		if (!string.IsNullOrEmpty(group.DesktopFile.IconName))
-		{
-			if (group.DesktopFile.IconName.StartsWith("/"))
-			{
-				return new Pixbuf(File.ReadAllBytes(group.DesktopFile.IconName));
-			}
-
-			return IconTheme.GetForScreen(Screen).LoadIcon(group.DesktopFile.IconName, 26, IconLookupFlags.DirLtr);
-		}
-
-		if (group.Tasks.Count > 0)
-		{
-			var task = group.Tasks.First();
-			var biggestIcon = task.Icons.MaxBy(i => i.Width);
-			return new Pixbuf(biggestIcon.Data, Colorspace.Rgb, true, 8, biggestIcon.Width, biggestIcon.Height, sizeof(int) * biggestIcon.Width);
-		}
-
-		return IconTheme.GetForScreen(Screen).LoadIcon("application-default-icon", 26, IconLookupFlags.DirLtr);
-	}
-
 	private Widget CreateAppPreview(ApplicationBarGroupViewModel viewModel, TaskState task)
 	{
-		var appIcon = new Image(LoadImage(viewModel).ScaleSimple(16, 16, InterpType.Bilinear));
+		var icon = IconLoader.LoadIcon(viewModel.DesktopFile.IconName, 16)
+			?? IconLoader.LoadIcon(task, 16)
+			?? IconLoader.DefaultAppIcon(16);
+
+		var appIcon = new Image(icon);
 
 		var appName = new Label(task.Title);
 		appName.Ellipsize = EllipsizeMode.End;

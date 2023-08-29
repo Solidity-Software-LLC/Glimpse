@@ -47,4 +47,18 @@ public static class Extensions
 	{
 		return obs.TakeUntil(Observable.FromEventPattern(source, nameof(source.Destroyed)).Take(1));
 	}
+
+	public static IObservable<bool> CreateContextMenuObservable(this Widget widget)
+	{
+		var buttonPressObs = Observable.FromEventPattern<ButtonPressEventArgs>(widget, nameof(widget.ButtonPressEvent))
+			.TakeUntilDestroyed(widget)
+			.Where(e => e.EventArgs.Event.Button == 3 && e.EventArgs.Event.Type == EventType.ButtonPress)
+			.Select(e => true);
+
+		var popupMenuObs = Observable.FromEventPattern<PopupMenuArgs>(widget, nameof(widget.PopupMenu))
+			.TakeUntilDestroyed(widget)
+			.Select(e => true);
+
+		return buttonPressObs.Merge(popupMenuObs);
+	}
 }

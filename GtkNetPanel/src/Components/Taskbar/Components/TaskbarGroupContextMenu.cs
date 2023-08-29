@@ -1,6 +1,8 @@
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
 using Gtk;
+using GtkNetPanel.Components.Shared;
 using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;
 
@@ -33,13 +35,13 @@ public class TaskbarGroupContextMenu : Menu
 	{
 		if (barGroup.Tasks.Count == 0)
 		{
-			CreateDesktopFileActions(barGroup).ForEach(Add);
+			CreateDesktopFileActions(barGroup.DesktopFile).ForEach(Add);
 			Add(CreateLaunchMenuItem(barGroup));
 			Add(CreatePinMenuItem(barGroup));
 		}
 		else
 		{
-			CreateDesktopFileActions(barGroup).ForEach(Add);
+			CreateDesktopFileActions(barGroup.DesktopFile).ForEach(Add);
 			Add(CreateLaunchMenuItem(barGroup));
 			Add(CreatePinMenuItem(barGroup));
 			if (CreateCloseAction(barGroup) is { } closeAction) Add(closeAction);
@@ -52,14 +54,14 @@ public class TaskbarGroupContextMenu : Menu
 	{
 		var pinLabel = group.IsPinned ? "Unpin from taskbar" : "Pin to taskbar";
 		var icon = group.IsPinned ? Assets.UnpinIcon : Assets.PinIcon;
-		var pinMenuItem = CreateMenuItem(pinLabel, icon);
+		var pinMenuItem = ContextMenuHelper.CreateMenuItem(pinLabel, icon.ScaleSimple(16, 16, InterpType.Bilinear));
 		pinMenuItem.ButtonReleaseEvent += (o, args) => _pinSubject.OnNext(true);
 		return pinMenuItem;
 	}
 
 	private MenuItem CreateLaunchMenuItem(ApplicationBarGroupViewModel group)
 	{
-		var pinMenuItem = CreateMenuItem(group.DesktopFile.Name, group.DesktopFile.IconName);
+		var pinMenuItem = ContextMenuHelper.CreateMenuItem(group.DesktopFile.Name, IconLoader.LoadIcon(group.DesktopFile.IconName, 16));
 		pinMenuItem.ButtonReleaseEvent += (o, args) => _launch.OnNext(group.DesktopFile);
 		return pinMenuItem;
 	}
@@ -70,7 +72,7 @@ public class TaskbarGroupContextMenu : Menu
 
 		if (allowedActions.Contains(AllowedWindowActions.Close))
 		{
-			var menuItem = CreateMenuItem("Close", Assets.Close);
+			var menuItem = ContextMenuHelper.CreateMenuItem("Close", Assets.Close.ScaleSimple(16, 16, InterpType.Bilinear));
 			menuItem.ButtonReleaseEvent += (o, args) => _windowAction.OnNext(AllowedWindowActions.Close);
 			return menuItem;
 		}
@@ -78,66 +80,20 @@ public class TaskbarGroupContextMenu : Menu
 		return null;
 	}
 
-	private List<MenuItem> CreateDesktopFileActions(ApplicationBarGroupViewModel barGroup)
+	private List<MenuItem> CreateDesktopFileActions(DesktopFile desktopFile)
 	{
-		var results = new List<MenuItem>();
-		var desktopFile = barGroup.DesktopFile;
+		var menuItems = ContextMenuHelper.CreateDesktopFileActions(desktopFile);
+		menuItems.Add(new SeparatorMenuItem());
 
-		if (desktopFile != null && desktopFile.Actions.Count > 0)
+		menuItems.ForEach(m =>
 		{
-			var headerLabel = new Label("Tasks");
-			headerLabel.Halign = Align.Start;
-			headerLabel.StyleContext.AddClass("header-menu-item-label");
+			var action = (DesktopFileAction)m.Data["DesktopFileAction"];
 
-			var header = new SeparatorMenuItem();
-			header.StyleContext.AddClass("header-menu-item");
-			header.Add(headerLabel);
+			Observable.FromEventPattern(m, nameof(m.ButtonReleaseEvent))
+				.TakeUntilDestroyed(m)
+				.Subscribe(_ => _desktopFileAction.OnNext(action));
+		});
 
-			results.Add(header);
-
-			foreach (var action in desktopFile.Actions)
-			{
-				var menuItem = CreateMenuItem(action.ActionName, action.IconName);
-				menuItem.ButtonReleaseEvent += (o, args) => _desktopFileAction.OnNext(action);
-				results.Add(menuItem);
-			}
-
-			results.Add(new SeparatorMenuItem());
-		}
-
-		return results;
-	}
-
-	private MenuItem CreateMenuItem(string label, string iconName)
-	{
-		Pixbuf imageBuffer = null;
-
-		if (!string.IsNullOrEmpty(iconName))
-		{
-			if (iconName.StartsWith("/"))
-			{
-				imageBuffer = new Pixbuf(File.ReadAllBytes(iconName));
-			}
-			else
-			{
-				imageBuffer = IconTheme.GetForScreen(Screen).LoadIcon(iconName, 26, IconLookupFlags.DirLtr);
-			}
-		}
-
-		return CreateMenuItem(label, imageBuffer);
-	}
-
-	private MenuItem CreateMenuItem(string label, Pixbuf icon)
-	{
-		var image = new Image();
-		image.Pixbuf = icon?.ScaleSimple(16, 16, InterpType.Bilinear);
-
-		var box = new Box(Orientation.Horizontal, 6);
-		box.Add(image);
-		box.Add(new Label(label));
-
-		var menuItem = new MenuItem();
-		menuItem.Add(box);
-		return menuItem;
+		return menuItems;
 	}
 }

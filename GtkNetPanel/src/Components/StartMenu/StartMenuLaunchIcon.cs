@@ -10,7 +10,6 @@ using GtkNetPanel.Services.FreeDesktop;
 using GtkNetPanel.Services.GtkSharp;
 using GtkNetPanel.State;
 using Menu = Gtk.Menu;
-using MenuItem = Gtk.MenuItem;
 
 namespace GtkNetPanel.Components.StartMenu;
 
@@ -31,7 +30,7 @@ public class StartMenuLaunchIcon : EventBox
 
 		_freeDesktopService = freeDesktopService;
 		_dispatcher = dispatcher;
-		_contextMenu = new Menu();
+		_contextMenu = new Menu() { ReserveToggleSize = false };
 		_startMenuWindow = new StartMenuWindow(viewModelObservable);
 
 		_startMenuWindow
@@ -84,10 +83,23 @@ public class StartMenuLaunchIcon : EventBox
 
 	private void OpenContextMenu(DesktopFile desktopFile, StartMenuViewModel startMenuViewModel)
 	{
+		var menuItems = ContextMenuHelper.CreateDesktopFileActions(desktopFile);
+
+		menuItems.ForEach(m =>
+		{
+			var action = (DesktopFileAction)m.Data["DesktopFileAction"];
+
+			Observable.FromEventPattern(m, nameof(m.ButtonReleaseEvent))
+				.TakeUntilDestroyed(m)
+				.Subscribe(_ => _freeDesktopService.Run(action));
+		});
+
 		var isPinnedToStart = startMenuViewModel.PinnedStartApps.Any(f => f == desktopFile);
 		var isPinnedToTaskbar = startMenuViewModel.PinnedTaskbarApps.Any(f => f == desktopFile);
-		var pinStart = new MenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start");
-		var pinTaskbar = new MenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar");
+		var pinStartIcon = isPinnedToStart ? Assets.UnpinIcon : Assets.PinIcon;
+		var pinTaskbarIcon = isPinnedToTaskbar ? Assets.UnpinIcon : Assets.PinIcon;
+		var pinStart = ContextMenuHelper.CreateMenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start", pinStartIcon.ScaleSimple(16, 16, InterpType.Bilinear));
+		var pinTaskbar = ContextMenuHelper.CreateMenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar", pinTaskbarIcon.ScaleSimple(16, 16, InterpType.Bilinear));
 
 		Observable.FromEventPattern(pinStart, nameof(pinStart.ButtonPressEvent))
 			.TakeUntilDestroyed(pinStart)
@@ -98,6 +110,13 @@ public class StartMenuLaunchIcon : EventBox
 			.Subscribe(_ => _dispatcher.Dispatch(new ToggleTaskbarPinningAction() { DesktopFile = desktopFile }));
 
 		_contextMenu.RemoveAllChildren();
+
+		if (menuItems.Any())
+		{
+			menuItems.ForEach(_contextMenu.Add);
+			_contextMenu.Add(new SeparatorMenuItem());
+		}
+
 		_contextMenu.Add(pinStart);
 		_contextMenu.Add(pinTaskbar);
 		_contextMenu.ShowAll();

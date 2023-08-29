@@ -2,6 +2,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
 using Gtk;
+using GtkNetPanel.Components.Shared;
 using GtkNetPanel.Components.Shared.ContextMenu;
 using GtkNetPanel.Services.DBus.StatusNotifierItem;
 using GtkNetPanel.Services.GtkSharp;
@@ -15,15 +16,16 @@ public class SystemTrayIcon : EventBox
 {
 	private readonly Menu _contextMenu;
 	private readonly LinkedList<IDisposable> _disposables = new();
-	private readonly ContextMenuHelper _helper;
 	private readonly Subject<int> _menuItemActivatedSubject = new();
 	private readonly Subject<(int, int)> _applicationActivated = new();
 
 	public SystemTrayIcon(IObservable<SystemTrayItemState> viewModelObservable)
 	{
 		_contextMenu = new Menu();
-		_helper = new ContextMenuHelper(this);
-		_disposables.AddLast(_helper);
+
+		this.CreateContextMenuObservable()
+			.Where(_ => _contextMenu.Children.Any())
+			.Subscribe(_ => _contextMenu.Popup());
 
 		AddEvents((int)EventMask.ButtonReleaseMask);
 		var hasActivateMethod = false;
@@ -51,11 +53,6 @@ public class SystemTrayIcon : EventBox
 				var allMenuItems = DbusContextMenuHelpers.GetAllMenuItems(_contextMenu);
 				foreach (var i in allMenuItems) i.Activated += (_, _) => _menuItemActivatedSubject.OnNext(i.GetDbusMenuItem().Id);
 			}));
-
-		_disposables.AddLast(
-			Observable.FromEventPattern<EventArgs>(_helper, nameof(_helper.ContextMenu))
-				.Where(_ => _contextMenu.Children.Any())
-				.Subscribe(_ => _contextMenu.Popup()));
 
 		_disposables.AddLast(
 			Observable.FromEventPattern<ButtonPressEventArgs>(this, nameof(ButtonPressEvent))

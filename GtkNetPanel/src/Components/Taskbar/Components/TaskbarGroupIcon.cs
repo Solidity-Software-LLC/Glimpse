@@ -4,7 +4,6 @@ using Cairo;
 using Gdk;
 using Gtk;
 using GtkNetPanel.Components.Shared;
-using GtkNetPanel.Components.Shared.ContextMenu;
 
 namespace GtkNetPanel.Components.Taskbar.Components;
 
@@ -21,13 +20,9 @@ public class TaskbarGroupIcon : EventBox
 		Valign = Align.Center;
 		AppPaintable = true;
 		Visual = Screen.RgbaVisual;
-		var contextMenuHelper = new ContextMenuHelper(this);
-		AddEvents((int)(EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
 
-		contextMenuHelper.ContextMenu += (_, _) =>
-		{
-			_contextMenuObservable.OnNext(true);
-		};
+		this.CreateContextMenuObservable().Subscribe(_ => _contextMenuObservable.OnNext(true));
+		AddEvents((int)(EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
 
 		EnterNotifyEvent += (_, _) =>
 		{
@@ -49,32 +44,10 @@ public class TaskbarGroupIcon : EventBox
 		viewModel.DistinctUntilChanged(x => x.Tasks.Count).Subscribe(group =>
 		{
 			_currentViewModel = group;
-			Pixbuf imageBuffer;
 
-			if (!string.IsNullOrEmpty(group.DesktopFile.IconName))
-			{
-				if (group.DesktopFile.IconName.StartsWith("/"))
-				{
-					imageBuffer = new Pixbuf(File.ReadAllBytes(group.DesktopFile.IconName));
-				}
-				else
-				{
-					imageBuffer = IconTheme.GetForScreen(Screen).LoadIcon(group.DesktopFile.IconName, 26, IconLookupFlags.DirLtr);
-				}
-			}
-			else if (group.Tasks.Count > 0)
-			{
-				var task = group.Tasks.First();
-				var biggestIcon = task.Icons.MaxBy(i => i.Width);
-				imageBuffer = new Pixbuf(biggestIcon.Data, Colorspace.Rgb, true, 8, biggestIcon.Width, biggestIcon.Height, sizeof(int) * biggestIcon.Width);
-			}
-			else
-			{
-				imageBuffer = IconTheme.GetForScreen(Screen).LoadIcon("application-default-icon", 26, IconLookupFlags.DirLtr);
-			}
-
-			imageBuffer = imageBuffer.ScaleSimple(26, 26, InterpType.Bilinear);
-			image.Pixbuf = imageBuffer;
+			image.Pixbuf = IconLoader.LoadIcon(group.DesktopFile.IconName, 26)
+				?? IconLoader.LoadIcon(group.Tasks.FirstOrDefault(), 26)
+				?? IconLoader.DefaultAppIcon(26);
 
 			QueueDraw();
 		});

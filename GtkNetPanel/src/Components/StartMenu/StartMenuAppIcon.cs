@@ -1,9 +1,7 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using Gdk;
 using Gtk;
 using GtkNetPanel.Components.Shared;
-using GtkNetPanel.Components.Shared.ContextMenu;
 using GtkNetPanel.Services.FreeDesktop;
 using Pango;
 using WrapMode = Pango.WrapMode;
@@ -38,11 +36,8 @@ public class StartMenuAppIcon : EventBox
 		SetSizeRequest(82, 76);
 		StyleContext.AddClass("start-menu__app-icon");
 
-		var helper = new ContextMenuHelper(this);
-
-		Observable.FromEventPattern(helper, nameof(helper.ContextMenu))
+		this.CreateContextMenuObservable()
 			.WithLatestFrom(desktopFileObservable)
-			.TakeUntilDestroyed(this)
 			.Subscribe(t => _contextMenuRequested.OnNext(t.Second));
 
 		desktopFileObservable
@@ -50,29 +45,9 @@ public class StartMenuAppIcon : EventBox
 			.Subscribe(desktopFile =>
 			{
 				name.Text = desktopFile.Name;
-				image.Pixbuf = CreateAppIcon(desktopFile.IconName).ScaleSimple(36, 36, InterpType.Bilinear);
+				image.Pixbuf = IconLoader.LoadIcon(desktopFile.IconName, 36) ?? IconLoader.DefaultAppIcon(36);
 			});
 	}
 
 	public IObservable<DesktopFile> ContextMenuRequested => _contextMenuRequested;
-
-	private Pixbuf CreateAppIcon(string iconName)
-	{
-		var iconTheme = IconTheme.GetForScreen(Screen);
-
-		if (!string.IsNullOrEmpty(iconName))
-		{
-			if (iconName.StartsWith("/"))
-			{
-				return new Pixbuf(File.ReadAllBytes(iconName));
-			}
-
-			if (iconTheme.HasIcon(iconName))
-			{
-				return iconTheme.LoadIcon(iconName, 64, IconLookupFlags.DirLtr);
-			}
-		}
-
-		return iconTheme.LoadIcon("application-default-icon", 64, IconLookupFlags.DirLtr);
-	}
 }

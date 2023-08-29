@@ -14,9 +14,10 @@ public class TaskbarSelectors
 			.CombineLatest(rootStateSelectors.PinnedTaskbarApps)
 			.Select(t =>
 			{
+				var (tasks, pinnedApps) = t;
 				var allGroups = ImmutableList<ApplicationBarGroupViewModel>.Empty;
 
-				foreach (var pinned in t.Second)
+				foreach (var pinned in pinnedApps)
 				{
 					allGroups = allGroups.Add(new ApplicationBarGroupViewModel()
 					{
@@ -26,7 +27,7 @@ public class TaskbarSelectors
 					});
 				}
 
-				foreach (var task in t.First)
+				foreach (var task in tasks)
 				{
 					var desktopFile = task.DesktopFile;
 					var matchingGroup = allGroups.FirstOrDefault(g => g.DesktopFile.IniConfiguration.FilePath == task.DesktopFile.IniConfiguration.FilePath);
