@@ -27,6 +27,8 @@ public class DBusSystemTrayService
 	{
 		_watcherProxy = _connection.CreateProxy<IStatusNotifierWatcher>(IStatusNotifierWatcher.DbusInterfaceName, StatusNotifierObjectPath);
 
+		await _watcherProxy.RegisterStatusNotifierHostAsync("org.freedesktop.StatusNotifierWatcher-panel");
+
 		await _watcherProxy.WatchStatusNotifierItemRegisteredAsync(async s =>
 			{
 				_dispatcher.Dispatch(new AddTrayItemAction() { ItemState = await CreateTrayItemState(s) });
