@@ -5,7 +5,6 @@ using GLib;
 using Gtk;
 using GtkNetPanel.Extensions.Gtk;
 using GtkNetPanel.Extensions.Reactive;
-using GtkNetPanel.Services;
 using GtkNetPanel.Services.FreeDesktop;
 using Key = Gdk.Key;
 using Window = Gtk.Window;
@@ -18,7 +17,6 @@ public class StartMenuWindow : Window
 	private readonly Entry _hiddenEntry;
 	private readonly Subject<DesktopFile> _appLaunch = new();
 	private readonly Subject<DesktopFile> _contextMenuRequested = new();
-	private readonly Subject<string> _searchTextUpdatedSubject = new();
 	private readonly Entry _searchEntry;
 	private readonly List<(int, int)> _keyCodeRanges = new()
 	{
@@ -80,12 +78,11 @@ public class StartMenuWindow : Window
 		_searchEntry.PrimaryIconStock = Stock.Find;
 		_searchEntry.PlaceholderText = "Search all applications";
 
-		Observable.Return("")
+		SearchTextUpdated = Observable.Return("")
 			.Merge(Observable.FromEventPattern(_searchEntry, nameof(_searchEntry.TextInserted)).Select(_ => _searchEntry.Text))
 			.Merge(Observable.FromEventPattern(_searchEntry, nameof(_searchEntry.TextDeleted)).Select(_ => _searchEntry.Text))
 			.TakeUntilDestroyed(this)
-			.DistinctUntilChanged()
-			.Subscribe(s => _searchTextUpdatedSubject.OnNext(s));
+			.DistinctUntilChanged();
 
 		var label = new Label("Pinned");
 		label.Halign = Align.Start;
@@ -165,6 +162,10 @@ public class StartMenuWindow : Window
 		powerBox.Halign = Align.End;
 		powerBox.SetSizeRequest(38, 38);
 
+		PowerButtonClicked = Observable.FromEventPattern<ButtonReleaseEventArgs>(powerBox, nameof(powerBox.ButtonReleaseEvent))
+			.TakeUntilDestroyed(powerBox)
+			.Select(e => e.EventArgs);
+
 		var actionBar = new Box(Orientation.Horizontal, 0);
 		actionBar.Expand = true;
 		actionBar.StyleContext.AddClass("start-menu__action-bar");
@@ -176,9 +177,10 @@ public class StartMenuWindow : Window
 		return actionBar;
 	}
 
-	public IObservable<string> SearchTextUpdated => _searchTextUpdatedSubject;
+	public IObservable<string> SearchTextUpdated { get; }
 	public IObservable<DesktopFile> AppLaunch => _appLaunch;
 	public IObservable<DesktopFile> ContextMenuRequested => _contextMenuRequested;
+	public IObservable<ButtonReleaseEventArgs> PowerButtonClicked { get; private set; }
 
 	[ConnectBefore]
 	protected override bool OnKeyPressEvent(EventKey evnt)

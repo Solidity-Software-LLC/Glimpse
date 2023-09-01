@@ -24,14 +24,16 @@ public class StartMenuSelectors
 				rootStateSelectors.AllDesktopFiles,
 				rootStateSelectors.SearchText,
 				appsToDisplayObservable,
-				rootStateSelectors.PinnedTaskbarApps)
+				rootStateSelectors.PinnedTaskbarApps,
+				rootStateSelectors.PowerButtonCommand)
 			.Select(t => new StartMenuViewModel()
 			{
 				PinnedStartApps = t.First,
 				AllApps = t.Second,
 				SearchText = t.Third,
 				AppsToDisplay = t.Fourth,
-				PinnedTaskbarApps = t.Fifth
+				PinnedTaskbarApps = t.Fifth,
+				PowerButtonCommand = t.Sixth
 			})
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));
 	}

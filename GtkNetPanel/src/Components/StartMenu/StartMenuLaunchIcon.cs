@@ -9,6 +9,7 @@ using GtkNetPanel.Extensions.Gtk;
 using GtkNetPanel.Services.FreeDesktop;
 using GtkNetPanel.State;
 using Menu = Gtk.Menu;
+using Process = System.Diagnostics.Process;
 
 namespace GtkNetPanel.Components.StartMenu;
 
@@ -41,6 +42,12 @@ public class StartMenuLaunchIcon : EventBox
 			.AppLaunch
 			.TakeUntilDestroyed(this)
 			.Subscribe(LaunchApp);
+
+		_startMenuWindow
+			.PowerButtonClicked
+			.TakeUntilDestroyed(this)
+			.WithLatestFrom(viewModelObservable.Select(vm => vm.PowerButtonCommand).DistinctUntilChanged())
+			.Subscribe(t => Process.Start(t.Second));
 
 		Observable
 			.FromEventPattern(_startMenuWindow, nameof(_startMenuWindow.FocusOutEvent))
