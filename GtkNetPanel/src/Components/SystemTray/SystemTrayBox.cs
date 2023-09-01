@@ -11,11 +11,13 @@ public class SystemTrayBox : Box
 {
 	public SystemTrayBox(IState<SystemTrayState> trayState, IDispatcher dispatcher) : base(Orientation.Horizontal, 3)
 	{
+		StyleContext.AddClass("system-tray__taskbar-container");
+
 		trayState.ToObservable().ObserveOn(new GLibSynchronizationContext()).Select(x => x.Items).DistinctUntilChanged().UnbundleMany(i => i.Key).Subscribe(obs =>
 		{
 			var itemObservable = obs.Select(s => s.Value).DistinctUntilChanged();
 			var systemTrayIcon = new SystemTrayIcon(itemObservable);
-			PackStart(systemTrayIcon, false, false, 3);
+			PackStart(systemTrayIcon, false, false, 0);
 			ShowAll();
 
 			systemTrayIcon.MenuItemActivated.WithLatestFrom(itemObservable).Subscribe(t =>

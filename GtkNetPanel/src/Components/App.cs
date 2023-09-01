@@ -34,6 +34,7 @@ public class App : Window
 		rightBox.PackStart(systemTrayBox, false, false, 4);
 		rightBox.PackStart(clock, false, false, 5);
 		rightBox.Halign = Align.End;
+		rightBox.Valign = Align.Center;
 
 		var grid = new Grid();
 		grid.Attach(new DrawingArea(), 0, 0, 1, 1);
