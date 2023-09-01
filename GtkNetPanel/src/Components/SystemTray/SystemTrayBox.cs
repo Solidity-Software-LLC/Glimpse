@@ -9,7 +9,7 @@ namespace GtkNetPanel.Components.SystemTray;
 
 public class SystemTrayBox : Box
 {
-	public SystemTrayBox(IState<SystemTrayState> trayState, IDispatcher dispatcher) : base(Orientation.Horizontal, 3)
+	public SystemTrayBox(IState<SystemTrayState> trayState, IDispatcher dispatcher) : base(Orientation.Horizontal, 0)
 	{
 		StyleContext.AddClass("system-tray__taskbar-container");
 

@@ -120,11 +120,6 @@ public class StartMenuWindow : Window
 		pinnedAppsScrolledWindow.Expand = true;
 		pinnedAppsScrolledWindow.MarginBottom = 128;
 
-		var actionBar = new Box(Orientation.Horizontal, 0);
-		actionBar.Expand = true;
-		actionBar.StyleContext.AddClass("start-menu__action-bar");
-		actionBar.Add(new Label("Test") { Expand = true });
-
 		var layout = new Grid();
 		layout.Expand = true;
 		layout.ColumnHomogeneous = true;
@@ -132,13 +127,52 @@ public class StartMenuWindow : Window
 		layout.Attach(_hiddenEntry, 1, 0, 1, 1);
 		layout.Attach(label, 1, 1, 6, 1);
 		layout.Attach(pinnedAppsScrolledWindow, 1, 2, 6, 8);
-		layout.Attach(actionBar, 1, 10, 6, 1);
+		layout.Attach(CreateActionBar(), 1, 10, 6, 1);
 		layout.StyleContext.AddClass("start-menu__window");
 
 		Add(layout);
 		ShowAll();
 		Hide();
 		_hiddenEntry.Hide();
+	}
+
+	private Widget CreateActionBar()
+	{
+		var accountIcon = new Image(Assets.Person.ScaleSimple(42, 42, InterpType.Bilinear));
+		accountIcon.StyleContext.AddClass("start-menu__account-icon");
+
+		var userName = new Label(Environment.UserName);
+		userName.StyleContext.AddClass("start-menu__username");
+		var userNameBox = new EventBox();
+		userNameBox.Add(userName);
+
+		var settings = new Image(Assets.Settings.ScaleSimple(24, 24, InterpType.Bilinear));
+		var settingsBox = new EventBox();
+		settingsBox.Add(settings);
+		settingsBox.StyleContext.AddClass("start-menu__settings");
+		settingsBox.AddHoverHighlighting();
+		settingsBox.Valign = Align.Center;
+		settingsBox.Halign = Align.End;
+		settingsBox.SetSizeRequest(38, 38);
+
+		var power = new Image(Assets.Power.ScaleSimple(24, 24, InterpType.Bilinear));
+		var powerBox = new EventBox();
+		powerBox.Add(power);
+		powerBox.StyleContext.AddClass("start-menu__power");
+		powerBox.AddHoverHighlighting();
+		powerBox.Valign = Align.Center;
+		powerBox.Halign = Align.End;
+		powerBox.SetSizeRequest(38, 38);
+
+		var actionBar = new Box(Orientation.Horizontal, 0);
+		actionBar.Expand = true;
+		actionBar.StyleContext.AddClass("start-menu__action-bar");
+		actionBar.Add(accountIcon);
+		actionBar.Add(userNameBox);
+		actionBar.Add(new Label(Environment.MachineName) { Expand = true });
+		actionBar.Add(settingsBox);
+		actionBar.Add(powerBox);
+		return actionBar;
 	}
 
 	public IObservable<string> SearchTextUpdated => _searchTextUpdatedSubject;
