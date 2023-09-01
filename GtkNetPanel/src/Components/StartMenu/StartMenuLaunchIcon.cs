@@ -72,7 +72,7 @@ public class StartMenuLaunchIcon : EventBox
 		StyleContext.AddClass("start-menu__launch-icon");
 		SetSizeRequest(42, 42);
 		this.AddHoverHighlighting();
-		Add(new Image(Assets.Ubuntu.ScaleSimple(28, 28, InterpType.Bilinear)));
+		Add(new Image(Assets.MenuIcon.ScaleSimple(38, 38, InterpType.Bilinear)));
 	}
 
 	private void LaunchApp(DesktopFile desktopFile)
