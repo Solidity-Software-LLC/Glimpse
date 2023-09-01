@@ -1,106 +1,89 @@
+using System.Reactive.Linq;
 using Fluxor;
+using GtkNetPanel.Services.DBus.Core;
+using GtkNetPanel.Services.DBus.Interfaces;
 using GtkNetPanel.Services.DBus.Introspection;
-using GtkNetPanel.Services.DBus.Menu;
-using GtkNetPanel.Services.DBus.StatusNotifierItem;
 using GtkNetPanel.Services.DBus.StatusNotifierWatcher;
 using GtkNetPanel.State;
-using Tmds.DBus;
+using Tmds.DBus.Protocol;
 
 namespace GtkNetPanel.Services.SystemTray;
 
 public class DBusSystemTrayService
 {
-	private const string StatusNotifierObjectPath = "/StatusNotifierWatcher";
 	private readonly Connection _connection;
 	private readonly IntrospectionService _introspectionService;
 	private readonly IDispatcher _dispatcher;
-	private IStatusNotifierWatcher _watcherProxy;
+	private readonly StatusNotifierWatcher _watcher;
 
-	public DBusSystemTrayService(Connection connection, IntrospectionService introspectionService, IDispatcher dispatcher)
+	public DBusSystemTrayService(Connection connection, IntrospectionService introspectionService, IDispatcher dispatcher, StatusNotifierWatcher watcher)
 	{
 		_introspectionService = introspectionService;
 		_dispatcher = dispatcher;
-		_connection = connection ?? Connection.Session;
-	}
+		_connection = connection;
+		_watcher = watcher;
 
-	public async Task Initialize()
-	{
-		_watcherProxy = _connection.CreateProxy<IStatusNotifierWatcher>(IStatusNotifierWatcher.DbusInterfaceName, StatusNotifierObjectPath);
-
-		await _watcherProxy.RegisterStatusNotifierHostAsync("org.freedesktop.StatusNotifierWatcher-panel");
-
-		await _watcherProxy.WatchStatusNotifierItemRegisteredAsync(async s =>
-			{
-				_dispatcher.Dispatch(new AddTrayItemAction() { ItemState = await CreateTrayItemState(s) });
-			},
-			Console.WriteLine);
-
-		await LoadTrayItems();
-	}
-
-	private async Task LoadTrayItems()
-	{
-		var results = new List<SystemTrayItemState>();
-		var watcher = _connection.CreateProxy<IStatusNotifierWatcher>(IStatusNotifierWatcher.DbusInterfaceName, StatusNotifierObjectPath);
-
-		foreach (var statusNotifierItemServiceName in await watcher.GetRegisteredStatusNotifierItemsAsync())
-		{
-			results.Add(await CreateTrayItemState(statusNotifierItemServiceName));
-		}
-
-		_dispatcher.Dispatch(new AddBulkTrayItemsAction() { Items = results });
+		_watcher.RegisterStatusNotifierHostAsync("org.freedesktop.StatusNotifierWatcher-panel");
+		_watcher.ItemRegistered
+			.Select(s => Observable.FromAsync(() => CreateTrayItemState(s)).Take(1))
+			.Concat()
+			.Where(s => s != null)
+			.Subscribe(s => _dispatcher.Dispatch(new AddTrayItemAction() { ItemState = s }));
 	}
 
 	private async Task<SystemTrayItemState> CreateTrayItemState(string statusNotifierObjectPath)
 	{
-		var serviceName = statusNotifierObjectPath.RemoveObjectPath();
-		var statusNotifierItemDesc = await _introspectionService.FindDBusObjectDescription(serviceName, "/", i => i == IStatusNotifierItem.DbusInterfaceName);
-		var statusNotifierItemProxy = _connection.CreateProxy<IStatusNotifierItem>(statusNotifierItemDesc.ServiceName, statusNotifierItemDesc.ObjectPath);
-		var menuObjectPath = await statusNotifierItemProxy.TryGetAsync<string>("Menu") ?? (await statusNotifierItemProxy.TryGetAsync<ObjectPath>("Menu")).ToString();
-		var dbusMenuDescription = await _introspectionService.FindDBusObjectDescription(statusNotifierItemDesc.ServiceName, menuObjectPath, p => p == IDbusmenu.DbusInterfaceName);
-		var dbusMenuProxy = _connection.CreateProxy<IDbusmenu>(dbusMenuDescription.ServiceName, dbusMenuDescription.ObjectPath);
-		var dbusMenuLayout = await dbusMenuProxy.GetLayoutAsync(0, -1, Array.Empty<string>());
-
-		var propertyUpdateHandler = () =>
+		try
 		{
-			Task.Run(async () =>
+			return await CreateTrayItemStateInternal(statusNotifierObjectPath);
+		}
+		catch (Exception e)
+		{
+			Console.WriteLine(e);
+		}
+
+		return null;
+	}
+
+	private async Task<SystemTrayItemState> CreateTrayItemStateInternal(string statusNotifierObjectPath)
+	{
+		var serviceName = statusNotifierObjectPath.RemoveObjectPath();
+		var statusNotifierItemDesc = await _introspectionService.FindDBusObjectDescription(serviceName, "/", i => i == "org.kde.StatusNotifierItem");
+		var statusNotifierItemProxy = new OrgKdeStatusNotifierItem(_connection, statusNotifierItemDesc.ServiceName, statusNotifierItemDesc.ObjectPath);
+		var menuObjectPath = await statusNotifierItemProxy.GetMenuPropertyAsync();
+		var dbusMenuDescription = await _introspectionService.FindDBusObjectDescription(statusNotifierItemDesc.ServiceName, menuObjectPath, p => p == "com.canonical.dbusmenu");
+		var dbusMenuProxy = new ComCanonicalDbusmenu(_connection, dbusMenuDescription.ServiceName, dbusMenuDescription.ObjectPath);
+		var dbusMenuLayout = await dbusMenuProxy.GetLayoutAsync(0, -1, Array.Empty<string>());
+		var itemRemovedObservable = _watcher.ItemRemoved.Where(s => s == serviceName).Take(1);
+
+		statusNotifierItemProxy.PropertyChanged
+			.TakeUntil(itemRemovedObservable)
+			.Subscribe(props =>
 			{
+				Console.WriteLine("Property updated: " + serviceName + " " + statusNotifierItemDesc.ObjectPath);
 				_dispatcher.Dispatch(new UpdateStatusNotifierItemPropertiesAction()
 				{
-					Properties = await statusNotifierItemProxy.GetAllAsync(),
+					Properties = StatusNotifierItemProperties.From(props),
 					ServiceName = serviceName
 				});
 			});
-		};
 
-		var subscriptions = new LinkedList<IDisposable>();
-		subscriptions.AddLast(statusNotifierItemProxy.WatchNewIconAsync(propertyUpdateHandler, Console.WriteLine));
-		subscriptions.AddLast(statusNotifierItemProxy.WatchNewStatusAsync(_ => propertyUpdateHandler(), Console.WriteLine));
-		subscriptions.AddLast(statusNotifierItemProxy.WatchNewTitleAsync(propertyUpdateHandler, Console.WriteLine));
-		subscriptions.AddLast(statusNotifierItemProxy.WatchNewAttentionIconAsync(propertyUpdateHandler, Console.WriteLine));
-		subscriptions.AddLast(statusNotifierItemProxy.WatchNewOverlayIconAsync(propertyUpdateHandler, Console.WriteLine));
-		subscriptions.AddLast(statusNotifierItemProxy.WatchNewToolTipAsync(propertyUpdateHandler, Console.WriteLine));
-		subscriptions.AddLast(
-			await dbusMenuProxy.WatchLayoutUpdatedAsync(async _ =>
+		dbusMenuProxy.LayoutUpdated
+			.TakeUntil(itemRemovedObservable)
+			.Subscribe(menu =>
 			{
-				var updatedLayoutResult = await dbusMenuProxy.GetLayoutAsync(0, -1, Array.Empty<string>());
-				var updatedRootMenuItem = DbusSystemTrayMenuItem.From(updatedLayoutResult.layout);
-				_dispatcher.Dispatch(new UpdateMenuLayoutAction { ServiceName = serviceName, RootMenuItem = updatedRootMenuItem });
-			}, Console.WriteLine));
+				_dispatcher.Dispatch(new UpdateMenuLayoutAction { ServiceName = serviceName, RootMenuItem = DbusSystemTrayMenuItem.From(menu.layout) });
+			});
 
-		IDisposable watchForRemoveSubscription = null;
-
-		watchForRemoveSubscription = await _watcherProxy.WatchStatusNotifierItemUnregisteredAsync(objPath =>
-		{
-			if (serviceName != objPath.RemoveObjectPath()) return;
-			_dispatcher.Dispatch(new RemoveTrayItemAction { ServiceName = serviceName });
-			subscriptions.ToList().ForEach(s => s.Dispose());
-			watchForRemoveSubscription?.Dispose();
-		}, Console.WriteLine);
+		itemRemovedObservable
+			.Subscribe(_ =>
+			{
+				_dispatcher.Dispatch(new RemoveTrayItemAction { ServiceName = serviceName });
+			});
 
 		return new SystemTrayItemState()
 		{
-			Properties = await statusNotifierItemProxy.GetAllAsync(),
+			Properties = StatusNotifierItemProperties.From(await statusNotifierItemProxy.GetAllPropertiesAsync()),
 			StatusNotifierItemDescription = statusNotifierItemDesc,
 			DbusMenuDescription = dbusMenuDescription,
 			RootSystemTrayMenuItem = DbusSystemTrayMenuItem.From(dbusMenuLayout.layout)
@@ -109,25 +92,25 @@ public class DBusSystemTrayService
 
 	public async Task ActivateSystemTrayItemAsync(DbusObjectDescription desc, int x, int y)
 	{
-		var proxy = _connection.CreateProxy<IStatusNotifierItem>(desc.ServiceName, desc.ObjectPath);
-		await proxy.ActivateAsync(x, y);
+		var item = new OrgKdeStatusNotifierItem(_connection, desc.ServiceName, desc.ObjectPath);
+		await item.ActivateAsync(x, y);
 	}
 
 	public async Task ContextMenuAsync(DbusObjectDescription desc, int x, int y)
 	{
-		var proxy = _connection.CreateProxy<IStatusNotifierItem>(desc.ServiceName, desc.ObjectPath);
-		await proxy.ContextMenuAsync(x, y);
+		var item = new OrgKdeStatusNotifierItem(_connection, desc.ServiceName, desc.ObjectPath);
+		await item.ContextMenuAsync(x, y);
 	}
 
 	public async Task SecondaryActivateAsync(DbusObjectDescription desc, int x, int y)
 	{
-		var proxy = _connection.CreateProxy<IStatusNotifierItem>(desc.ServiceName, desc.ObjectPath);
-		await proxy.SecondaryActivateAsync(x, y);
+		var item = new OrgKdeStatusNotifierItem(_connection, desc.ServiceName, desc.ObjectPath);
+		await item.SecondaryActivateAsync(x, y);
 	}
 
 	public async Task ClickedItem(DbusObjectDescription desc, int id)
 	{
-		var proxy = _connection.CreateProxy<IDbusmenu>(desc.ServiceName, desc.ObjectPath);
-		await proxy.EventAsync(id, "clicked", new byte[1], 0);
+		var menu = new ComCanonicalDbusmenu(_connection, desc.ServiceName, desc.ObjectPath);
+		await menu.EventAsync(id, "clicked", new DBusVariantItem("y", new DBusByteItem(0)), 0);
 	}
 }

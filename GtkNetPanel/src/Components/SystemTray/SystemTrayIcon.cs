@@ -4,7 +4,7 @@ using Gdk;
 using Gtk;
 using GtkNetPanel.Components.Shared;
 using GtkNetPanel.Components.Shared.ContextMenu;
-using GtkNetPanel.Services.DBus.StatusNotifierItem;
+using GtkNetPanel.Services.DBus.Interfaces;
 using GtkNetPanel.Services.GtkSharp;
 using GtkNetPanel.Services.SystemTray;
 using GtkNetPanel.State;
@@ -42,7 +42,7 @@ public class SystemTrayIcon : EventBox
 		_disposables.AddLast(
 			viewModelObservable.Select(s => s.StatusNotifierItemDescription).DistinctUntilChanged().Subscribe(desc =>
 			{
-				hasActivateMethod = desc.InterfaceHasMethod(IStatusNotifierItem.DbusInterfaceName, "Activate");
+				hasActivateMethod = desc.InterfaceHasMethod(OrgKdeStatusNotifierItem.Interface, "Activate");
 			}));
 
 		_disposables.AddLast(

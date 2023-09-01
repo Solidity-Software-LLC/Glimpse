@@ -1,6 +1,6 @@
 using Gdk;
 using Gtk;
-using GtkNetPanel.Services.DBus.StatusNotifierItem;
+using GtkNetPanel.Services.DBus.StatusNotifierWatcher;
 
 namespace GtkNetPanel.Services.SystemTray;
 

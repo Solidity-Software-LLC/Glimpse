@@ -1,0 +1,80 @@
+<node>
+	<interface name="com.canonical.dbusmenu">
+		<property access="read" type="u" name="Version">
+		</property>
+		<property access="read" type="s" name="TextDirection">
+		</property>
+		<property access="read" type="s" name="Status">
+		</property>
+		<property access="read" type="as" name="IconThemePath">
+		</property>
+		<method name="GetLayout">
+			<annotation value="QDBusMenuLayoutItem"
+									name="org.qtproject.QtDBus.QtTypeName.Out1"/>
+			<arg direction="in" type="i" name="parentId"/>
+			<arg direction="in" type="i" name="recursionDepth"/>
+			<arg direction="in" type="as" name="propertyNames"/>
+			<arg direction="out" type="u" name="revision"/>
+			<arg direction="out" type="(ia{sv}av)" name="layout"/>
+		</method>
+		<method name="GetGroupProperties">
+			<annotation value="QList&lt;int&gt;"
+									name="org.qtproject.QtDBus.QtTypeName.In0"/>
+			<annotation value="QDBusMenuItemList"
+									name="org.qtproject.QtDBus.QtTypeName.Out0"/>
+			<arg direction="in" type="ai" name="ids"/>
+			<arg direction="in" type="as" name="propertyNames"/>
+			<arg direction="out" type="a(ia{sv})" name="properties"/>
+		</method>
+		<method name="GetProperty">
+			<arg direction="in" type="i" name="id"/>
+			<arg direction="in" type="s" name="name"/>
+			<arg direction="out" type="v" name="value"/>
+		</method>
+		<method name="Event">
+			<arg direction="in" type="i" name="id"/>
+			<arg direction="in" type="s" name="eventId"/>
+			<arg direction="in" type="v" name="data"/>
+			<arg direction="in" type="u" name="timestamp"/>
+		</method>
+		<method name="EventGroup">
+			<annotation value="QList&lt;QDBusMenuEvent&gt;"
+									name="org.qtproject.QtDBus.QtTypeName.In0"/>
+			<annotation value="QList&lt;int&gt;"
+									name="org.qtproject.QtDBus.QtTypeName.Out0"/>
+			<arg direction="in" type="a(isvu)" name="events"/>
+			<arg direction="out" type="ai" name="idErrors"/>
+		</method>
+		<method name="AboutToShow">
+			<arg direction="in" type="i" name="id"/>
+			<arg direction="out" type="b" name="needUpdate"/>
+		</method>
+		<method name="AboutToShowGroup">
+			<annotation value="QList&lt;int&gt;"
+									name="org.qtproject.QtDBus.QtTypeName.In0"/>
+			<annotation value="QList&lt;int&gt;"
+									name="org.qtproject.QtDBus.QtTypeName.Out0"/>
+			<annotation value="QList&lt;int&gt;"
+									name="org.qtproject.QtDBus.QtTypeName.Out1"/>
+			<arg direction="in" type="ai" name="ids"/>
+			<arg direction="out" type="ai" name="updatesNeeded"/>
+			<arg direction="out" type="ai" name="idErrors"/>
+		</method>
+		<signal name="ItemsPropertiesUpdated">
+			<annotation value="QDBusMenuItemList"
+									name="org.qtproject.QtDBus.QtTypeName.In0"/>
+			<annotation value="QDBusMenuItemKeysList"
+									name="org.qtproject.QtDBus.QtTypeName.In1"/>
+			<arg direction="out" type="a(ia{sv})" name="updatedProps"/>
+			<arg direction="out" type="a(ias)" name="removedProps"/>
+		</signal>
+		<signal name="LayoutUpdated">
+			<arg direction="out" type="u" name="revision"/>
+			<arg direction="out" type="i" name="parent"/>
+		</signal>
+		<signal name="ItemActivationRequested">
+			<arg direction="out" type="i" name="id"/>
+			<arg direction="out" type="u" name="timestamp"/>
+		</signal>
+	</interface>
+</node>

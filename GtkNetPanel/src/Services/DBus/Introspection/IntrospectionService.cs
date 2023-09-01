@@ -1,6 +1,7 @@
 using System.Xml.Linq;
 using System.Xml.XPath;
-using Tmds.DBus;
+using GtkNetPanel.Services.DBus.Interfaces;
+using Tmds.DBus.Protocol;
 
 namespace GtkNetPanel.Services.DBus.Introspection;
 
@@ -12,37 +13,39 @@ public class IntrospectionService
 
 	public async Task<DbusObjectDescription> FindDBusObjectDescription(string serviceName, string objectPath, Func<string, bool> match)
 	{
-		var introProxy = _connection.CreateProxy<IIntrospectable>(serviceName, objectPath);
+		var introProxy = new OrgFreedesktopDBusIntrospectable(_connection, serviceName, objectPath);
 		var rawXml = await introProxy.IntrospectAsync();
 		var xml = XDocument.Parse(rawXml);
+		var matchingInterfaces = xml.XPathSelectElements("//node/interface").Where(i => match(i.Attribute("name").Value)).ToList();
 
-		foreach (var i in xml.XPathSelectElements("//node/interface"))
+		if (matchingInterfaces.Any())
 		{
-			if (!match(i.Attribute("name").Value))
-			{
-				continue;
-			}
-
 			return new DbusObjectDescription
 			{
 				ServiceName = serviceName,
 				ObjectPath = objectPath,
 				Xml = rawXml,
-				Interfaces = xml
-					.XPathSelectElements("//interface")
-					.Select(x => new DbusInterface { Name = x.Attribute("name").Value, Methods = x.XPathSelectElements("./method").Select(m => m.Attribute("name").Value).ToArray() }).ToList()
+				Interfaces = matchingInterfaces.Select(ParseDbusInterface).ToList()
 			};
 		}
 
 		foreach (var n in xml.XPathSelectElements("//node/node"))
 		{
-			var result = await FindDBusObjectDescription(serviceName, objectPath.Length == 1 ? "/" + n.Attribute("name").Value : objectPath + "/" + n.Attribute("name").Value, match);
-			if (result != null)
-			{
-				return result;
-			}
+			var nodeName = n.Attribute("name")?.Value;
+			var childObjectPath = objectPath.Length == 1 ? "/" + nodeName : objectPath + "/" + nodeName;
+			var result = await FindDBusObjectDescription(serviceName, childObjectPath, match);
+			if (result != null) return result;
 		}
 
 		return null;
+	}
+
+	private static DbusInterface ParseDbusInterface(XElement x)
+	{
+		return new DbusInterface()
+		{
+			Name = x.Attribute("name").Value,
+			Methods = x.XPathSelectElements("./method").Select(m => m.Attribute("name").Value).ToArray()
+		};
 	}
 }

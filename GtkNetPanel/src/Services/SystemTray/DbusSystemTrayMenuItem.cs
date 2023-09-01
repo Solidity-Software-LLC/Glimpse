@@ -1,4 +1,5 @@
 using System.Text;
+using GtkNetPanel.Services.DBus.Core;
 
 namespace GtkNetPanel.Services.SystemTray;
 
@@ -16,7 +17,7 @@ public class DbusSystemTrayMenuItem
 
 	public DbusSystemTrayMenuItem[] Children { get; set; }
 
-	public static DbusSystemTrayMenuItem From((int, IDictionary<string, object>, object[]) root)
+	public static DbusSystemTrayMenuItem From((int, Dictionary<string, DBusVariantItem>, DBusVariantItem[]) root)
 	{
 		root.Item2.TryGetValue("enabled", out var enabled);
 		root.Item2.TryGetValue("label", out var label);
@@ -31,35 +32,49 @@ public class DbusSystemTrayMenuItem
 		var item = new DbusSystemTrayMenuItem()
 		{
 			Id = root.Item1,
-			Enabled = (bool?) enabled,
-			Label = (string) label,
-			Visible = (bool?) visible,
-			IconName = (string) iconName,
-			ToggleState = (int?) toggleState,
-			ToggleType = (string) toggleType,
-			Type = (string) type,
-			IconData = (byte[]) iconData,
+			Enabled = ((DBusBoolItem) enabled?.Value)?.Value,
+			Label = ((DBusStringItem) label?.Value)?.Value,
+			Visible = ((DBusBoolItem) visible?.Value)?.Value,
+			IconName = ((DBusStringItem) iconName?.Value)?.Value,
+			ToggleState = ((DBusInt32Item) toggleState?.Value)?.Value,
+			ToggleType = ((DBusStringItem) toggleType?.Value)?.Value,
+			Type = ((DBusStringItem) type?.Value)?.Value,
 			Children = ProcessChildren(root.Item3)
 		};
+
+		if (iconData?.Value is DBusArrayItem iconArray)
+		{
+			item.IconData = iconArray.Select(i => i as DBusByteItem).Select(i => i.Value).ToArray();
+		}
+		else
+		{
+			item.IconData = ((DBusByteArrayItem) iconData?.Value)?.ToArray();
+		}
 
 		return item;
 	}
 
-	private static DbusSystemTrayMenuItem[] ProcessChildren(object[] children)
+	private static DbusSystemTrayMenuItem[] ProcessChildren(DBusVariantItem[] children)
 	{
 		if (!children.Any()) return Array.Empty<DbusSystemTrayMenuItem>();
 
-		if (children.First().GetType().IsAssignableTo(typeof((int, IDictionary<string, object>, object[]))))
+		var processedChildren = new LinkedList<DbusSystemTrayMenuItem>();
+
+		foreach (var child in children.Select(c => c.Value as DBusStructItem))
 		{
-			return children.Cast<(int, IDictionary<string, object>, object[])>().Select(From).ToArray();
+			var id = ((DBusInt32Item) child.First()).Value;
+			var properties = ((DBusArrayItem)child.ElementAt(1))
+				.ToArray()
+				.Cast<DBusDictEntryItem>()
+				.ToDictionary(i => i.Key.ToString(), i => (DBusVariantItem) i.Value);
+			var childrenOfChild = ((DBusArrayItem)child.ElementAt(2)).Cast<DBusVariantItem>().ToArray();
+			var tuple = (id, properties, subChildren: childrenOfChild);
+
+			processedChildren.AddLast(From(tuple));
+
 		}
 
-		if (children.First().GetType().IsAssignableTo(typeof((int, object[], object[]))))
-		{
-			throw new Exception("Wrong child type returned for menu item");
-		}
-
-		return Array.Empty<DbusSystemTrayMenuItem>();
+		return processedChildren.ToArray();
 	}
 
 	public string Print(int depth)

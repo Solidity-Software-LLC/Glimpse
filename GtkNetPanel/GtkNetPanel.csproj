@@ -19,7 +19,10 @@
 		<PackageReference Include="GtkSharp" Version="3.24.24.95"/>
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1"/>
 		<PackageReference Include="System.Reactive" Version="6.0.0"/>
-		<PackageReference Include="Tmds.DBus" Version="0.15.0"/>
+		<PackageReference Include="Tmds.DBus.Protocol" Version="0.15.0" />
 	</ItemGroup>
+
+
+
 
 </Project>
