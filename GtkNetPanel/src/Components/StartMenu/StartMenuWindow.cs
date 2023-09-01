@@ -74,7 +74,7 @@ public class StartMenuWindow : Window
 		_searchEntry.IsEditable = true;
 		_searchEntry.Valign = Align.Center;
 		_searchEntry.StyleContext.AddClass("start-menu__search-input");
-		_searchEntry.HeightRequest = 30;
+		_searchEntry.HeightRequest = 28;
 		_searchEntry.Halign = Align.Fill;
 		_searchEntry.PrimaryIconStock = Stock.Find;
 		_searchEntry.PlaceholderText = "Search all applications";

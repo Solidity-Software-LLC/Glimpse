@@ -1,4 +1,3 @@
-using Cairo;
 using Gdk;
 
 namespace GtkNetPanel.Components;

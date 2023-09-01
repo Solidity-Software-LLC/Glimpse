@@ -24,7 +24,7 @@
 	font-size: 12px;
 }
 
-.start-menu__search-input text {
+entry.start-menu__search-input {
 	color: black;
 	background-color: white;
 	border: 0;
