@@ -24,7 +24,7 @@
 	font-size: 12px;
 }
 
-entry.start-menu__search-input {
+.start-menu__search-input {
 	color: black;
 	background-color: white;
 	border: 0;
@@ -45,11 +45,11 @@ entry.start-menu__search-input {
 	margin-left: 8px;
 }
 
-.start-menu__power {
-
+.start-menu__user-settings-button {
+	padding: 4px;
 }
 
-.start-menu__power:hover, .start-menu__settings:hover {
-	border-radius: 4px;
-	background-color: rgba(255, 255, 255, 0.1);
+.start-menu__power, .start-menu__settings {
+	min-width: 38px;
+	min-height: 38px;
 }

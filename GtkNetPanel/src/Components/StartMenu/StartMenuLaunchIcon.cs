@@ -47,7 +47,31 @@ public class StartMenuLaunchIcon : EventBox
 			.PowerButtonClicked
 			.TakeUntilDestroyed(this)
 			.WithLatestFrom(viewModelObservable.Select(vm => vm.PowerButtonCommand).DistinctUntilChanged())
-			.Subscribe(t => Process.Start(t.Second));
+			.Subscribe(t =>
+			{
+				_startMenuWindow.ClosePopup();
+				Process.Start(t.Second);
+			});
+
+		_startMenuWindow
+			.SettingsButtonClicked
+			.TakeUntilDestroyed(this)
+			.WithLatestFrom(viewModelObservable.Select(vm => vm.SettingsButtonCommand).DistinctUntilChanged())
+			.Subscribe(t =>
+			{
+				_startMenuWindow.ClosePopup();
+				Process.Start(t.Second);
+			});
+
+		_startMenuWindow
+			.UserSettingsClicked
+			.TakeUntilDestroyed(this)
+			.WithLatestFrom(viewModelObservable.Select(vm => vm.UserSettingsCommand).DistinctUntilChanged())
+			.Subscribe(t =>
+			{
+				_startMenuWindow.ClosePopup();
+				Process.Start(t.Second);
+			});
 
 		Observable
 			.FromEventPattern(_startMenuWindow, nameof(_startMenuWindow.FocusOutEvent))
@@ -94,10 +118,7 @@ public class StartMenuLaunchIcon : EventBox
 		menuItems.ForEach(m =>
 		{
 			var action = (DesktopFileAction)m.Data["DesktopFileAction"];
-
-			Observable.FromEventPattern(m, nameof(m.ButtonReleaseEvent))
-				.TakeUntilDestroyed(m)
-				.Subscribe(_ => _freeDesktopService.Run(action));
+			m.CreateButtonReleaseObservable().Subscribe(_ => _freeDesktopService.Run(action));
 		});
 
 		var isPinnedToStart = startMenuViewModel.PinnedStartApps.Any(f => f == desktopFile);
@@ -105,15 +126,9 @@ public class StartMenuLaunchIcon : EventBox
 		var pinStartIcon = isPinnedToStart ? Assets.UnpinIcon : Assets.PinIcon;
 		var pinTaskbarIcon = isPinnedToTaskbar ? Assets.UnpinIcon : Assets.PinIcon;
 		var pinStart = ContextMenuHelper.CreateMenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start", pinStartIcon.ScaleSimple(16, 16, InterpType.Bilinear));
+		pinStart.CreateButtonReleaseObservable().Subscribe(_ => _dispatcher.Dispatch(new ToggleStartMenuPinningAction() { DesktopFile = desktopFile }));
 		var pinTaskbar = ContextMenuHelper.CreateMenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar", pinTaskbarIcon.ScaleSimple(16, 16, InterpType.Bilinear));
-
-		Observable.FromEventPattern(pinStart, nameof(pinStart.ButtonPressEvent))
-			.TakeUntilDestroyed(pinStart)
-			.Subscribe(_ => _dispatcher.Dispatch(new ToggleStartMenuPinningAction() { DesktopFile = desktopFile }));
-
-		Observable.FromEventPattern(pinTaskbar, nameof(pinTaskbar.ButtonPressEvent))
-			.TakeUntilDestroyed(pinTaskbar)
-			.Subscribe(_ => _dispatcher.Dispatch(new ToggleTaskbarPinningAction() { DesktopFile = desktopFile }));
+		pinTaskbar.CreateButtonReleaseObservable().Subscribe(_ => _dispatcher.Dispatch(new ToggleTaskbarPinningAction() { DesktopFile = desktopFile }));
 
 		_contextMenu.RemoveAllChildren();
 

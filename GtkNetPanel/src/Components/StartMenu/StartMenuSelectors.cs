@@ -25,7 +25,9 @@ public class StartMenuSelectors
 				rootStateSelectors.SearchText,
 				appsToDisplayObservable,
 				rootStateSelectors.PinnedTaskbarApps,
-				rootStateSelectors.PowerButtonCommand)
+				rootStateSelectors.PowerButtonCommand,
+				rootStateSelectors.SettingsButtonCommand,
+				rootStateSelectors.UserSettingsCommand)
 			.Select(t => new StartMenuViewModel()
 			{
 				PinnedStartApps = t.First,
@@ -33,7 +35,9 @@ public class StartMenuSelectors
 				SearchText = t.Third,
 				AppsToDisplay = t.Fourth,
 				PinnedTaskbarApps = t.Fifth,
-				PowerButtonCommand = t.Sixth
+				PowerButtonCommand = t.Sixth,
+				SettingsButtonCommand = t.Seventh,
+				UserSettingsCommand = t.Eighth
 			})
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));
 	}

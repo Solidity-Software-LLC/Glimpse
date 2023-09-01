@@ -1,4 +1,3 @@
-using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
 using Gtk;
@@ -55,14 +54,14 @@ public class TaskbarGroupContextMenu : Menu
 		var pinLabel = group.IsPinned ? "Unpin from taskbar" : "Pin to taskbar";
 		var icon = group.IsPinned ? Assets.UnpinIcon : Assets.PinIcon;
 		var pinMenuItem = ContextMenuHelper.CreateMenuItem(pinLabel, icon.ScaleSimple(16, 16, InterpType.Bilinear));
-		pinMenuItem.ButtonReleaseEvent += (o, args) => _pinSubject.OnNext(true);
+		pinMenuItem.CreateButtonReleaseObservable().Subscribe(_ => _pinSubject.OnNext(true));
 		return pinMenuItem;
 	}
 
 	private MenuItem CreateLaunchMenuItem(ApplicationBarGroupViewModel group)
 	{
 		var pinMenuItem = ContextMenuHelper.CreateMenuItem(group.DesktopFile.Name, IconLoader.LoadIcon(group.DesktopFile.IconName, 16));
-		pinMenuItem.ButtonReleaseEvent += (o, args) => _launch.OnNext(group.DesktopFile);
+		pinMenuItem.CreateButtonReleaseObservable().Subscribe(_ => _launch.OnNext(group.DesktopFile));
 		return pinMenuItem;
 	}
 
@@ -73,7 +72,7 @@ public class TaskbarGroupContextMenu : Menu
 		if (allowedActions.Contains(AllowedWindowActions.Close))
 		{
 			var menuItem = ContextMenuHelper.CreateMenuItem("Close", Assets.Close.ScaleSimple(16, 16, InterpType.Bilinear));
-			menuItem.ButtonReleaseEvent += (o, args) => _windowAction.OnNext(AllowedWindowActions.Close);
+			menuItem.CreateButtonReleaseObservable().Subscribe(_ => _windowAction.OnNext(AllowedWindowActions.Close));
 			return menuItem;
 		}
 
@@ -83,16 +82,17 @@ public class TaskbarGroupContextMenu : Menu
 	private List<MenuItem> CreateDesktopFileActions(DesktopFile desktopFile)
 	{
 		var menuItems = ContextMenuHelper.CreateDesktopFileActions(desktopFile);
-		menuItems.Add(new SeparatorMenuItem());
 
-		menuItems.ForEach(m =>
+		if (menuItems.Any())
 		{
-			var action = (DesktopFileAction)m.Data["DesktopFileAction"];
+			menuItems.Add(new SeparatorMenuItem());
 
-			Observable.FromEventPattern(m, nameof(m.ButtonReleaseEvent))
-				.TakeUntilDestroyed(m)
-				.Subscribe(_ => _desktopFileAction.OnNext(action));
-		});
+			menuItems.ForEach(m =>
+			{
+				var action = (DesktopFileAction)m.Data["DesktopFileAction"];
+				m.CreateButtonReleaseObservable().Subscribe(_ => _desktopFileAction.OnNext(action));
+			});
+		}
 
 		return menuItems;
 	}

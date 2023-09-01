@@ -136,44 +136,31 @@ public class StartMenuWindow : Window
 
 	private Widget CreateActionBar()
 	{
-		var accountIcon = new Image(Assets.Person.ScaleSimple(42, 42, InterpType.Bilinear));
-		accountIcon.StyleContext.AddClass("start-menu__account-icon");
+		var userButton = new Button()
+			.AddClass("start-menu__user-settings-button").AddMany(
+				new Box(Orientation.Horizontal, 0).AddMany(
+					new Image(Assets.Person.ScaleSimple(42, 42, InterpType.Bilinear)).AddClass("start-menu__account-icon"),
+					new Label(Environment.UserName).AddClass("start-menu__username")));
 
-		var userName = new Label(Environment.UserName);
-		userName.StyleContext.AddClass("start-menu__username");
-		var userNameBox = new EventBox();
-		userNameBox.Add(userName);
+		userButton.Valign = Align.Center;
+		UserSettingsClicked = userButton.CreateButtonReleaseObservable();
 
-		var settings = new Image(Assets.Settings.ScaleSimple(24, 24, InterpType.Bilinear));
-		var settingsBox = new EventBox();
-		settingsBox.Add(settings);
-		settingsBox.StyleContext.AddClass("start-menu__settings");
-		settingsBox.AddHoverHighlighting();
-		settingsBox.Valign = Align.Center;
-		settingsBox.Halign = Align.End;
-		settingsBox.SetSizeRequest(38, 38);
+		var settingsButton = new Button(new Image(Assets.Settings.ScaleSimple(24, 24, InterpType.Bilinear)));
+		settingsButton.AddClass("start-menu__settings");
+		settingsButton.Valign = Align.Center;
+		settingsButton.Halign = Align.End;
+		SettingsButtonClicked = settingsButton.CreateButtonReleaseObservable();
 
-		var power = new Image(Assets.Power.ScaleSimple(24, 24, InterpType.Bilinear));
-		var powerBox = new EventBox();
-		powerBox.Add(power);
-		powerBox.StyleContext.AddClass("start-menu__power");
-		powerBox.AddHoverHighlighting();
-		powerBox.Valign = Align.Center;
-		powerBox.Halign = Align.End;
-		powerBox.SetSizeRequest(38, 38);
-
-		PowerButtonClicked = Observable.FromEventPattern<ButtonReleaseEventArgs>(powerBox, nameof(powerBox.ButtonReleaseEvent))
-			.TakeUntilDestroyed(powerBox)
-			.Select(e => e.EventArgs);
+		var powerButton = new Button(new Image(Assets.Power.ScaleSimple(24, 24, InterpType.Bilinear)));
+		powerButton.AddClass("start-menu__power");
+		powerButton.Valign = Align.Center;
+		powerButton.Halign = Align.End;
+		PowerButtonClicked = powerButton.CreateButtonReleaseObservable();
 
 		var actionBar = new Box(Orientation.Horizontal, 0);
 		actionBar.Expand = true;
-		actionBar.StyleContext.AddClass("start-menu__action-bar");
-		actionBar.Add(accountIcon);
-		actionBar.Add(userNameBox);
-		actionBar.Add(new Label(Environment.MachineName) { Expand = true });
-		actionBar.Add(settingsBox);
-		actionBar.Add(powerBox);
+		actionBar.AddClass("start-menu__action-bar");
+		actionBar.AddMany(userButton, new Label(Environment.MachineName) { Expand = true }, settingsButton, powerButton);
 		return actionBar;
 	}
 
@@ -181,6 +168,8 @@ public class StartMenuWindow : Window
 	public IObservable<DesktopFile> AppLaunch => _appLaunch;
 	public IObservable<DesktopFile> ContextMenuRequested => _contextMenuRequested;
 	public IObservable<ButtonReleaseEventArgs> PowerButtonClicked { get; private set; }
+	public IObservable<ButtonReleaseEventArgs> SettingsButtonClicked { get; private set; }
+	public IObservable<ButtonReleaseEventArgs> UserSettingsClicked { get; private set; }
 
 	[ConnectBefore]
 	protected override bool OnKeyPressEvent(EventKey evnt)

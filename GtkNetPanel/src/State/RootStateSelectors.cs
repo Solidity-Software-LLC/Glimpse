@@ -3,7 +3,6 @@ using System.Reactive.Linq;
 using Fluxor;
 using GtkNetPanel.Extensions.Fluxor;
 using GtkNetPanel.Extensions.Reactive;
-using GtkNetPanel.Services;
 using GtkNetPanel.Services.FreeDesktop;
 
 namespace GtkNetPanel.State;
@@ -18,6 +17,8 @@ public class RootStateSelectors
 	public IObservable<ImmutableList<DesktopFile>> AllDesktopFiles { get; }
 	public IObservable<string> SearchText { get; }
 	public IObservable<string> PowerButtonCommand { get; }
+	public IObservable<string> SettingsButtonCommand { get; }
+	public IObservable<string> UserSettingsCommand { get; }
 	public IObservable<ImmutableList<TaskState>> Tasks { get; }
 
 	public RootStateSelectors(IState<RootState> rootState)
@@ -59,6 +60,14 @@ public class RootStateSelectors
 
 		PowerButtonCommand = StartMenuState
 			.Select(s => s.PowerButtonCommand)
+			.DistinctUntilChanged();
+
+		SettingsButtonCommand = StartMenuState
+			.Select(s => s.SettingsButtonCommand)
+			.DistinctUntilChanged();
+
+		UserSettingsCommand = StartMenuState
+			.Select(s => s.UserSettingsCommand)
 			.DistinctUntilChanged();
 	}
 }

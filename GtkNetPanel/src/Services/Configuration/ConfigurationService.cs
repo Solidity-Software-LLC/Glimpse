@@ -40,6 +40,8 @@ public class ConfigurationService
 			new JsonSerializerOptions(JsonSerializerDefaults.General) { PropertyNameCaseInsensitive = true });
 
 		_dispatcher.Dispatch(new UpdatePowerButtonCommandAction() { Command = config.PowerButtonCommand });
+		_dispatcher.Dispatch(new UpdateSettingsButtonCommandAction() { Command = config.SettingsButtonCommand });
+		_dispatcher.Dispatch(new UpdateUserSettingsCommandAction() { Command = config.UserSettingsCommand });
 
 		foreach (var filePath in config.Taskbar.PinnedLaunchers)
 		{

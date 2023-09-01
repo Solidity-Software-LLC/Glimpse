@@ -7,6 +7,13 @@ namespace GtkNetPanel.Extensions.Gtk;
 
 public static class Extensions
 {
+	public static IObservable<ButtonReleaseEventArgs> CreateButtonReleaseObservable(this Widget widget)
+	{
+		return Observable.FromEventPattern<ButtonReleaseEventArgs>(widget, nameof(widget.ButtonReleaseEvent))
+			.TakeUntilDestroyed(widget)
+			.Select(e => e.EventArgs);
+	}
+
 	public static void AddHoverHighlighting(this Widget widget)
 	{
 		widget.AddEvents((int)(EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
@@ -60,5 +67,17 @@ public static class Extensions
 			.Select(e => true);
 
 		return buttonPressObs.Merge(popupMenuObs);
+	}
+
+	public static T AddClass<T>(this T widget, params string[] classes) where T : Widget
+	{
+		foreach (var c in classes) widget.StyleContext.AddClass(c);
+		return widget;
+	}
+
+	public static T AddMany<T>(this T widget, params Widget[] children) where T : Container
+	{
+		foreach (var c in children) widget.Add(c);
+		return widget;
 	}
 }

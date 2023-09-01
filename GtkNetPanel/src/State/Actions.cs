@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using GtkNetPanel.Services;
 using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;
 
@@ -51,6 +50,16 @@ public class UpdateDesktopFilesAction
 }
 
 public class UpdatePowerButtonCommandAction
+{
+	public string Command { get; set; }
+}
+
+public class UpdateUserSettingsCommandAction
+{
+	public string Command { get; set; }
+}
+
+public class UpdateSettingsButtonCommandAction
 {
 	public string Command { get; set; }
 }

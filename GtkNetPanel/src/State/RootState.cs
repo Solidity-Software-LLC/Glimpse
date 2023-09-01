@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using Fluxor;
-using GtkNetPanel.Services;
 using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;
 
@@ -30,6 +29,8 @@ public record StartMenuState
 	public ImmutableList<DesktopFile> PinnedDesktopFiles = ImmutableList<DesktopFile>.Empty;
 	public string SearchText { get; set; }
 	public string PowerButtonCommand { get; set; } = "xfce4-session-logout";
+	public string SettingsButtonCommand { get; set; } = "xfce4-settings-manager";
+	public string UserSettingsCommand { get; set; } = "mugshot";
 
 	public virtual bool Equals(StartMenuState other) => ReferenceEquals(this, other);
 }
