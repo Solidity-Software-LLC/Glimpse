@@ -44,7 +44,7 @@ public static class Program
 				containerBuilder.RegisterType<XLibAdaptorService>().SingleInstance();
 				containerBuilder.RegisterType<RootStateSelectors>().SingleInstance();
 				containerBuilder.RegisterType<StartMenuSelectors>().SingleInstance();
-				containerBuilder.RegisterType<StatusNotifierWatcher>().SingleInstance();
+				containerBuilder.RegisterType<OrgKdeStatusNotifierWatcher>().SingleInstance();
 				containerBuilder.Register(c => new OrgFreedesktopDBus(c.Resolve<Connection>(), Connection.DBusServiceName, Connection.DBusObjectPath)).SingleInstance();
 				containerBuilder.RegisterInstance(new Connection(new ClientConnectionOptions(Address.Session!) { })).ExternallyOwned();
 				containerBuilder.Register(_ => new Application("org.SharpPanel", ApplicationFlags.None)).SingleInstance();
@@ -60,7 +60,7 @@ public static class Program
 
 		var dbusConnection = host.Services.GetRequiredService<Connection>();
 		await dbusConnection.ConnectAsync();
-		dbusConnection.AddMethodHandler(host.Services.GetRequiredService<StatusNotifierWatcher>());
+		dbusConnection.AddMethodHandler(host.Services.GetRequiredService<OrgKdeStatusNotifierWatcher>());
 
 		var store = host.Services.GetRequiredService<IStore>();
 		await store.InitializeAsync();

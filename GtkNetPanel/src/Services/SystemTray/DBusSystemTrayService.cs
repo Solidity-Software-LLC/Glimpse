@@ -14,9 +14,9 @@ public class DBusSystemTrayService
 	private readonly Connection _connection;
 	private readonly IntrospectionService _introspectionService;
 	private readonly IDispatcher _dispatcher;
-	private readonly StatusNotifierWatcher _watcher;
+	private readonly OrgKdeStatusNotifierWatcher _watcher;
 
-	public DBusSystemTrayService(Connection connection, IntrospectionService introspectionService, IDispatcher dispatcher, StatusNotifierWatcher watcher)
+	public DBusSystemTrayService(Connection connection, IntrospectionService introspectionService, IDispatcher dispatcher, OrgKdeStatusNotifierWatcher watcher)
 	{
 		_introspectionService = introspectionService;
 		_dispatcher = dispatcher;
@@ -24,6 +24,7 @@ public class DBusSystemTrayService
 		_watcher = watcher;
 
 		_watcher.RegisterStatusNotifierHostAsync("org.freedesktop.StatusNotifierWatcher-panel");
+
 		_watcher.ItemRegistered
 			.Select(s => Observable.FromAsync(() => CreateTrayItemState(s)).Take(1))
 			.Concat()
@@ -60,7 +61,6 @@ public class DBusSystemTrayService
 			.TakeUntil(itemRemovedObservable)
 			.Subscribe(props =>
 			{
-				Console.WriteLine("Property updated: " + serviceName + " " + statusNotifierItemDesc.ObjectPath);
 				_dispatcher.Dispatch(new UpdateStatusNotifierItemPropertiesAction()
 				{
 					Properties = StatusNotifierItemProperties.From(props),
@@ -72,7 +72,7 @@ public class DBusSystemTrayService
 			.TakeUntil(itemRemovedObservable)
 			.Subscribe(menu =>
 			{
-				_dispatcher.Dispatch(new UpdateMenuLayoutAction { ServiceName = serviceName, RootMenuItem = DbusSystemTrayMenuItem.From(menu.layout) });
+				_dispatcher.Dispatch(new UpdateMenuLayoutAction { ServiceName = serviceName, RootMenuItem = DbusMenuItem.From(menu.layout) });
 			});
 
 		itemRemovedObservable
@@ -86,7 +86,7 @@ public class DBusSystemTrayService
 			Properties = StatusNotifierItemProperties.From(await statusNotifierItemProxy.GetAllPropertiesAsync()),
 			StatusNotifierItemDescription = statusNotifierItemDesc,
 			DbusMenuDescription = dbusMenuDescription,
-			RootSystemTrayMenuItem = DbusSystemTrayMenuItem.From(dbusMenuLayout.layout)
+			RootMenuItem = DbusMenuItem.From(dbusMenuLayout.layout)
 		};
 	}
 

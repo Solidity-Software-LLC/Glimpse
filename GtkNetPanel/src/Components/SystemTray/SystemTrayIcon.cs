@@ -46,7 +46,7 @@ public class SystemTrayIcon : EventBox
 			}));
 
 		_disposables.AddLast(
-			viewModelObservable.Select(s => s.RootSystemTrayMenuItem).DistinctUntilChanged().Subscribe(menuState =>
+			viewModelObservable.Select(s => s.RootMenuItem).DistinctUntilChanged().Subscribe(menuState =>
 			{
 				_contextMenu.RemoveAllChildren();
 				DbusContextMenuHelpers.PopulateMenu(_contextMenu, menuState);

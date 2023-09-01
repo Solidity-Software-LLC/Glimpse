@@ -1,27 +1,53 @@
-﻿using System.Text;
+﻿using System.Reactive.Subjects;
+using System.Text;
 using GtkNetPanel.Services.DBus.Core;
 using Tmds.DBus.Protocol;
 
 namespace GtkNetPanel.Services.DBus.Interfaces;
 
-public abstract class OrgKdeStatusNotifierWatcher : IMethodHandler
+public class OrgKdeStatusNotifierWatcher : IMethodHandler
 {
-	private readonly SynchronizationContext? _synchronizationContext;
+	private readonly Subject<string> _itemRegistered = new();
+	private readonly Subject<string> _itemRemoved = new();
 
-	public OrgKdeStatusNotifierWatcher(bool emitOnCapturedContext = true)
+	public OrgKdeStatusNotifierWatcher(OrgFreedesktopDBus dbusInterface, Connection connection)
 	{
-		if (emitOnCapturedContext)
+		Connection = connection;
+
+		dbusInterface.NameChanged.Subscribe(t =>
 		{
-			_synchronizationContext = SynchronizationContext.Current;
-		}
+			var matchingItem = BackingProperties.RegisteredStatusNotifierItems.FirstOrDefault(s => s == t.Item1 && string.IsNullOrEmpty(t.Item3));
+
+			if (!string.IsNullOrEmpty(matchingItem))
+			{
+				BackingProperties.RegisteredStatusNotifierItems = BackingProperties.RegisteredStatusNotifierItems.Where(s => s != matchingItem).ToArray();
+				_itemRemoved.OnNext(matchingItem);
+				EmitStatusNotifierItemUnregistered(matchingItem);
+			}
+		});
 	}
 
-	protected abstract Connection Connection { get; }
-
+	private Connection Connection { get; }
+	public string Path { get; } = "/StatusNotifierWatcher";
+	public IObservable<string> ItemRegistered => _itemRegistered;
+	public IObservable<string> ItemRemoved => _itemRemoved;
 	public Properties BackingProperties { get; } = new();
-	public abstract string Path { get; }
 
 	public bool RunMethodHandlerSynchronously(Message message) => true;
+
+	public void RegisterStatusNotifierHostAsync(string service)
+	{
+		BackingProperties.IsStatusNotifierHostRegistered = true;
+		EmitStatusNotifierHostRegistered();
+	}
+
+	private ValueTask OnRegisterStatusNotifierItemAsync(string sender, string service)
+	{
+		BackingProperties.RegisteredStatusNotifierItems = BackingProperties.RegisteredStatusNotifierItems.Concat(new[] { sender }).ToArray();
+		EmitStatusNotifierItemRegistered(sender);
+		_itemRegistered.OnNext(sender);
+		return ValueTask.CompletedTask;
+	}
 
 	public async ValueTask HandleMethodAsync(MethodContext context)
 	{
@@ -39,28 +65,6 @@ public abstract class OrgKdeStatusNotifierWatcher : IMethodHandler
 							{
 								var reader = context.Request.GetBodyReader();
 								service = reader.ReadString();
-							}
-
-							if (_synchronizationContext is not null)
-							{
-								TaskCompletionSource<bool> tsc = new();
-								_synchronizationContext.Post(async _ =>
-								{
-									try
-									{
-										await OnRegisterStatusNotifierHostAsync(service);
-										tsc.SetResult(true);
-									}
-									catch (Exception e)
-									{
-										tsc.SetException(e);
-									}
-								}, null);
-								await tsc.Task;
-							}
-							else
-							{
-								await OnRegisterStatusNotifierHostAsync(service);
 							}
 
 							if (!context.NoReplyExpected)
@@ -89,27 +93,7 @@ public abstract class OrgKdeStatusNotifierWatcher : IMethodHandler
 								service = reader.ReadString();
 							}
 
-							if (_synchronizationContext is not null)
-							{
-								TaskCompletionSource<bool> tsc = new();
-								_synchronizationContext.Post(async _ =>
-								{
-									try
-									{
-										await OnRegisterStatusNotifierItemAsync(Encoding.ASCII.GetString(context.Request.Sender), service);
-										tsc.SetResult(true);
-									}
-									catch (Exception e)
-									{
-										tsc.SetException(e);
-									}
-								}, null);
-								await tsc.Task;
-							}
-							else
-							{
-								await OnRegisterStatusNotifierItemAsync(Encoding.ASCII.GetString(context.Request.Sender), service);
-							}
+							await OnRegisterStatusNotifierItemAsync(Encoding.ASCII.GetString(context.Request.Sender), service);
 
 							if (!context.NoReplyExpected)
 							{
@@ -212,9 +196,6 @@ public abstract class OrgKdeStatusNotifierWatcher : IMethodHandler
 				break;
 		}
 	}
-
-	protected abstract ValueTask OnRegisterStatusNotifierHostAsync(string service);
-	protected abstract ValueTask OnRegisterStatusNotifierItemAsync(string sender, string service);
 
 	protected void EmitStatusNotifierHostRegistered()
 	{

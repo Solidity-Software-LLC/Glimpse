@@ -1,9 +1,8 @@
-using System.Text;
 using GtkNetPanel.Services.DBus.Core;
 
 namespace GtkNetPanel.Services.SystemTray;
 
-public class DbusSystemTrayMenuItem
+public class DbusMenuItem
 {
 	public int Id { get; set; }
 	public bool? Enabled { get; set; }
@@ -15,9 +14,9 @@ public class DbusSystemTrayMenuItem
 	public string Type { get; set; }
 	public byte[] IconData { get; set; }
 
-	public DbusSystemTrayMenuItem[] Children { get; set; }
+	public DbusMenuItem[] Children { get; set; }
 
-	public static DbusSystemTrayMenuItem From((int, Dictionary<string, DBusVariantItem>, DBusVariantItem[]) root)
+	public static DbusMenuItem From((int, Dictionary<string, DBusVariantItem>, DBusVariantItem[]) root)
 	{
 		root.Item2.TryGetValue("enabled", out var enabled);
 		root.Item2.TryGetValue("label", out var label);
@@ -29,7 +28,7 @@ public class DbusSystemTrayMenuItem
 		root.Item2.TryGetValue("type", out var type);
 
 
-		var item = new DbusSystemTrayMenuItem()
+		var item = new DbusMenuItem()
 		{
 			Id = root.Item1,
 			Enabled = ((DBusBoolItem) enabled?.Value)?.Value,
@@ -54,11 +53,11 @@ public class DbusSystemTrayMenuItem
 		return item;
 	}
 
-	private static DbusSystemTrayMenuItem[] ProcessChildren(DBusVariantItem[] children)
+	private static DbusMenuItem[] ProcessChildren(DBusVariantItem[] children)
 	{
-		if (!children.Any()) return Array.Empty<DbusSystemTrayMenuItem>();
+		if (!children.Any()) return Array.Empty<DbusMenuItem>();
 
-		var processedChildren = new LinkedList<DbusSystemTrayMenuItem>();
+		var processedChildren = new LinkedList<DbusMenuItem>();
 
 		foreach (var child in children.Select(c => c.Value as DBusStructItem))
 		{
@@ -75,32 +74,5 @@ public class DbusSystemTrayMenuItem
 		}
 
 		return processedChildren.ToArray();
-	}
-
-	public string Print(int depth)
-	{
-		var output = new StringBuilder();
-
-		for (var i = 0; i < depth; i++) output.Append("\t");
-		output.AppendLine($"Id: {Id}");
-		for (var i = 0; i < depth; i++) output.Append("\t");
-		output.AppendLine($"Enabled: {Enabled}");
-		for (var i = 0; i < depth; i++) output.Append("\t");
-		output.AppendLine($"Label: {Label}");
-		for (var i = 0; i < depth; i++) output.Append("\t");
-		output.AppendLine($"Visible: {Visible}");
-		for (var i = 0; i < depth; i++) output.Append("\t");
-		output.AppendLine($"IconName: {IconName}");
-		for (var i = 0; i < depth; i++) output.Append("\t");
-		output.AppendLine($"ToggleState: {ToggleState}");
-		for (var i = 0; i < depth; i++) output.Append("\t");
-		output.AppendLine($"ToggleType: {ToggleType}");
-
-		foreach (var c in Children)
-		{
-			output.AppendLine(c.Print(depth + 1));
-		}
-
-		return output.ToString();
 	}
 }

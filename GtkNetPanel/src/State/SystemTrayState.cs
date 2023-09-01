@@ -17,7 +17,7 @@ public class SystemTrayItemState
 	public StatusNotifierItemProperties Properties { get; set; }
 	public DbusObjectDescription StatusNotifierItemDescription { get; set; }
 	public DbusObjectDescription DbusMenuDescription { get; set; }
-	public DbusSystemTrayMenuItem RootSystemTrayMenuItem { get; set; }
+	public DbusMenuItem RootMenuItem { get; set; }
 
 	public SystemTrayItemState()
 	{
@@ -29,7 +29,7 @@ public class SystemTrayItemState
 		Properties = other.Properties;
 		StatusNotifierItemDescription = other.StatusNotifierItemDescription;
 		DbusMenuDescription = other.DbusMenuDescription;
-		RootSystemTrayMenuItem = other.RootSystemTrayMenuItem;
+		RootMenuItem = other.RootMenuItem;
 	}
 }
 
@@ -56,7 +56,7 @@ public class RemoveTrayItemAction
 public class UpdateMenuLayoutAction
 {
 	public string ServiceName { get; set; }
-	public DbusSystemTrayMenuItem RootMenuItem { get; set; }
+	public DbusMenuItem RootMenuItem { get; set; }
 }
 
 public class ActivateApplicationAction
@@ -96,7 +96,7 @@ public static class SystemTrayItemStateReducers
 	{
 		if (state.Items.TryGetValue(action.ServiceName, out var currentItem))
 		{
-			return new() { Items = state.Items.SetItem(action.ServiceName, new SystemTrayItemState(currentItem) { RootSystemTrayMenuItem = action.RootMenuItem }) };
+			return new() { Items = state.Items.SetItem(action.ServiceName, new SystemTrayItemState(currentItem) { RootMenuItem = action.RootMenuItem }) };
 		}
 
 		return state;
