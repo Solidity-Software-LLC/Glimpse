@@ -38,6 +38,10 @@ public static class IconLoader
 			{
 				imageBuffer = iconTheme.LoadIcon(iconName, size, IconLookupFlags.DirLtr);
 			}
+			else if (File.Exists($"/usr/share/pixmaps/{iconName}.png"))
+			{
+				imageBuffer = new Pixbuf(File.ReadAllBytes($"/usr/share/pixmaps/{iconName}.png"));
+			}
 		}
 
 		return imageBuffer?.ScaleSimple(size, size, InterpType.Bilinear);
