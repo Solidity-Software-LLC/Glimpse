@@ -3,7 +3,8 @@ using System.Reactive.Subjects;
 using Gdk;
 using GLib;
 using Gtk;
-using GtkNetPanel.Components.Shared;
+using GtkNetPanel.Extensions.Gtk;
+using GtkNetPanel.Extensions.Reactive;
 using GtkNetPanel.Services;
 using GtkNetPanel.Services.FreeDesktop;
 using Key = Gdk.Key;
@@ -30,8 +31,8 @@ public class StartMenuWindow : Window
 		: base(WindowType.Toplevel)
 	{
 		var iconCache = new Dictionary<string, StartMenuAppIcon>();
-		var allAppsObservable = viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged().UnbundleMany(a => a.IniConfiguration.FilePath);
-		var displayedAppsObservable = viewModelObservable.Select(vm => vm.AppsToDisplay).DistinctUntilChanged().UnbundleMany(a => a.IniConfiguration.FilePath);
+		var allAppsObservable = viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged().UnbundleMany(a => a.IniFile.FilePath);
+		var displayedAppsObservable = viewModelObservable.Select(vm => vm.AppsToDisplay).DistinctUntilChanged().UnbundleMany(a => a.IniFile.FilePath);
 
 		allAppsObservable.Subscribe(file =>
 		{

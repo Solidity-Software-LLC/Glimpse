@@ -2,11 +2,10 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
 using Gtk;
-using GtkNetPanel.Components.Shared;
-using GtkNetPanel.Components.Shared.ContextMenu;
+using GtkNetPanel.Extensions.Gtk;
 using GtkNetPanel.Services.DBus.Interfaces;
-using GtkNetPanel.Services.GtkSharp;
 using GtkNetPanel.State;
+using GtkNetPanel.State.SystemTray;
 using Menu = Gtk.Menu;
 
 namespace GtkNetPanel.Components.SystemTray;

@@ -6,22 +6,6 @@ using GtkNetPanel.State;
 
 namespace GtkNetPanel.Services.Configuration;
 
-public class Configuration
-{
-	public TaskbarConfiguration Taskbar { get; set; } = new();
-	public StartMenuConfiguration StartMenu { get; set; } = new();
-}
-
-public class StartMenuConfiguration
-{
-	public List<string> PinnedLaunchers { get; set; } = new();
-}
-
-public class TaskbarConfiguration
-{
-	public List<string> PinnedLaunchers { get; set; } = new();
-}
-
 public class ConfigurationService
 {
 	private readonly FreeDesktopService _freeDesktopService;
@@ -47,13 +31,15 @@ public class ConfigurationService
 
 		if (!File.Exists(configFile))
 		{
-			File.WriteAllText(configFile, JsonSerializer.Serialize(new Configuration()));
+			File.WriteAllText(configFile, JsonSerializer.Serialize(new ConfigurationFile()));
 		}
 
 		// Add file watcher
-		var config = JsonSerializer.Deserialize<Configuration>(
+		var config = JsonSerializer.Deserialize<ConfigurationFile>(
 			File.ReadAllText(configFile),
 			new JsonSerializerOptions(JsonSerializerDefaults.General) { PropertyNameCaseInsensitive = true });
+
+		_dispatcher.Dispatch(new UpdatePowerButtonCommandAction() { Command = config.PowerButtonCommand });
 
 		foreach (var filePath in config.Taskbar.PinnedLaunchers)
 		{
@@ -68,14 +54,14 @@ public class ConfigurationService
 		}
 
 		_rootStateSelectors.PinnedTaskbarApps
-			.CombineLatest(_rootStateSelectors.PinnedStartMenuApps)
+			.CombineLatest(_rootStateSelectors.PinnedStartMenuApps, _rootStateSelectors.PowerButtonCommand)
 			.Skip(1)
 			.Subscribe(t =>
 			{
 				Console.WriteLine("Writing");
-				var newConfig = new Configuration();
-				newConfig.Taskbar.PinnedLaunchers.AddRange(t.First.Select(d => d.IniConfiguration.FilePath));
-				newConfig.StartMenu.PinnedLaunchers.AddRange(t.Second.Select(d => d.IniConfiguration.FilePath));
+				var newConfig = new ConfigurationFile { PowerButtonCommand = t.Third };
+				newConfig.Taskbar.PinnedLaunchers.AddRange(t.First.Select(d => d.IniFile.FilePath));
+				newConfig.StartMenu.PinnedLaunchers.AddRange(t.Second.Select(d => d.IniFile.FilePath));
 				File.WriteAllText(configFile, JsonSerializer.Serialize(newConfig, new JsonSerializerOptions(JsonSerializerDefaults.General) { WriteIndented = true }));
 			});
 	}

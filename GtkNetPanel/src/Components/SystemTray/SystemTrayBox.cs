@@ -2,8 +2,11 @@ using System.Reactive.Linq;
 using Fluxor;
 using GLib;
 using Gtk;
+using GtkNetPanel.Extensions.Fluxor;
+using GtkNetPanel.Extensions.Reactive;
 using GtkNetPanel.Services;
 using GtkNetPanel.State;
+using GtkNetPanel.State.SystemTray;
 
 namespace GtkNetPanel.Components.SystemTray;
 

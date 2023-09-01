@@ -2,7 +2,7 @@ using Gdk;
 using Gtk;
 using GtkNetPanel.Services.FreeDesktop;
 
-namespace GtkNetPanel.Components.Shared;
+namespace GtkNetPanel.Extensions.Gtk;
 
 public static class ContextMenuHelper
 {

@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reactive.Subjects;
 using Fluxor;
+using GtkNetPanel.Extensions.IO;
 using GtkNetPanel.State;
 using SearchOption = System.IO.SearchOption;
 
@@ -43,7 +44,7 @@ public class FreeDesktopService
 
 	public DesktopFile FindAppDesktopFileByPath(string filePath)
 	{
-		return _desktopFiles.FirstOrDefault(f => f.IniConfiguration.FilePath.Equals(filePath, StringComparison.InvariantCultureIgnoreCase));
+		return _desktopFiles.FirstOrDefault(f => f.IniFile.FilePath.Equals(filePath, StringComparison.InvariantCultureIgnoreCase));
 	}
 
 	public DesktopFile FindAppDesktopFile(string applicationName)
@@ -57,12 +58,12 @@ public class FreeDesktopService
 				?? _desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower() == lowerCaseAppName);
 	}
 
-	private IniConfiguration ReadIniFile(string filePath)
+	private IniFile ReadIniFile(string filePath)
 	{
 		try
 		{
 			var iniFile = File.OpenRead(filePath);
-			var iniConfig = IniConfiguration.Read(iniFile);
+			var iniConfig = IniFile.Read(iniFile);
 			iniConfig.FilePath = filePath;
 			return iniConfig;
 		}

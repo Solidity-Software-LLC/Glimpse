@@ -1,7 +1,7 @@
 using System.Reactive.Linq;
 using Gtk;
 
-namespace GtkNetPanel.Components.Shared;
+namespace GtkNetPanel.Extensions.Gtk;
 
 public class ForEach<T> : Box
 {

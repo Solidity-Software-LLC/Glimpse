@@ -1,6 +1,6 @@
 using GtkNetPanel.Services.DBus.Interfaces;
 
-namespace GtkNetPanel.Services.DBus.StatusNotifierWatcher;
+namespace GtkNetPanel.Services.DBus;
 
 public record StatusNotifierItemProperties
 {

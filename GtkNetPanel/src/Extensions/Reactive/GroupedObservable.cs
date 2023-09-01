@@ -2,7 +2,7 @@ using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
-namespace GtkNetPanel.Services;
+namespace GtkNetPanel.Extensions.Reactive;
 
 public sealed class GroupedObservable<TKey, TValue> : ObservableBase<TValue>, IGroupedObservable<TKey, TValue>
 {

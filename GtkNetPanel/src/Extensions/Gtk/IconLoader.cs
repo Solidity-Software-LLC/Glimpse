@@ -1,10 +1,9 @@
 using Gdk;
 using Gtk;
-using GtkNetPanel.Services;
-using GtkNetPanel.Services.DBus.StatusNotifierWatcher;
+using GtkNetPanel.Services.DBus;
 using GtkNetPanel.State;
 
-namespace GtkNetPanel.Components.Shared;
+namespace GtkNetPanel.Extensions.Gtk;
 
 public static class IconLoader
 {

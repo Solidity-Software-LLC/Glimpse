@@ -5,9 +5,8 @@ using Fluxor;
 using Gdk;
 using GLib;
 using Gtk;
-using GtkNetPanel.Components.Shared;
+using GtkNetPanel.Extensions.Gtk;
 using GtkNetPanel.Services.FreeDesktop;
-using GtkNetPanel.Services.GtkSharp;
 using GtkNetPanel.State;
 using Menu = Gtk.Menu;
 

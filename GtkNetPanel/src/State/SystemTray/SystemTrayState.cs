@@ -1,10 +1,10 @@
 using System.Collections.Immutable;
 using Fluxor;
+using GtkNetPanel.Services.DBus;
 using GtkNetPanel.Services.DBus.Introspection;
-using GtkNetPanel.Services.DBus.StatusNotifierWatcher;
 using GtkNetPanel.Services.SystemTray;
 
-namespace GtkNetPanel.State;
+namespace GtkNetPanel.State.SystemTray;
 
 [FeatureState]
 public class SystemTrayState

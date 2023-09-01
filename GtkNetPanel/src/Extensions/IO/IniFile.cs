@@ -1,4 +1,4 @@
-namespace GtkNetPanel.Services;
+namespace GtkNetPanel.Extensions.IO;
 
 public class IniSection
 {
@@ -6,15 +6,15 @@ public class IniSection
 	public Dictionary<string, string> NameValuePairs { get; set; } = new();
 }
 
-public class IniConfiguration
+public class IniFile
 {
 	public Dictionary<string, string> NameValuePairs { get; set; } = new();
 	public LinkedList<IniSection> Sections { get; set; } = new();
 	public string FilePath { get; set; }
 
-	public static IniConfiguration Read(Stream stream)
+	public static IniFile Read(Stream stream)
 	{
-		var config = new IniConfiguration();
+		var config = new IniFile();
 		IniSection currentSection = null;
 		using var reader = new StreamReader(stream);
 

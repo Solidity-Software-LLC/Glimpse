@@ -1,10 +1,10 @@
 using Gdk;
 using Gtk;
-using GtkNetPanel.Services.SystemTray;
+using GtkNetPanel.Services.DBus;
 using Menu = Gtk.Menu;
 using MenuItem = Gtk.MenuItem;
 
-namespace GtkNetPanel.Components.Shared.ContextMenu;
+namespace GtkNetPanel.Components.SystemTray;
 
 public static class DbusContextMenuHelpers
 {

@@ -1,6 +1,6 @@
 using Gdk;
 
-namespace GtkNetPanel.Services.GtkSharp;
+namespace GtkNetPanel.Extensions.Gtk;
 
 public static class Atoms
 {

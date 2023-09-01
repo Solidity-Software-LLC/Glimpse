@@ -1,7 +1,7 @@
 using System.Reactive.Linq;
 using Fluxor;
 
-namespace GtkNetPanel.State;
+namespace GtkNetPanel.Extensions.Fluxor;
 
 public static class StateExtensions
 {

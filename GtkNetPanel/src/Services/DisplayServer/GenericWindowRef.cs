@@ -1,4 +1,4 @@
-namespace GtkNetPanel.Services;
+namespace GtkNetPanel.Services.DisplayServer;
 
 public class GenericWindowRef
 {

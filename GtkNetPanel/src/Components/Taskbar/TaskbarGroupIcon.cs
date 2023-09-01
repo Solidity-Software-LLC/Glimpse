@@ -3,9 +3,9 @@ using System.Reactive.Subjects;
 using Cairo;
 using Gdk;
 using Gtk;
-using GtkNetPanel.Components.Shared;
+using GtkNetPanel.Extensions.Gtk;
 
-namespace GtkNetPanel.Components.Taskbar.Components;
+namespace GtkNetPanel.Components.Taskbar;
 
 public class TaskbarGroupIcon : EventBox
 {

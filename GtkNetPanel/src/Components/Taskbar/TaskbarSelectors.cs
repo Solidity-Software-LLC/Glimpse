@@ -30,7 +30,7 @@ public class TaskbarSelectors
 				foreach (var task in tasks)
 				{
 					var desktopFile = task.DesktopFile;
-					var matchingGroup = allGroups.FirstOrDefault(g => g.DesktopFile.IniConfiguration.FilePath == task.DesktopFile.IniConfiguration.FilePath);
+					var matchingGroup = allGroups.FirstOrDefault(g => g.DesktopFile.IniFile.FilePath == task.DesktopFile.IniFile.FilePath);
 
 					if (matchingGroup == null)
 					{

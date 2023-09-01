@@ -1,14 +1,14 @@
 using System.Reactive.Subjects;
 using Gdk;
 using Gtk;
-using GtkNetPanel.Components.Shared;
-using GtkNetPanel.Services;
+using GtkNetPanel.Extensions.Gtk;
+using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.State;
 using Pango;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
 
-namespace GtkNetPanel.Components.Taskbar.Components;
+namespace GtkNetPanel.Components.Taskbar;
 
 public class TaskbarWindowPicker : Window
 {

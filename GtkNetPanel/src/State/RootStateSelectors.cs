@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
 using System.Reactive.Linq;
 using Fluxor;
+using GtkNetPanel.Extensions.Fluxor;
+using GtkNetPanel.Extensions.Reactive;
 using GtkNetPanel.Services;
 using GtkNetPanel.Services.FreeDesktop;
 
@@ -15,6 +17,7 @@ public class RootStateSelectors
 	public IObservable<ImmutableList<DesktopFile>> PinnedStartMenuApps { get; }
 	public IObservable<ImmutableList<DesktopFile>> AllDesktopFiles { get; }
 	public IObservable<string> SearchText { get; }
+	public IObservable<string> PowerButtonCommand { get; }
 	public IObservable<ImmutableList<TaskState>> Tasks { get; }
 
 	public RootStateSelectors(IState<RootState> rootState)
@@ -52,6 +55,10 @@ public class RootStateSelectors
 
 		SearchText = StartMenuState
 			.Select(s => s.SearchText)
+			.DistinctUntilChanged();
+
+		PowerButtonCommand = StartMenuState
+			.Select(s => s.PowerButtonCommand)
 			.DistinctUntilChanged();
 	}
 }

@@ -1,3 +1,5 @@
+using GtkNetPanel.Extensions.IO;
+
 namespace GtkNetPanel.Services.FreeDesktop;
 
 public class DesktopFileAction

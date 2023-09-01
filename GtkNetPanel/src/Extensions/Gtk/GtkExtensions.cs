@@ -2,7 +2,7 @@ using Gdk;
 using Gtk;
 using Monitor = Gdk.Monitor;
 
-namespace GtkNetPanel.Services.GtkSharp;
+namespace GtkNetPanel.Extensions.Gtk;
 
 public static class GtkExtensions
 {

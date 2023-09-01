@@ -1,10 +1,12 @@
 using System.Reactive.Linq;
 using Fluxor;
+using GtkNetPanel.Extensions;
+using GtkNetPanel.Services.DBus;
 using GtkNetPanel.Services.DBus.Core;
 using GtkNetPanel.Services.DBus.Interfaces;
 using GtkNetPanel.Services.DBus.Introspection;
-using GtkNetPanel.Services.DBus.StatusNotifierWatcher;
 using GtkNetPanel.State;
+using GtkNetPanel.State.SystemTray;
 using Tmds.DBus.Protocol;
 
 namespace GtkNetPanel.Services.SystemTray;

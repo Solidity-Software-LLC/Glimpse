@@ -1,8 +1,9 @@
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using System.Text;
+using GtkNetPanel.Extensions;
+using GtkNetPanel.Extensions.Gtk;
 using GtkNetPanel.Interop.X11;
-using GtkNetPanel.Services.GtkSharp;
 using GtkNetPanel.State;
 using Microsoft.Extensions.Hosting;
 using Task = System.Threading.Tasks.Task;

@@ -2,11 +2,11 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
 using Gtk;
-using GtkNetPanel.Components.Shared;
+using GtkNetPanel.Extensions.Gtk;
 using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;
 
-namespace GtkNetPanel.Components.Taskbar.Components;
+namespace GtkNetPanel.Components.Taskbar;
 
 public class TaskbarGroupContextMenu : Menu
 {

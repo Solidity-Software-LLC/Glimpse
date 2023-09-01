@@ -1,7 +1,7 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gtk;
-using GtkNetPanel.Components.Shared;
+using GtkNetPanel.Extensions.Gtk;
 using GtkNetPanel.Services.FreeDesktop;
 using Pango;
 using WrapMode = Pango.WrapMode;

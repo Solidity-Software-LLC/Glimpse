@@ -1,3 +1,5 @@
+using GtkNetPanel.Extensions.IO;
+
 namespace GtkNetPanel.Services.FreeDesktop;
 
 public class DesktopFile
@@ -8,11 +10,11 @@ public class DesktopFile
 	public DesktopFileExec Exec { get; set; }
 	public List<DesktopFileAction> Actions { get; set; }
 	public List<string> Categories { get; set; }
-	public IniConfiguration IniConfiguration { get; set; }
+	public IniFile IniFile { get; set; }
 
-	public static DesktopFile From(IniConfiguration configuration)
+	public static DesktopFile From(IniFile file)
 	{
-		var desktopEntry = configuration.Sections.FirstOrDefault(s => s.Header.Equals("Desktop Entry", StringComparison.InvariantCultureIgnoreCase));
+		var desktopEntry = file.Sections.FirstOrDefault(s => s.Header.Equals("Desktop Entry", StringComparison.InvariantCultureIgnoreCase));
 
 		if (desktopEntry == null)
 		{
@@ -27,12 +29,12 @@ public class DesktopFile
 
 		var desktopFile = new DesktopFile()
 		{
-			IniConfiguration = configuration,
+			IniFile = file,
 			Name = name ?? "",
 			IconName = icon ?? "",
 			Exec = ParseExec(exec) ?? new DesktopFileExec(),
 			StartupWmClass = startupWmClass ?? "",
-			Actions = ParseActions(configuration) ?? new List<DesktopFileAction>(),
+			Actions = ParseActions(file) ?? new List<DesktopFileAction>(),
 			Categories = ParseCategories(categories) ?? new List<string>()
 		};
 
@@ -62,9 +64,9 @@ public class DesktopFile
 		return categories.Split(";", StringSplitOptions.RemoveEmptyEntries).ToList();
 	}
 
-	private static List<DesktopFileAction> ParseActions(IniConfiguration configuration)
+	private static List<DesktopFileAction> ParseActions(IniFile file)
 	{
-		var desktopEntry = configuration.Sections.FirstOrDefault(s => s.Header.Equals("Desktop Entry", StringComparison.InvariantCultureIgnoreCase));
+		var desktopEntry = file.Sections.FirstOrDefault(s => s.Header.Equals("Desktop Entry", StringComparison.InvariantCultureIgnoreCase));
 
 		if (desktopEntry == null)
 		{
@@ -80,7 +82,7 @@ public class DesktopFile
 
 		foreach (var actionName in actions.Split(";", StringSplitOptions.RemoveEmptyEntries))
 		{
-			var actionSection = configuration.Sections.FirstOrDefault(s => s.Header.Contains(actionName));
+			var actionSection = file.Sections.FirstOrDefault(s => s.Header.Contains(actionName));
 
 			if (actionSection == null)
 			{

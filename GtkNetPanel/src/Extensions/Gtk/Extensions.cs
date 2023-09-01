@@ -3,7 +3,7 @@ using Gdk;
 using Gtk;
 using Window = Gtk.Window;
 
-namespace GtkNetPanel.Components.Shared;
+namespace GtkNetPanel.Extensions.Gtk;
 
 public static class Extensions
 {

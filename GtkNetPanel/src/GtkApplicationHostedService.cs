@@ -4,7 +4,7 @@ using Gdk;
 using GLib;
 using Gtk;
 using GtkNetPanel.Components;
-using GtkNetPanel.Services.GtkSharp;
+using GtkNetPanel.Extensions.Gtk;
 using Microsoft.Extensions.Hosting;
 using Application = Gtk.Application;
 using Task = System.Threading.Tasks.Task;
