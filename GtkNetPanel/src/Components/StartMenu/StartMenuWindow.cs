@@ -125,7 +125,7 @@ public class StartMenuWindow : Window
 		layout.Attach(_hiddenEntry, 1, 0, 1, 1);
 		layout.Attach(label, 1, 1, 6, 1);
 		layout.Attach(pinnedAppsScrolledWindow, 1, 2, 6, 8);
-		layout.Attach(CreateActionBar(), 1, 10, 6, 1);
+		layout.Attach(CreateActionBar(viewModelObservable.Select(vm => vm.ActionBarViewModel).DistinctUntilChanged()), 1, 10, 6, 1);
 		layout.StyleContext.AddClass("start-menu__window");
 
 		Add(layout);
@@ -134,12 +134,22 @@ public class StartMenuWindow : Window
 		_hiddenEntry.Hide();
 	}
 
-	private Widget CreateActionBar()
+	private Widget CreateActionBar(IObservable<ActionBarViewModel> viewModel)
 	{
+		var userImage = new Image().AddClass("start-menu__account-icon");
+
+		viewModel
+			.Select(vm => vm.UserIconPath)
+			.DistinctUntilChanged()
+			.TakeUntilDestroyed(this)
+			.Select(path => string.IsNullOrEmpty(path) ? Assets.Person.ScaleSimple(42, 42, InterpType.Bilinear) : new Pixbuf(path))
+			.Select(p => p.ScaleSimple(42, 42, InterpType.Bilinear))
+			.Subscribe(p => userImage.Pixbuf = p);
+
 		var userButton = new Button()
 			.AddClass("start-menu__user-settings-button").AddMany(
 				new Box(Orientation.Horizontal, 0).AddMany(
-					new Image(Assets.Person.ScaleSimple(42, 42, InterpType.Bilinear)).AddClass("start-menu__account-icon"),
+					userImage,
 					new Label(Environment.UserName).AddClass("start-menu__username")));
 
 		userButton.Valign = Align.Center;

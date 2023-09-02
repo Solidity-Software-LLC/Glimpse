@@ -19,6 +19,7 @@ public class RootStateSelectors
 	public IObservable<string> PowerButtonCommand { get; }
 	public IObservable<string> SettingsButtonCommand { get; }
 	public IObservable<string> UserSettingsCommand { get; }
+	public IObservable<string> UserIconPath { get; }
 	public IObservable<ImmutableList<TaskState>> Tasks { get; }
 
 	public RootStateSelectors(IState<RootState> rootState)
@@ -68,6 +69,12 @@ public class RootStateSelectors
 
 		UserSettingsCommand = StartMenuState
 			.Select(s => s.UserSettingsCommand)
+			.DistinctUntilChanged();
+
+		UserIconPath = RootState
+			.Select(s => s.UserState)
+			.DistinctUntilChanged()
+			.Select(s => s.IconPath)
 			.DistinctUntilChanged();
 	}
 }

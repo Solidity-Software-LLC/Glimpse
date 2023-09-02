@@ -6,8 +6,8 @@ using GtkNetPanel.Components;
 using GtkNetPanel.Components.StartMenu;
 using GtkNetPanel.Components.SystemTray;
 using GtkNetPanel.Components.Taskbar;
-using GtkNetPanel.Services;
 using GtkNetPanel.Services.Configuration;
+using GtkNetPanel.Services.DBus;
 using GtkNetPanel.Services.DBus.Interfaces;
 using GtkNetPanel.Services.DBus.Introspection;
 using GtkNetPanel.Services.DisplayServer;
@@ -44,9 +44,14 @@ public static class Program
 				containerBuilder.RegisterType<XLibAdaptorService>().SingleInstance();
 				containerBuilder.RegisterType<RootStateSelectors>().SingleInstance();
 				containerBuilder.RegisterType<StartMenuSelectors>().SingleInstance();
+				containerBuilder.RegisterType<OrgFreedesktopAccounts>().SingleInstance();
 				containerBuilder.RegisterType<OrgKdeStatusNotifierWatcher>().SingleInstance();
-				containerBuilder.Register(c => new OrgFreedesktopDBus(c.Resolve<Connection>(), Connection.DBusServiceName, Connection.DBusObjectPath)).SingleInstance();
-				containerBuilder.RegisterInstance(new Connection(new ClientConnectionOptions(Address.Session!) { })).ExternallyOwned();
+				containerBuilder.Register(c => new OrgFreedesktopDBus(c.Resolve<Connections>().Session, Connection.DBusServiceName, Connection.DBusObjectPath)).SingleInstance();
+				containerBuilder.RegisterInstance(new Connections()
+					{
+						Session = new Connection(Address.Session!),
+						System = new Connection(Address.System!),
+					}).ExternallyOwned();
 				containerBuilder.Register(_ => new Application("org.SharpPanel", ApplicationFlags.None)).SingleInstance();
 			}))
 			.ConfigureServices(services =>
@@ -58,15 +63,16 @@ public static class Program
 
 		var host = builder.Build();
 
-		var dbusConnection = host.Services.GetRequiredService<Connection>();
-		await dbusConnection.ConnectAsync();
-		dbusConnection.AddMethodHandler(host.Services.GetRequiredService<OrgKdeStatusNotifierWatcher>());
+		var dbusConnection = host.Services.GetRequiredService<Connections>();
+		await dbusConnection.Session.ConnectAsync();
+		await dbusConnection.System.ConnectAsync();
+		dbusConnection.Session.AddMethodHandler(host.Services.GetRequiredService<OrgKdeStatusNotifierWatcher>());
 
 		var store = host.Services.GetRequiredService<IStore>();
 		await store.InitializeAsync();
 
 		var fdService = host.Services.GetRequiredService<FreeDesktopService>();
-		fdService.Init();
+		fdService.Init(dbusConnection);
 
 		var configService = host.Services.GetRequiredService<ConfigurationService>();
 		configService.Initialize();

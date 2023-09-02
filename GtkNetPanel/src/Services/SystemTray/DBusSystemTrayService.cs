@@ -5,7 +5,6 @@ using GtkNetPanel.Services.DBus;
 using GtkNetPanel.Services.DBus.Core;
 using GtkNetPanel.Services.DBus.Interfaces;
 using GtkNetPanel.Services.DBus.Introspection;
-using GtkNetPanel.State;
 using GtkNetPanel.State.SystemTray;
 using Tmds.DBus.Protocol;
 
@@ -18,16 +17,17 @@ public class DBusSystemTrayService
 	private readonly IDispatcher _dispatcher;
 	private readonly OrgKdeStatusNotifierWatcher _watcher;
 
-	public DBusSystemTrayService(Connection connection, IntrospectionService introspectionService, IDispatcher dispatcher, OrgKdeStatusNotifierWatcher watcher)
+	public DBusSystemTrayService(Connections connections, IntrospectionService introspectionService, IDispatcher dispatcher, OrgKdeStatusNotifierWatcher watcher)
 	{
 		_introspectionService = introspectionService;
 		_dispatcher = dispatcher;
-		_connection = connection;
+		_connection = connections.Session;
 		_watcher = watcher;
 
 		_watcher.RegisterStatusNotifierHostAsync("org.freedesktop.StatusNotifierWatcher-panel");
 
 		_watcher.ItemRegistered
+			.Delay(TimeSpan.FromSeconds(1))
 			.Select(s => Observable.FromAsync(() => CreateTrayItemState(s)).Take(1))
 			.Concat()
 			.Where(s => s != null)

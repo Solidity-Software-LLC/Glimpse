@@ -46,7 +46,7 @@ public class StartMenuLaunchIcon : EventBox
 		_startMenuWindow
 			.PowerButtonClicked
 			.TakeUntilDestroyed(this)
-			.WithLatestFrom(viewModelObservable.Select(vm => vm.PowerButtonCommand).DistinctUntilChanged())
+			.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.PowerButtonCommand).DistinctUntilChanged())
 			.Subscribe(t =>
 			{
 				_startMenuWindow.ClosePopup();
@@ -56,7 +56,7 @@ public class StartMenuLaunchIcon : EventBox
 		_startMenuWindow
 			.SettingsButtonClicked
 			.TakeUntilDestroyed(this)
-			.WithLatestFrom(viewModelObservable.Select(vm => vm.SettingsButtonCommand).DistinctUntilChanged())
+			.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.SettingsButtonCommand).DistinctUntilChanged())
 			.Subscribe(t =>
 			{
 				_startMenuWindow.ClosePopup();
@@ -66,7 +66,7 @@ public class StartMenuLaunchIcon : EventBox
 		_startMenuWindow
 			.UserSettingsClicked
 			.TakeUntilDestroyed(this)
-			.WithLatestFrom(viewModelObservable.Select(vm => vm.UserSettingsCommand).DistinctUntilChanged())
+			.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.UserSettingsCommand).DistinctUntilChanged())
 			.Subscribe(t =>
 			{
 				_startMenuWindow.ClosePopup();

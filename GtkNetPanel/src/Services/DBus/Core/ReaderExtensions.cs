@@ -1,4 +1,5 @@
-﻿using Tmds.DBus.Protocol;
+﻿using System.Text;
+using Tmds.DBus.Protocol;
 
 namespace GtkNetPanel.Services.DBus.Core;
 
@@ -19,7 +20,12 @@ public static class ReaderExtensions
 	public static ObjectPath ReadMessage_o(Message message, object? _)
 	{
 		var reader = message.GetBodyReader();
-		reader.ReadUInt32();
+
+		if (message.SignatureAsString == "v")
+		{
+			reader.ReadSignature();
+		}
+
 		return reader.ReadObjectPath();
 	}
 
@@ -256,5 +262,85 @@ public static class ReaderExtensions
 		var arg1 = reader.ReadString();
 		var arg2 = reader.ReadString();
 		return (arg0, arg1, arg2);
+	}
+
+	public static ObjectPath[] ReadArray_ao(this ref Reader reader)
+	{
+		List<ObjectPath> items = new();
+		ArrayEnd headersEnd = reader.ReadArrayStart(DBusType.ObjectPath);
+		while (reader.HasNext(headersEnd)) items.Add(reader.ReadObjectPath());
+		return items.ToArray();
+	}
+
+	public static ObjectPath[] ReadMessage_ao(Message message, object? _)
+	{
+		Reader reader = message.GetBodyReader();
+		return reader.ReadArray_ao();
+	}
+
+	public static (long @expiration_time, long @last_change_time, long @min_days_between_changes, long @max_days_between_changes, long @days_to_warn, long @days_after_expiration_until_lock) ReadMessage_xxxxxx(Message message, object? _)
+	{
+		Reader reader = message.GetBodyReader();
+		long arg0 = reader.ReadInt64();
+		long arg1 = reader.ReadInt64();
+		long arg2 = reader.ReadInt64();
+		long arg3 = reader.ReadInt64();
+		long arg4 = reader.ReadInt64();
+		long arg5 = reader.ReadInt64();
+		return (arg0, arg1, arg2, arg3, arg4, arg5);
+	}
+
+	public static ulong ReadMessage_t(Message message, object? _)
+	{
+		Reader reader = message.GetBodyReader();
+		return reader.ReadUInt64();
+	}
+
+	public static Dictionary<string, string> ReadDictionary_aess(this ref Reader reader)
+	{
+		Dictionary<string, string> items = new();
+		ArrayEnd headersEnd = reader.ReadArrayStart(DBusType.Struct);
+		while (reader.HasNext(headersEnd)) items.Add(reader.ReadString(), reader.ReadString());
+		return items;
+	}
+
+	public static Dictionary<string, string>[] ReadArray_aaess(this ref Reader reader)
+	{
+		List<Dictionary<string, string>> items = new();
+		ArrayEnd headersEnd = reader.ReadArrayStart(DBusType.DictEntry);
+		while (reader.HasNext(headersEnd)) items.Add(reader.ReadDictionary_aess());
+		return items.ToArray();
+	}
+
+	public static Dictionary<string, string>[] ReadMessage_aaess(Message message, object? _)
+	{
+		Reader reader = message.GetBodyReader();
+		return reader.ReadArray_aaess();
+	}
+
+	public static long ReadMessage_x(Message message, object? _)
+	{
+		Reader reader = message.GetBodyReader();
+		return reader.ReadInt64();
+	}
+
+	public static (long, long, Dictionary<string, DBusVariantItem>) ReadStruct_rxxaesvz(this ref Reader reader)
+	{
+		reader.AlignStruct();
+		return ValueTuple.Create(reader.ReadInt64(), reader.ReadInt64(), reader.ReadDictionary_aesv());
+	}
+
+	public static (long, long, Dictionary<string, DBusVariantItem>)[] ReadArray_arxxaesvz(this ref Reader reader)
+	{
+		List<(long, long, Dictionary<string, DBusVariantItem>)> items = new();
+		ArrayEnd headersEnd = reader.ReadArrayStart(DBusType.Struct);
+		while (reader.HasNext(headersEnd)) items.Add(reader.ReadStruct_rxxaesvz());
+		return items.ToArray();
+	}
+
+	public static (long, long, Dictionary<string, DBusVariantItem>)[] ReadMessage_arxxaesvz(Message message, object? _)
+	{
+		Reader reader = message.GetBodyReader();
+		return reader.ReadArray_arxxaesvz();
 	}
 }

@@ -19,15 +19,27 @@ public class StartMenuSelectors
 			.Select(t => string.IsNullOrEmpty(t.First) ? t.Second
 				: t.Third.Where(d => d.Name.Contains(t.First, StringComparison.InvariantCultureIgnoreCase)).ToImmutableList());
 
+		var actionBarViewModelSelector = rootStateSelectors.PowerButtonCommand
+			.CombineLatest(
+				rootStateSelectors.SettingsButtonCommand,
+				rootStateSelectors.UserSettingsCommand,
+				rootStateSelectors.UserIconPath)
+			.Select(t => new ActionBarViewModel()
+			{
+				PowerButtonCommand = t.First,
+				SettingsButtonCommand = t.Second,
+				UserSettingsCommand = t.Third,
+				UserIconPath = t.Fourth
+			})
+			.DistinctUntilChanged();
+
 		ViewModel = rootStateSelectors.PinnedStartMenuApps
 			.CombineLatest(
 				rootStateSelectors.AllDesktopFiles,
 				rootStateSelectors.SearchText,
 				appsToDisplayObservable,
 				rootStateSelectors.PinnedTaskbarApps,
-				rootStateSelectors.PowerButtonCommand,
-				rootStateSelectors.SettingsButtonCommand,
-				rootStateSelectors.UserSettingsCommand)
+				actionBarViewModelSelector)
 			.Select(t => new StartMenuViewModel()
 			{
 				PinnedStartApps = t.First,
@@ -35,9 +47,7 @@ public class StartMenuSelectors
 				SearchText = t.Third,
 				AppsToDisplay = t.Fourth,
 				PinnedTaskbarApps = t.Fifth,
-				PowerButtonCommand = t.Sixth,
-				SettingsButtonCommand = t.Seventh,
-				UserSettingsCommand = t.Eighth
+				ActionBarViewModel = t.Sixth
 			})
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));
 	}

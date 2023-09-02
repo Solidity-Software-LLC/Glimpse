@@ -10,9 +10,9 @@ public class OrgKdeStatusNotifierWatcher : IMethodHandler
 	private readonly Subject<string> _itemRegistered = new();
 	private readonly Subject<string> _itemRemoved = new();
 
-	public OrgKdeStatusNotifierWatcher(OrgFreedesktopDBus dbusInterface, Connection connection)
+	public OrgKdeStatusNotifierWatcher(OrgFreedesktopDBus dbusInterface, Connections connections)
 	{
-		Connection = connection;
+		Connection = connections.Session;
 
 		dbusInterface.NameChanged.Subscribe(t =>
 		{

@@ -35,7 +35,9 @@ public class DbusMenuItem
 			Label = ((DBusStringItem) label?.Value)?.Value,
 			Visible = ((DBusBoolItem) visible?.Value)?.Value,
 			IconName = ((DBusStringItem) iconName?.Value)?.Value,
-			ToggleState = ((DBusInt32Item) toggleState?.Value)?.Value,
+			ToggleState = toggleState?.Value is DBusInt32Item v1 ? v1.Value
+				: toggleState?.Value is DBusUInt32Item v2 ? (int) v2.Value
+				: 0,
 			ToggleType = ((DBusStringItem) toggleType?.Value)?.Value,
 			Type = ((DBusStringItem) type?.Value)?.Value,
 			Children = ProcessChildren(root.Item3)
@@ -61,7 +63,10 @@ public class DbusMenuItem
 
 		foreach (var child in children.Select(c => c.Value as DBusStructItem))
 		{
-			var id = ((DBusInt32Item) child.First()).Value;
+			var id = child.First() is DBusInt32Item id1 ? id1.Value
+				: child.First() is DBusUInt32Item id2 ? (int)id2.Value
+				: throw new Exception("Unabled to parse menu item of type " + child.First().GetType().FullName);
+
 			var properties = ((DBusArrayItem)child.ElementAt(1))
 				.ToArray()
 				.Cast<DBusDictEntryItem>()

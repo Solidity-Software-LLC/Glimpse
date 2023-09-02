@@ -12,8 +12,16 @@ public record RootState
 	public GenericWindowRef FocusedWindow = new();
 	public ImmutableList<DesktopFile> DesktopFiles = ImmutableList<DesktopFile>.Empty;
 	public StartMenuState StartMenuState { get; set; } = new();
+	public UserState UserState { get; set; } = new();
 
 	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
+}
+
+public record UserState
+{
+	public string UserName { get; set; }
+	public string IconPath { get; set; }
+	public virtual bool Equals(UserState other) => ReferenceEquals(this, other);
 }
 
 public record TaskbarState

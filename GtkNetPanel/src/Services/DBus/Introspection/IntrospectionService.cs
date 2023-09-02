@@ -9,7 +9,7 @@ public class IntrospectionService
 {
 	private readonly Connection _connection;
 
-	public IntrospectionService(Connection connection) => _connection = connection;
+	public IntrospectionService(Connections connections) => _connection = connections.Session;
 
 	public async Task<DbusObjectDescription> FindDBusObjectDescription(string serviceName, string objectPath, Func<string, bool> match)
 	{

@@ -71,4 +71,12 @@ public static class WriterExtensions
 
 		writer.WriteArrayEnd(arrayStart);
 	}
+
+	public static void WriteArray_aaess(this ref MessageWriter writer, Dictionary<string, string>[] values)
+	{
+		ArrayStart arrayStart = writer.WriteArrayStart(DBusType.DictEntry);
+		foreach (Dictionary<string, string> value in values)
+			writer.WriteDictionary_aess(value);
+		writer.WriteArrayEnd(arrayStart);
+	}
 }

@@ -1,3 +1,4 @@
+using System.Reactive.Linq;
 using Fluxor;
 using GtkNetPanel.Interop.X11;
 using GtkNetPanel.Services.FreeDesktop;
@@ -80,7 +81,16 @@ public class X11DisplayServer : IDisplayServer
 	{
 		var allowedX11WindowActions = _xService.GetAtomArray(windowRef, XAtoms.NetWmAllowedActions);
 		var windowActions = ParseWindowActions(allowedX11WindowActions);
-		var desktopFile = _freeDesktopService.FindAppDesktopFile(_xService.GetClassHint(windowRef).res_name);
+		var desktopFile = _freeDesktopService.FindAppDesktopFileByName(_xService.GetClassHint(windowRef).res_name)
+			?? _freeDesktopService.FindAppDesktopFileByName(_xService.GetClassHint(windowRef).res_class)
+			?? _freeDesktopService.FindAppDesktopFileByName(_xService.GetStringProperty(windowRef, XAtoms.NetWmName));
+
+		desktopFile ??= new DesktopFile()
+		{
+			Name = _xService.GetStringProperty(windowRef, XAtoms.NetWmName),
+			IconName = "application-default-icon",
+			IniFile = new () { FilePath = Guid.NewGuid().ToString() }
+		};
 
 		return new TaskState()
 		{
@@ -88,7 +98,7 @@ public class X11DisplayServer : IDisplayServer
 			WindowRef = new GenericWindowRef() { Id = $"{windowRef.Display}_{windowRef.Window}", InternalRef = windowRef },
 			Icons = _xService.GetIcons(windowRef),
 			State = _xService.GetAtomArray(windowRef, XAtoms.NetWmState).ToList(),
-			ApplicationName = desktopFile.Name,
+			ApplicationName = desktopFile?.Name ?? _xService.GetClassHint(windowRef).res_name,
 			DesktopFile = desktopFile,
 			AllowedActions = windowActions,
 			Screenshot = _xService.CaptureWindowScreenshot(windowRef)

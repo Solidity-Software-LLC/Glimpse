@@ -1,24 +1,28 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Reactive.Subjects;
+using System.Reactive.Linq;
 using Fluxor;
 using GtkNetPanel.Extensions.IO;
+using GtkNetPanel.Services.DBus;
+using GtkNetPanel.Services.DBus.Interfaces;
 using GtkNetPanel.State;
-using SearchOption = System.IO.SearchOption;
+using Tmds.DBus.Protocol;
 
 namespace GtkNetPanel.Services.FreeDesktop;
 
 public class FreeDesktopService
 {
 	private readonly IDispatcher _dispatcher;
+	private readonly OrgFreedesktopAccounts _freedesktopAccounts;
 	private ImmutableList<DesktopFile> _desktopFiles;
 
-	public FreeDesktopService(IDispatcher dispatcher)
+	public FreeDesktopService(IDispatcher dispatcher, OrgFreedesktopAccounts freedesktopAccounts)
 	{
 		_dispatcher = dispatcher;
+		_freedesktopAccounts = freedesktopAccounts;
 	}
 
-	public void Init()
+	public async Task Init(Connections connections)
 	{
 		var environmentVariables = Environment.GetEnvironmentVariables();
 
@@ -40,6 +44,17 @@ public class FreeDesktopService
 			.ToImmutableList();
 
 		_dispatcher.Dispatch(new UpdateDesktopFilesAction() { DesktopFiles = _desktopFiles });
+
+		var userObjectPath = await _freedesktopAccounts.FindUserByNameAsync(Environment.UserName);
+		var userService = new OrgFreedesktopAccountsUser(connections.System, "org.freedesktop.Accounts", userObjectPath);
+
+		Observable
+			.Return(await userService.GetAllPropertiesAsync())
+			.Concat(userService.PropertiesChanged)
+			.Subscribe(p =>
+			{
+				_dispatcher.Dispatch(new UpdateUserAction() { UserName = p.UserName, IconPath = p.IconFile });
+			});
 	}
 
 	public DesktopFile FindAppDesktopFileByPath(string filePath)
@@ -47,15 +62,15 @@ public class FreeDesktopService
 		return _desktopFiles.FirstOrDefault(f => f.IniFile.FilePath.Equals(filePath, StringComparison.InvariantCultureIgnoreCase));
 	}
 
-	public DesktopFile FindAppDesktopFile(string applicationName)
+	public DesktopFile FindAppDesktopFileByName(string applicationName)
 	{
 		var lowerCaseAppName = applicationName.ToLower();
 
 		return _desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower() == lowerCaseAppName)
-				?? _desktopFiles.FirstOrDefault(f => f.Name.ToLower().Contains(lowerCaseAppName))
-				?? _desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower().Contains(lowerCaseAppName))
-				?? _desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower().Contains(lowerCaseAppName))
-				?? _desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower() == lowerCaseAppName);
+			?? _desktopFiles.FirstOrDefault(f => f.Name.ToLower().Contains(lowerCaseAppName))
+			?? _desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower().Contains(lowerCaseAppName))
+			?? _desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower().Contains(lowerCaseAppName))
+			?? _desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower() == lowerCaseAppName);
 	}
 
 	private IniFile ReadIniFile(string filePath)
