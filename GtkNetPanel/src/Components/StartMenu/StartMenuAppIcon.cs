@@ -1,5 +1,4 @@
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using Gtk;
 using GtkNetPanel.Extensions.Gtk;
 using GtkNetPanel.Services.FreeDesktop;
@@ -8,10 +7,8 @@ using WrapMode = Pango.WrapMode;
 
 namespace GtkNetPanel.Components.StartMenu;
 
-public class StartMenuAppIcon : EventBox
+public class StartMenuAppIcon : Button
 {
-	private readonly Subject<DesktopFile> _contextMenuRequested = new();
-
 	public StartMenuAppIcon(IObservable<DesktopFile> desktopFileObservable)
 	{
 		var name = new Label();
@@ -26,19 +23,13 @@ public class StartMenuAppIcon : EventBox
 		var image = new Image();
 
 		var appIconContainer = new Box(Orientation.Vertical, 0);
-		appIconContainer.PackStart(image, false, false, 0);
-		appIconContainer.PackStart(name, false, false, 0);
+		appIconContainer.AddMany(image, name);
 		appIconContainer.Valign = Align.Center;
 		appIconContainer.Halign = Align.Center;
 
 		Add(appIconContainer);
-		this.AddHoverHighlighting();
-		SetSizeRequest(82, 76);
 		StyleContext.AddClass("start-menu__app-icon");
-
-		this.CreateContextMenuObservable()
-			.WithLatestFrom(desktopFileObservable)
-			.Subscribe(t => _contextMenuRequested.OnNext(t.Second));
+		ContextMenuRequested = this.CreateContextMenuObservable().WithLatestFrom(desktopFileObservable).Select(t => t.Second);
 
 		desktopFileObservable
 			.TakeUntilDestroyed(this)
@@ -49,5 +40,5 @@ public class StartMenuAppIcon : EventBox
 			});
 	}
 
-	public IObservable<DesktopFile> ContextMenuRequested => _contextMenuRequested;
+	public IObservable<DesktopFile> ContextMenuRequested { get; }
 }

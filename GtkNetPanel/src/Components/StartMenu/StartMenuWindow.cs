@@ -39,9 +39,8 @@ public class StartMenuWindow : Window
 			appIcon.Valign = Align.Start;
 			appIcon.Expand = false;
 
-			Observable.FromEventPattern<ButtonReleaseEventArgs>(appIcon, nameof(ButtonReleaseEvent))
-				.TakeUntilDestroyed(appIcon)
-				.Where(static e => e.EventArgs.Event.Button == 1)
+			appIcon.CreateButtonReleaseObservable()
+				.Where(static e => e.Event.Button == 1)
 				.WithLatestFrom(file)
 				.Subscribe(t => _appLaunch.OnNext(t.Second));
 
@@ -50,7 +49,7 @@ public class StartMenuWindow : Window
 				.Subscribe(f => _contextMenuRequested.OnNext(f));
 
 			iconCache.Add(file.Key, appIcon);
-			file.Subscribe(_ => { }, _ => { }, () => iconCache.Remove(file.Key));
+			file.Subscribe(static _ => { }, static _ => { }, () => iconCache.Remove(file.Key));
 		});
 
 		SkipPagerHint = true;
@@ -63,8 +62,6 @@ public class StartMenuWindow : Window
 		AppPaintable = true;
 		Visible = false;
 
-		SetSizeRequest(640, 725);
-
 		_hiddenEntry = new Entry();
 		_hiddenEntry.IsEditable = false;
 
@@ -72,8 +69,7 @@ public class StartMenuWindow : Window
 		_searchEntry.Expand = true;
 		_searchEntry.IsEditable = true;
 		_searchEntry.Valign = Align.Center;
-		_searchEntry.StyleContext.AddClass("start-menu__search-input");
-		_searchEntry.HeightRequest = 28;
+		_searchEntry.AddClass("start-menu__search-input");
 		_searchEntry.Halign = Align.Fill;
 		_searchEntry.PrimaryIconStock = Stock.Find;
 		_searchEntry.PlaceholderText = "Search all applications";

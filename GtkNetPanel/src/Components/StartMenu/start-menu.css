@@ -1,15 +1,19 @@
 .start-menu__launch-icon {
 	border-radius: 5px;
+	min-width: 42px;
+	min-height: 42px;
 }
 
-.start-menu__launch-icon:hover {
-	background-color: rgba(255, 255, 255, 0.3);
+.start-menu__launch-icon--open {
+	background-color: rgba(255, 255, 255, 0.1);
 }
 
 .start-menu__window {
 	border: 1px solid #555555;
 	border-radius: 10px;
 	background-color: rgba(48, 48, 48, 1);
+	min-width: 640px;
+	min-height: 725px;
 }
 
 .start-menu__action-bar {
@@ -29,10 +33,12 @@
 	background-color: white;
 	border: 0;
 	border-radius: 15px;
+	min-height: 28px;
 }
 
-.start-menu__app-icon:hover {
-	background-color: rgba(255, 255, 255, 0.3);
+.start-menu__app-icon {
+	min-width: 82px;
+	min-height: 76px;
 	border-radius: 4px;
 }
 

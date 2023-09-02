@@ -13,7 +13,7 @@ using Process = System.Diagnostics.Process;
 
 namespace GtkNetPanel.Components.StartMenu;
 
-public class StartMenuLaunchIcon : EventBox
+public class StartMenuLaunchIcon : Button
 {
 	private readonly FreeDesktopService _freeDesktopService;
 	private readonly IDispatcher _dispatcher;
@@ -73,9 +73,7 @@ public class StartMenuLaunchIcon : EventBox
 				Process.Start(t.Second);
 			});
 
-		Observable
-			.FromEventPattern(_startMenuWindow, nameof(_startMenuWindow.FocusOutEvent))
-			.TakeUntilDestroyed(this)
+		_startMenuWindow.ObserveEvent(nameof(FocusOutEvent))
 			.Where(c => !_contextMenu.Visible)
 			.Subscribe(_ => _startMenuWindow.ClosePopup());
 
@@ -88,20 +86,21 @@ public class StartMenuLaunchIcon : EventBox
 		_buttonRelease
 			.TakeUntilDestroyed(this)
 			.Where(_ => !_startMenuWindow.Visible)
-			.Subscribe(_ => _startMenuWindow.Popup());
+			.Subscribe(_ =>
+			{
+				_startMenuWindow.Popup();
+				StyleContext.AddClass("start-menu__launch-icon--open");
+			});
 
-		Observable
-			.FromEventPattern(_startMenuWindow, nameof(_startMenuWindow.VisibilityNotifyEvent))
-			.TakeUntilDestroyed(this)
-			.Subscribe(_ => _startMenuWindow.CenterOnScreenAboveWidget(this));
+		_startMenuWindow.ObserveEvent(nameof(Hidden)).Subscribe(_ => StyleContext.RemoveClass("start-menu__launch-icon--open"));
+		_startMenuWindow.ObserveEvent(nameof(Shown)).Subscribe(_ => StyleContext.AddClass("start-menu__launch-icon--open"));
+		_startMenuWindow.ObserveEvent(nameof(VisibilityNotifyEvent)).Subscribe(_ => _startMenuWindow.CenterOnScreenAboveWidget(this));
 
 		Expand = false;
 		Valign = Align.Center;
 		Halign = Align.Center;
 		CanFocus = false;
 		StyleContext.AddClass("start-menu__launch-icon");
-		SetSizeRequest(42, 42);
-		this.AddHoverHighlighting();
 		Add(new Image(Assets.MenuIcon.ScaleSimple(38, 38, InterpType.Bilinear)));
 	}
 

@@ -55,15 +55,23 @@ public static class Extensions
 		return obs.TakeUntil(Observable.FromEventPattern(source, nameof(source.Destroyed)).Take(1));
 	}
 
+	public static IObservable<object> ObserveEvent(this Widget widget, string eventName)
+	{
+		return Observable.FromEventPattern<object>(widget, eventName).TakeUntilDestroyed(widget).Select(e => e.EventArgs);
+	}
+
+	public static IObservable<T> ObserveEvent<T>(this Widget widget, string eventName)
+	{
+		return Observable.FromEventPattern<T>(widget, eventName).TakeUntilDestroyed(widget).Select(e => e.EventArgs);
+	}
+
 	public static IObservable<bool> CreateContextMenuObservable(this Widget widget)
 	{
-		var buttonPressObs = Observable.FromEventPattern<ButtonPressEventArgs>(widget, nameof(widget.ButtonPressEvent))
-			.TakeUntilDestroyed(widget)
-			.Where(e => e.EventArgs.Event.Button == 3 && e.EventArgs.Event.Type == EventType.ButtonPress)
-			.Select(e => true);
+		var buttonPressObs = widget.ObserveEvent<ButtonPressEventArgs>(nameof(widget.ButtonPressEvent))
+			.Where(e => e.Event.Button == 3 && e.Event.Type == EventType.ButtonPress)
+			.Select(_ => true);
 
-		var popupMenuObs = Observable.FromEventPattern<PopupMenuArgs>(widget, nameof(widget.PopupMenu))
-			.TakeUntilDestroyed(widget)
+		var popupMenuObs = widget.ObserveEvent<PopupMenuArgs>(nameof(widget.PopupMenu))
 			.Select(e => true);
 
 		return buttonPressObs.Merge(popupMenuObs);
