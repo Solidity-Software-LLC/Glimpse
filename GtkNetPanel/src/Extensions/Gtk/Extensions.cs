@@ -42,9 +42,9 @@ public static class Extensions
 		var monitor = window.Display.GetMonitorAtWindow(window.Window);
 		var monitorDimensions = monitor.Geometry;
 
-		widget.Window.GetOrigin(out _, out var y);
+		widget.Window.GetRootCoords(0, 0, out var x, out var y);
 
-		var windowX = monitorDimensions.Width / 2 - window.Window.Width / 2;
+		var windowX = x + monitorDimensions.Width / 2 - window.Window.Width / 2;
 		var windowY = y - window.Window.Height - 16;
 
 		window.Move(windowX, windowY);

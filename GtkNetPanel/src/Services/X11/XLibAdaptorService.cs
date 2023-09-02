@@ -17,6 +17,7 @@ public class XLibAdaptorService : IDisposable
 	private readonly Subject<XWindowRef> _windowCreated = new();
 	private readonly Subject<XWindowRef> _windowRemoved = new();
 	private readonly Subject<XWindowRef> _focusChanged = new();
+	private readonly Subject<(int x, int y)> _startMenuOpen = new();
 	private List<XWindowRef> _knownWindows = new();
 
 	public XLibAdaptorService(IHostApplicationLifetime applicationLifetime)
@@ -27,14 +28,19 @@ public class XLibAdaptorService : IDisposable
 	public IObservable<XWindowRef> WindowCreated => _windowCreated;
 	public IObservable<XWindowRef> WindowRemoved => _windowRemoved;
 	public IObservable<XWindowRef> FocusChanged => _focusChanged;
+	public IObservable<(int x, int y)> StartMenuOpen => _startMenuOpen;
 
 	public void Initialize()
 	{
 		XLib.XInitThreads();
+
 		var display = XLib.XOpenDisplay(0);
-		var window = XLib.XDefaultRootWindow(display);
-		XLib.XSelectInput(display, window, EventMask.SubstructureNotifyMask | EventMask.PropertyChangeMask);
-		_rootWindowRef = new XWindowRef() { Window = window, Display = display };
+		var rootWindow = XLib.XDefaultRootWindow(display);
+
+		_rootWindowRef = new XWindowRef() { Window = rootWindow, Display = display };
+
+		XLib.XGrabKey(display, XConstants.KeyCode_Super_L, XConstants.AllModifiers, rootWindow, true, 0, 0);
+		XLib.XSelectInput(display, rootWindow, EventMask.SubstructureNotifyMask | EventMask.PropertyChangeMask | EventMask.KeyPressMask | EventMask.KeyReleaseMask);
 		Task.Run(() => WatchEvents(_applicationLifetime.ApplicationStopping));
 	}
 
@@ -46,7 +52,13 @@ public class XLibAdaptorService : IDisposable
 			XLib.XNextEvent(_rootWindowRef.Display, eventPointer);
 			var someEvent = Marshal.PtrToStructure<XAnyEvent>(eventPointer);
 
-			if (someEvent.type == (int) Event.PropertyNotify)
+			if (someEvent.type == (int)Event.KeyPress)
+			{
+				XLib.XUngrabKeyboard(_rootWindowRef.Display, 0);
+				var e = Marshal.PtrToStructure<XKeyEvent>(eventPointer);
+				_startMenuOpen.OnNext((e.x_root, e.y_root));
+			}
+			else if (someEvent.type == (int) Event.PropertyNotify)
 			{
 				var e = Marshal.PtrToStructure<XPropertyEvent>(eventPointer);
 

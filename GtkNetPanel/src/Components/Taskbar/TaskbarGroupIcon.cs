@@ -24,20 +24,20 @@ public class TaskbarGroupIcon : EventBox
 		this.CreateContextMenuObservable().Subscribe(_ => _contextMenuObservable.OnNext(true));
 		AddEvents((int)(EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
 
-		EnterNotifyEvent += (_, _) =>
+		this.ObserveEvent(nameof(EnterNotifyEvent)).Subscribe(_ =>
 		{
 			SetStateFlags(StateFlags.Prelight, true);
 			QueueDraw();
-		};
+		});
 
-		LeaveNotifyEvent += (_, _) =>
+		this.ObserveEvent(nameof(LeaveNotifyEvent)).Subscribe(_ =>
 		{
 			SetStateFlags(StateFlags.Normal, true);
 			QueueDraw();
-		};
+		});
 
+		SetSizeRequest(42, 42);
 		var image = new Image();
-		image.SetSizeRequest(42, 42);
 		Add(image);
 		ShowAll();
 

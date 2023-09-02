@@ -102,12 +102,21 @@ public class XLib
 
 	[DllImport("libX11.so.6")]
 	public static extern bool XTranslateCoordinates(ulong display, ulong src_w, ulong dest_w, int src_x, int src_y, out int dest_x_return, out int dest_y_return, out ulong child_return);
+
+	[DllImport("libX11.so.6")]
+	public static extern int XGrabKey(ulong display, byte keycode, uint modifiers, ulong grab_window, bool owner_events, int pointer_mode, int keyboard_mode);
+
+	[DllImport("libX11.so.6")]
+	public static extern int XUngrabKeyboard(ulong display, ulong time);
+
 }
 
 public static class XConstants
 {
 	public const uint AllPlanes = 0xFFFFFFFF;
 	public const int ZPixmap = 2; // This value might vary, please confirm the correct value for your system
+	public const int KeyCode_Super_L = 133;
+	public const int AllModifiers = 1 << 15;
 }
 
 [StructLayout(LayoutKind.Sequential)]

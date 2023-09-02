@@ -1,4 +1,3 @@
-using System.Reactive.Linq;
 using Fluxor;
 using GtkNetPanel.Interop.X11;
 using GtkNetPanel.Services.FreeDesktop;
@@ -18,7 +17,11 @@ public class X11DisplayServer : IDisplayServer
 		_xService = xService;
 		_dispatcher = dispatcher;
 		_freeDesktopService = freeDesktopService;
+
+		StartMenuOpen = _xService.StartMenuOpen;
 	}
+
+	public IObservable<(int x, int y)> StartMenuOpen { get; }
 
 	public void ToggleWindowVisibility(GenericWindowRef windowRef)
 	{

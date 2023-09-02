@@ -6,6 +6,7 @@ using Gdk;
 using GLib;
 using Gtk;
 using GtkNetPanel.Extensions.Gtk;
+using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;
 using GtkNetPanel.State;
 using Menu = Gtk.Menu;
@@ -21,7 +22,7 @@ public class StartMenuLaunchIcon : Button
 	private readonly StartMenuWindow _startMenuWindow;
 	private readonly Menu _contextMenu;
 
-	public StartMenuLaunchIcon(FreeDesktopService freeDesktopService, IDispatcher dispatcher, StartMenuSelectors selectors)
+	public StartMenuLaunchIcon(FreeDesktopService freeDesktopService, IDispatcher dispatcher, StartMenuSelectors selectors, IDisplayServer displayServer)
 	{
 		var viewModelObservable = selectors
 			.ViewModel
@@ -91,6 +92,19 @@ public class StartMenuLaunchIcon : Button
 				_startMenuWindow.Popup();
 				StyleContext.AddClass("start-menu__launch-icon--open");
 			});
+
+		displayServer.StartMenuOpen.Subscribe(coords =>
+		{
+			Window.GetRootCoords(0, 0, out var windowX, out var windowY);
+			var eventMonitor = Window.Display.GetMonitorAtPoint(coords.x, coords.y);
+			var windowMonitor = Window.Display.GetMonitorAtPoint(windowX, windowY);
+
+			if (eventMonitor == windowMonitor)
+			{
+				_startMenuWindow.Popup();
+				StyleContext.AddClass("start-menu__launch-icon--open");
+			}
+		});
 
 		_startMenuWindow.ObserveEvent(nameof(Hidden)).Subscribe(_ => StyleContext.RemoveClass("start-menu__launch-icon--open"));
 		_startMenuWindow.ObserveEvent(nameof(Shown)).Subscribe(_ => StyleContext.AddClass("start-menu__launch-icon--open"));
