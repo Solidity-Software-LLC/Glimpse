@@ -10,7 +10,7 @@ using Menu = Gtk.Menu;
 
 namespace GtkNetPanel.Components.SystemTray;
 
-public class SystemTrayIcon : EventBox
+public class SystemTrayIcon : Button
 {
 	private readonly Menu _contextMenu;
 	private readonly Subject<int> _menuItemActivatedSubject = new();
@@ -20,12 +20,10 @@ public class SystemTrayIcon : EventBox
 	{
 		_contextMenu = new Menu();
 
-		this.AddHoverHighlighting();
 		this.CreateContextMenuObservable()
 			.Where(_ => _contextMenu.Children.Any())
 			.Subscribe(_ => _contextMenu.Popup());
 
-		SetSizeRequest(28, 36);
 		Valign = Align.Center;
 		StyleContext.AddClass("system-tray__icon");
 		var hasActivateMethod = false;

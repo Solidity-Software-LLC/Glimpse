@@ -7,6 +7,7 @@ public record ConfigurationFile
 	public string PowerButtonCommand { get; set; } = "xfce4-session-logout";
 	public string SettingsButtonCommand { get; set; } = "xfce4-settings-manager";
 	public string UserSettingsCommand { get; set; } = "mugshot";
+	public string VolumeCommand { get; set; } = "pavucontrol";
 }
 
 public class StartMenuConfiguration

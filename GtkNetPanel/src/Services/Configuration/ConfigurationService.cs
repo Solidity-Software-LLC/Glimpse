@@ -42,6 +42,7 @@ public class ConfigurationService
 		_dispatcher.Dispatch(new UpdatePowerButtonCommandAction() { Command = config.PowerButtonCommand });
 		_dispatcher.Dispatch(new UpdateSettingsButtonCommandAction() { Command = config.SettingsButtonCommand });
 		_dispatcher.Dispatch(new UpdateUserSettingsCommandAction() { Command = config.UserSettingsCommand });
+		_dispatcher.Dispatch(new UpdateVolumeCommandAction() { Command = config.VolumeCommand });
 
 		foreach (var filePath in config.Taskbar.PinnedLaunchers)
 		{

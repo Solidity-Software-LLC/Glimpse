@@ -64,6 +64,11 @@ public class UpdateSettingsButtonCommandAction
 	public string Command { get; set; }
 }
 
+public class UpdateVolumeCommandAction
+{
+	public string Command { get; set; }
+}
+
 public class UpdateUserAction
 {
 	public string UserName { get; set; }

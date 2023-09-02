@@ -1,5 +1,6 @@
 .system-tray__icon {
-
+	min-width: 28px;
+	min-height: 36px;
 }
 
 .system-tray__icon:hover {

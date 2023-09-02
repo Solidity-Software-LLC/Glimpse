@@ -5,6 +5,12 @@ namespace GtkNetPanel.State;
 public class Reducers
 {
 	[ReducerMethod]
+	public static RootState ReduceUpdateVolumeCommandAction(RootState state, UpdateVolumeCommandAction action)
+	{
+		return state with { VolumeCommand = action.Command };
+	}
+
+	[ReducerMethod]
 	public static RootState ReduceUpdateUserAction(RootState state, UpdateUserAction action)
 	{
 		return state with { UserState = state.UserState with { UserName = action.UserName, IconPath = action.IconPath } };

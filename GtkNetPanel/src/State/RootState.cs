@@ -13,6 +13,7 @@ public record RootState
 	public ImmutableList<DesktopFile> DesktopFiles = ImmutableList<DesktopFile>.Empty;
 	public StartMenuState StartMenuState { get; set; } = new();
 	public UserState UserState { get; set; } = new();
+	public string VolumeCommand { get; set; }
 
 	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
 }
