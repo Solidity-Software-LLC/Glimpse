@@ -10,7 +10,6 @@ using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;
 using GtkNetPanel.State;
 using Menu = Gtk.Menu;
-using Process = System.Diagnostics.Process;
 
 namespace GtkNetPanel.Components.StartMenu;
 
@@ -51,7 +50,7 @@ public class StartMenuLaunchIcon : Button
 			.Subscribe(t =>
 			{
 				_startMenuWindow.ClosePopup();
-				Process.Start(t.Second);
+				_freeDesktopService.Run(t.Second);
 			});
 
 		_startMenuWindow
@@ -61,7 +60,7 @@ public class StartMenuLaunchIcon : Button
 			.Subscribe(t =>
 			{
 				_startMenuWindow.ClosePopup();
-				Process.Start(t.Second);
+				_freeDesktopService.Run(t.Second);
 			});
 
 		_startMenuWindow
@@ -71,7 +70,7 @@ public class StartMenuLaunchIcon : Button
 			.Subscribe(t =>
 			{
 				_startMenuWindow.ClosePopup();
-				Process.Start(t.Second);
+				_freeDesktopService.Run(t.Second);
 			});
 
 		_startMenuWindow.ObserveEvent(nameof(FocusOutEvent))
@@ -121,7 +120,7 @@ public class StartMenuLaunchIcon : Button
 	private void LaunchApp(DesktopFile desktopFile)
 	{
 		_startMenuWindow.Hide();
-		_freeDesktopService.Run(desktopFile.Exec.FullExec);
+		_freeDesktopService.Run(desktopFile);
 	}
 
 	private void OpenContextMenu(DesktopFile desktopFile, StartMenuViewModel startMenuViewModel)

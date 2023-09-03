@@ -6,15 +6,15 @@ using Gtk;
 using GtkNetPanel.Extensions.Fluxor;
 using GtkNetPanel.Extensions.Gtk;
 using GtkNetPanel.Extensions.Reactive;
+using GtkNetPanel.Services.FreeDesktop;
 using GtkNetPanel.State;
 using GtkNetPanel.State.SystemTray;
-using Process = System.Diagnostics.Process;
 
 namespace GtkNetPanel.Components.SystemTray;
 
 public class SystemTrayBox : Box
 {
-	public SystemTrayBox(IState<SystemTrayState> trayState, IDispatcher dispatcher, RootStateSelectors rootStateSelectors) : base(Orientation.Horizontal, 0)
+	public SystemTrayBox(IState<SystemTrayState> trayState, IDispatcher dispatcher, RootStateSelectors rootStateSelectors, FreeDesktopService freeDesktopService) : base(Orientation.Horizontal, 0)
 	{
 		StyleContext.AddClass("system-tray__taskbar-container");
 
@@ -24,7 +24,7 @@ public class SystemTrayBox : Box
 
 		volumeButton.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent))
 			.WithLatestFrom(rootStateSelectors.VolumeCommand)
-			.Subscribe(t => Process.Start(t.Second));
+			.Subscribe(t => freeDesktopService.Run(t.Second));
 
 		PackEnd(volumeButton, false, false, 0);
 

@@ -6,7 +6,6 @@ using GtkNetPanel.Extensions.IO;
 using GtkNetPanel.Services.DBus;
 using GtkNetPanel.Services.DBus.Interfaces;
 using GtkNetPanel.State;
-using Tmds.DBus.Protocol;
 
 namespace GtkNetPanel.Services.FreeDesktop;
 
@@ -90,18 +89,20 @@ public class FreeDesktopService
 		return null;
 	}
 
-	public void Run(string exec)
+	public void Run(DesktopFile desktopFile)
 	{
-		var parts = exec.Split(" ");
-		var executable = parts.FirstOrDefault();
-		if (string.IsNullOrEmpty(executable)) return;
-		var startInfo = new ProcessStartInfo(executable, string.Join(" ", parts[1..]));
-		startInfo.WorkingDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
-		Process.Start(startInfo);
+		Run(desktopFile.Exec.FullExec);
 	}
 
 	public void Run(DesktopFileAction action)
 	{
 		Run(action.Exec);
+	}
+
+	public void Run(string command)
+	{
+		var startInfo = new ProcessStartInfo("setsid", command);
+		startInfo.WorkingDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+		Process.Start(startInfo);
 	}
 }

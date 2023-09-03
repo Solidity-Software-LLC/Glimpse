@@ -5,7 +5,6 @@ using GLib;
 using Gtk;
 using GtkNetPanel.Extensions.Gtk;
 using GtkNetPanel.Extensions.Reactive;
-using GtkNetPanel.Services;
 using GtkNetPanel.Services.DisplayServer;
 using GtkNetPanel.Services.FreeDesktop;
 using GtkNetPanel.State;
@@ -52,7 +51,7 @@ public class TaskbarView : Box
 			groupIcon.ButtonRelease
 				.WithLatestFrom(viewModelObservable)
 				.Where(t => t.First.Button == 1 && t.Second.Tasks.Count == 0)
-				.Subscribe(t => freeDesktopService.Run(t.Second.DesktopFile.Exec.FullExec));
+				.Subscribe(t => freeDesktopService.Run(t.Second.DesktopFile));
 
 			groupIcon.ButtonRelease
 				.WithLatestFrom(viewModelObservable)
@@ -78,7 +77,7 @@ public class TaskbarView : Box
 
 			contextMenu.Launch
 				.WithLatestFrom(viewModelObservable)
-				.Subscribe(t => freeDesktopService.Run(t.Second.DesktopFile.Exec.FullExec));
+				.Subscribe(t => freeDesktopService.Run(t.Second.DesktopFile));
 
 			replayLatestViewModelObservable.Connect();
 			return groupIcon;
