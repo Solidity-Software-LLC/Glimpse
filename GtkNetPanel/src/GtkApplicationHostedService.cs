@@ -52,7 +52,7 @@ public class GtkApplicationHostedService : IHostedService
 				StyleContext.AddProviderForScreen(Display.Default.DefaultScreen, screenCss, uint.MaxValue);
 
 				var panels = Display.Default
-					.GetMonitors().Take(1)
+					.GetMonitors()
 					.Select(m =>
 					{
 						var panel = _serviceProvider.BeginLifetimeScope("panel").Resolve<App>();

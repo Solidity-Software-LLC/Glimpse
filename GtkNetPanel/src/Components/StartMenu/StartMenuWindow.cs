@@ -203,7 +203,6 @@ public class StartMenuWindow : Window
 
 	public void Popup()
 	{
-		Window.SetShadowWidth(0, 0, 0, 0);
 		Show();
 	}
 }
