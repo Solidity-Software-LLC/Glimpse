@@ -39,7 +39,7 @@ public class XLibAdaptorService : IDisposable
 
 		_rootWindowRef = new XWindowRef() { Window = rootWindow, Display = display };
 
-		XLib.XGrabKey(display, XConstants.KeyCode_Super_L, XConstants.AllModifiers, rootWindow, true, 0, 0);
+		XLib.XGrabKey(display, XConstants.KeyCode_Super_L, XConstants.AllModifiers, rootWindow, true, 0, 1);
 		XLib.XSelectInput(display, rootWindow, EventMask.SubstructureNotifyMask | EventMask.PropertyChangeMask | EventMask.KeyPressMask | EventMask.KeyReleaseMask);
 		Task.Run(() => WatchEvents(_applicationLifetime.ApplicationStopping));
 	}
@@ -52,7 +52,7 @@ public class XLibAdaptorService : IDisposable
 			XLib.XNextEvent(_rootWindowRef.Display, eventPointer);
 			var someEvent = Marshal.PtrToStructure<XAnyEvent>(eventPointer);
 
-			if (someEvent.type == (int)Event.KeyPress)
+			if (someEvent.type == (int)Event.KeyRelease)
 			{
 				XLib.XUngrabKeyboard(_rootWindowRef.Display, 0);
 				var e = Marshal.PtrToStructure<XKeyEvent>(eventPointer);

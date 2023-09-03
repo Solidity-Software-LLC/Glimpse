@@ -92,18 +92,20 @@ public class StartMenuLaunchIcon : Button
 				StyleContext.AddClass("start-menu__launch-icon--open");
 			});
 
-		displayServer.StartMenuOpen.Subscribe(coords =>
-		{
-			Window.GetRootCoords(0, 0, out var windowX, out var windowY);
-			var eventMonitor = Window.Display.GetMonitorAtPoint(coords.x, coords.y);
-			var windowMonitor = Window.Display.GetMonitorAtPoint(windowX, windowY);
-
-			if (eventMonitor == windowMonitor)
+		displayServer
+			.StartMenuOpen
+			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
+			.Subscribe(coords =>
 			{
-				_startMenuWindow.Popup();
-				StyleContext.AddClass("start-menu__launch-icon--open");
-			}
-		});
+				var eventMonitor = Window.Display.GetMonitorAtPoint(coords.x, coords.y);
+				var windowMonitor = Window.Display.GetMonitorAtWindow(Window);
+
+				if (eventMonitor == windowMonitor)
+				{
+					_startMenuWindow.Popup();
+					StyleContext.AddClass("start-menu__launch-icon--open");
+				}
+			});
 
 		_startMenuWindow.ObserveEvent(nameof(Hidden)).Subscribe(_ => StyleContext.RemoveClass("start-menu__launch-icon--open"));
 		_startMenuWindow.ObserveEvent(nameof(Shown)).Subscribe(_ => StyleContext.AddClass("start-menu__launch-icon--open"));
