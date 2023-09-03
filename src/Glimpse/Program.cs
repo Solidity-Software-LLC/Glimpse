@@ -52,7 +52,7 @@ public static class Program
 						Session = new Connection(Address.Session!),
 						System = new Connection(Address.System!),
 					}).ExternallyOwned();
-				containerBuilder.Register(_ => new Application("org.SharpPanel", ApplicationFlags.None)).SingleInstance();
+				containerBuilder.Register(_ => new Application("org.solidity-software-llc.glimpse", ApplicationFlags.None)).SingleInstance();
 			}))
 			.ConfigureServices(services =>
 			{

@@ -1,5 +1,9 @@
-.window-picker__grid {
+.window-picker__app {
 	padding: 6px;
+}
+
+.window-picker__app-events:hover {
+	background-color: rgba(255, 255, 255, 0.1);
 }
 
 .window-picker__screenshot {
@@ -8,7 +12,7 @@
 }
 
 .window-picker__app:hover {
-	background-color: rgba(100, 100, 100, 1);
+	border-radius: 0;
 }
 
 .window-picker__app-icon {

@@ -25,25 +25,19 @@ public class TaskbarWindowPicker : Window
 		TypeHint = WindowTypeHint.Dialog;
 		Visual = Screen.RgbaVisual;
 
-		var previewSelectionLayout = new Box(Orientation.Horizontal, 0);
-		previewSelectionLayout.AppPaintable = true;
-		previewSelectionLayout.StyleContext.AddClass("window-picker__container");
+		var layout = new Box(Orientation.Horizontal, 0);
 
-		Add(previewSelectionLayout);
-
-		FocusOutEvent += (_, _) =>
-		{
-			Visible = false;
-		};
+		Add(layout);
+		this.ObserveEvent(nameof(FocusOutEvent)).Subscribe(_ => Visible = false);
 
 		viewModelObservable.Subscribe(vm =>
 		{
-			previewSelectionLayout.Children.ToList().ForEach(previewSelectionLayout.Remove);
+			layout.RemoveAllChildren();
 
 			foreach (var task in vm.Tasks)
 			{
 				var preview = CreateAppPreview(vm, task);
-				previewSelectionLayout.PackStart(preview, false, false, 0);
+				layout.PackStart(preview, false, false, 0);
 			}
 		});
 	}
@@ -100,14 +94,15 @@ public class TaskbarWindowPicker : Window
 		grid.AttachNextTo(appName, appIcon, PositionType.Right, 1, 1);
 		grid.AttachNextTo(closeIconBox, appName, PositionType.Right, 1, 1);
 		grid.Attach(screenshotImage, 0, 1, 3, 1);
-		grid.AddClass("window-picker__grid");
+		grid.AddClass("window-picker__app");
 
-		var eventBox = new EventBox();
-		eventBox.AddHoverHighlighting();
-		eventBox.ObserveButtonRelease().Subscribe(_ => _previewWindowClicked.OnNext(task.WindowRef));
-		eventBox.Add(grid);
-		eventBox.StyleContext.AddClass("window-picker__app");
+		var appPreview = new EventBox()
+			.AddClass("window-picker__app-events")
+			.AddMany(grid)
+			.AddHoverHighlighting();
 
-		return eventBox;
+		appPreview.ObserveButtonRelease().Subscribe(_ => _previewWindowClicked.OnNext(task.WindowRef));
+
+		return appPreview;
 	}
 }
