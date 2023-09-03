@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<OutputType>Exe</OutputType>
+		<GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
+		<RootNamespace>Glimpse</RootNamespace>
+	</PropertyGroup>
+
+	<PropertyGroup Condition=" '$(Configuration)' != 'Debug' ">
+		<UseAppHost>true</UseAppHost>
+		<DebugType>None</DebugType>
+		<DebugSymbols>False</DebugSymbols>
+		<PublishSingleFile>true</PublishSingleFile>
+		<SelfContained>true</SelfContained>
+		<PublishTrimmed>true</PublishTrimmed>
+		<TrimmerRemoveSymbols>true</TrimmerRemoveSymbols>
+		<IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
+		<EventSourceSupport>true</EventSourceSupport>
+		<TrimMode>Link</TrimMode>
+		<DebuggerSupport>false</DebuggerSupport>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Assets/*" LogicalName="%(Filename)%(Extension)" />
+		<EmbeddedResource Include="Components/**/*.css" LogicalName="%(Filename)%(Extension)" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Autofac" Version="7.1.0" />
+		<PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
+		<PackageReference Include="Fluxor" Version="5.9.0"/>
+		<PackageReference Include="GtkSharp" Version="3.24.24.95"/>
+		<PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1"/>
+		<PackageReference Include="System.Reactive" Version="6.0.0"/>
+		<PackageReference Include="Tmds.DBus.Protocol" Version="0.15.0" />
+	</ItemGroup>
+
+</Project>
