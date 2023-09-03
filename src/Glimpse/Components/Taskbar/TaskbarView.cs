@@ -20,7 +20,7 @@ public class TaskbarView : Box
 			.ObserveOn(new GLibSynchronizationContext());
 
 		var forEachObs = viewModelSelector.Select(g => g.Groups).DistinctUntilChanged().UnbundleMany(g => g.ApplicationName);
-		var forEachGroup = new ForEach<ApplicationBarGroupViewModel>(forEachObs, viewModelObservable =>
+		var forEachGroup = new ForEach<TaskbarGroupViewModel>(forEachObs, viewModelObservable =>
 		{
 			var replayLatestViewModelObservable = viewModelObservable.Replay(1);
 			var contextMenu = new TaskbarGroupContextMenu(viewModelObservable);

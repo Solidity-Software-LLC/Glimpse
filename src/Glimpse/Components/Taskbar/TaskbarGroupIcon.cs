@@ -9,11 +9,11 @@ namespace Glimpse.Components.Taskbar;
 
 public class TaskbarGroupIcon : EventBox
 {
-	private ApplicationBarGroupViewModel _currentViewModel;
+	private TaskbarGroupViewModel _currentViewModel;
 	private readonly Subject<bool> _contextMenuObservable = new();
 	private readonly Subject<EventButton> _buttonRelease = new();
 
-	public TaskbarGroupIcon(IObservable<ApplicationBarGroupViewModel> viewModel)
+	public TaskbarGroupIcon(IObservable<TaskbarGroupViewModel> viewModel)
 	{
 		Visible = false;
 		Vexpand = false;

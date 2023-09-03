@@ -15,20 +15,19 @@ public class TaskbarWindowPicker : Window
 	private readonly Subject<GenericWindowRef> _previewWindowClicked = new();
 	private readonly Subject<GenericWindowRef> _closeWindow = new();
 
-	public TaskbarWindowPicker(IObservable<ApplicationBarGroupViewModel> viewModelObservable) : base(WindowType.Toplevel)
+	public TaskbarWindowPicker(IObservable<TaskbarGroupViewModel> viewModelObservable) : base(WindowType.Toplevel)
 	{
 		SkipPagerHint = true;
 		SkipTaskbarHint = true;
 		Decorated = false;
 		Resizable = false;
 		CanFocus = true;
-		AppPaintable = true;
 		TypeHint = WindowTypeHint.Dialog;
 		Visual = Screen.RgbaVisual;
 
 		var previewSelectionLayout = new Box(Orientation.Horizontal, 0);
 		previewSelectionLayout.AppPaintable = true;
-		previewSelectionLayout.StyleContext.AddClass("app-preview-popup-container");
+		previewSelectionLayout.StyleContext.AddClass("window-picker__container");
 
 		Add(previewSelectionLayout);
 
@@ -59,51 +58,55 @@ public class TaskbarWindowPicker : Window
 		GrabFocus();
 	}
 
-	private Widget CreateAppPreview(ApplicationBarGroupViewModel viewModel, TaskState task)
+	private Widget CreateAppPreview(TaskbarGroupViewModel viewModel, TaskState task)
 	{
 		var icon = IconLoader.LoadIcon(viewModel.DesktopFile.IconName, 16)
 			?? IconLoader.LoadIcon(task, 16)
 			?? IconLoader.DefaultAppIcon(16);
 
-		var appIcon = new Image(icon);
+		var appIcon = new Image(icon)
+			{
+				Halign = Align.Start
+			}
+			.AddClass("window-picker__app-icon");
 
-		var appName = new Label(task.Title);
-		appName.Ellipsize = EllipsizeMode.End;
-		appName.Justify = Justification.Left;
-		appName.Halign = Align.Start;
-		appName.Hexpand = true;
-		appName.MaxWidthChars = 20;
+		var appName = new Label(task.Title)
+			{
+				Ellipsize = EllipsizeMode.End,
+				Justify = Justification.Left,
+				Halign = Align.Start,
+				MaxWidthChars = 15,
+				Expand = true
+			}
+			.AddClass("window-picker__app-name");
 
-		var closeIconBox = new EventBox();
-		closeIconBox.AddHoverHighlighting();
-		closeIconBox.StyleContext.AddClass("app-preview-close-icon");
-		closeIconBox.SetSizeRequest(16, 16);
-		closeIconBox.Add(new Image(Assets.Close.ScaleSimple(12, 12, InterpType.Bilinear)));
-		closeIconBox.ButtonReleaseEvent += (_, _) => _closeWindow.OnNext(task.WindowRef);
+		var closeIconBox = new Button()
+			{
+				Halign = Align.End
+			}
+			.AddClass("window-picker__app-close-button")
+			.AddMany(new Image(Assets.Close.ScaleSimple(12, 12, InterpType.Bilinear)));
 
-		var topRow = new Box(Orientation.Horizontal, 4);
-		topRow.PackStart(appIcon, false, false, 0);
-		topRow.PackStart(appName, true, true, 0);
-		topRow.PackStart(closeIconBox, false, false, 0);
+		closeIconBox.ObserveButtonRelease().Subscribe(_ => _closeWindow.OnNext(task.WindowRef));
 
-		var bitmapImage = task.Screenshot;
-		var imageBuffer = new Pixbuf(bitmapImage.Data, Colorspace.Rgb, true, 8, bitmapImage.Width, bitmapImage.Height, 4 * bitmapImage.Width);
-		var ratio = (double) imageBuffer.Width / imageBuffer.Height;
-		imageBuffer = imageBuffer.ScaleSimple((int) (100 * ratio), 100, InterpType.Bilinear);
+		var screenshotImage = new Image(task.Screenshot.ScaleToFit(100, 200))
+			{
+				Halign = Align.Center
+			}
+			.AddClass("window-picker__screenshot");
 
-		var appWindowContainer = new Box(Orientation.Vertical, 4);
-		appWindowContainer.Hexpand = false;
-		appWindowContainer.Vexpand = false;
-		appWindowContainer.Add(topRow);
-		appWindowContainer.Add(new Image(imageBuffer));
-		appWindowContainer.StyleContext.AddClass("app-preview-layout");
-		appWindowContainer.WidthRequest = 230;
+		var grid = new Grid();
+		grid.Attach(appIcon, 0, 0, 1, 1);
+		grid.AttachNextTo(appName, appIcon, PositionType.Right, 1, 1);
+		grid.AttachNextTo(closeIconBox, appName, PositionType.Right, 1, 1);
+		grid.Attach(screenshotImage, 0, 1, 3, 1);
+		grid.AddClass("window-picker__grid");
 
 		var eventBox = new EventBox();
 		eventBox.AddHoverHighlighting();
-		eventBox.ButtonReleaseEvent += (o, args) => _previewWindowClicked.OnNext(task.WindowRef);
-		eventBox.Add(appWindowContainer);
-		eventBox.StyleContext.AddClass("app-preview-app");
+		eventBox.ObserveButtonRelease().Subscribe(_ => _previewWindowClicked.OnNext(task.WindowRef));
+		eventBox.Add(grid);
+		eventBox.StyleContext.AddClass("window-picker__app");
 
 		return eventBox;
 	}

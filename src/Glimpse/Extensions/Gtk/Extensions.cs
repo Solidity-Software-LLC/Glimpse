@@ -1,5 +1,6 @@
 using System.Reactive.Linq;
 using Gdk;
+using Glimpse.State;
 using Gtk;
 using Window = Gtk.Window;
 
@@ -7,7 +8,7 @@ namespace Glimpse.Extensions.Gtk;
 
 public static class Extensions
 {
-	public static IObservable<ButtonReleaseEventArgs> CreateButtonReleaseObservable(this Widget widget)
+	public static IObservable<ButtonReleaseEventArgs> ObserveButtonRelease(this Widget widget)
 	{
 		return Observable.FromEventPattern<ButtonReleaseEventArgs>(widget, nameof(widget.ButtonReleaseEvent))
 			.TakeUntilDestroyed(widget)
@@ -87,5 +88,30 @@ public static class Extensions
 	{
 		foreach (var c in children) widget.Add(c);
 		return widget;
+	}
+
+	public static Pixbuf ToPixbuf(this BitmapImage image)
+	{
+		return new Pixbuf(image.Data, Colorspace.Rgb, true, 8, image.Width, image.Height, 4 * image.Width);
+	}
+
+	public static double AspectRatio(this BitmapImage image)
+	{
+		return (double)image.Width / image.Height;
+	}
+
+	public static Pixbuf ScaleToFit(this BitmapImage image, int maxHeight, int maxWidth)
+	{
+		var imageBuffer = image.ToPixbuf();
+		var scaledWidth = maxHeight * image.AspectRatio();
+		var scaledHeight = (double) maxHeight;
+
+		if (scaledWidth > maxWidth)
+		{
+			scaledWidth = maxWidth;
+			scaledHeight /= image.AspectRatio();
+		}
+
+		return imageBuffer.ScaleSimple((int) scaledWidth, (int) scaledHeight, InterpType.Bilinear);
 	}
 }

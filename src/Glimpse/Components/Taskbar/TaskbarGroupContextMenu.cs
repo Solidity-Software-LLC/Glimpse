@@ -14,7 +14,7 @@ public class TaskbarGroupContextMenu : Menu
 	private readonly Subject<DesktopFileAction> _desktopFileAction = new();
 	private readonly Subject<DesktopFile> _launch = new();
 
-	public TaskbarGroupContextMenu(IObservable<ApplicationBarGroupViewModel> viewModel)
+	public TaskbarGroupContextMenu(IObservable<TaskbarGroupViewModel> viewModel)
 	{
 		ReserveToggleSize = false;
 
@@ -30,7 +30,7 @@ public class TaskbarGroupContextMenu : Menu
 	public Subject<DesktopFileAction> DesktopFileAction => _desktopFileAction;
 	public Subject<DesktopFile> Launch => _launch;
 
-	private void CreateContextMenu(ApplicationBarGroupViewModel barGroup)
+	private void CreateContextMenu(TaskbarGroupViewModel barGroup)
 	{
 		if (barGroup.Tasks.Count == 0)
 		{
@@ -49,30 +49,30 @@ public class TaskbarGroupContextMenu : Menu
 		ShowAll();
 	}
 
-	private MenuItem CreatePinMenuItem(ApplicationBarGroupViewModel group)
+	private MenuItem CreatePinMenuItem(TaskbarGroupViewModel group)
 	{
 		var pinLabel = group.IsPinned ? "Unpin from taskbar" : "Pin to taskbar";
 		var icon = group.IsPinned ? Assets.UnpinIcon : Assets.PinIcon;
 		var pinMenuItem = ContextMenuHelper.CreateMenuItem(pinLabel, icon.ScaleSimple(16, 16, InterpType.Bilinear));
-		pinMenuItem.CreateButtonReleaseObservable().Subscribe(_ => _pinSubject.OnNext(true));
+		pinMenuItem.ObserveButtonRelease().Subscribe(_ => _pinSubject.OnNext(true));
 		return pinMenuItem;
 	}
 
-	private MenuItem CreateLaunchMenuItem(ApplicationBarGroupViewModel group)
+	private MenuItem CreateLaunchMenuItem(TaskbarGroupViewModel group)
 	{
 		var pinMenuItem = ContextMenuHelper.CreateMenuItem(group.DesktopFile.Name, IconLoader.LoadIcon(group.DesktopFile.IconName, 16));
-		pinMenuItem.CreateButtonReleaseObservable().Subscribe(_ => _launch.OnNext(group.DesktopFile));
+		pinMenuItem.ObserveButtonRelease().Subscribe(_ => _launch.OnNext(group.DesktopFile));
 		return pinMenuItem;
 	}
 
-	private MenuItem CreateCloseAction(ApplicationBarGroupViewModel barGroup)
+	private MenuItem CreateCloseAction(TaskbarGroupViewModel barGroup)
 	{
 		var allowedActions = barGroup.Tasks.First().AllowedActions;
 
 		if (allowedActions.Contains(AllowedWindowActions.Close))
 		{
 			var menuItem = ContextMenuHelper.CreateMenuItem("Close", Assets.Close.ScaleSimple(16, 16, InterpType.Bilinear));
-			menuItem.CreateButtonReleaseObservable().Subscribe(_ => _windowAction.OnNext(AllowedWindowActions.Close));
+			menuItem.ObserveButtonRelease().Subscribe(_ => _windowAction.OnNext(AllowedWindowActions.Close));
 			return menuItem;
 		}
 
@@ -90,7 +90,7 @@ public class TaskbarGroupContextMenu : Menu
 			menuItems.ForEach(m =>
 			{
 				var action = (DesktopFileAction)m.Data["DesktopFileAction"];
-				m.CreateButtonReleaseObservable().Subscribe(_ => _desktopFileAction.OnNext(action));
+				m.ObserveButtonRelease().Subscribe(_ => _desktopFileAction.OnNext(action));
 			});
 		}
 

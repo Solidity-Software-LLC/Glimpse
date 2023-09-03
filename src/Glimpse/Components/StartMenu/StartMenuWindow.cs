@@ -39,7 +39,7 @@ public class StartMenuWindow : Window
 			appIcon.Valign = Align.Start;
 			appIcon.Expand = false;
 
-			appIcon.CreateButtonReleaseObservable()
+			appIcon.ObserveButtonRelease()
 				.Where(static e => e.Event.Button == 1)
 				.WithLatestFrom(file)
 				.Subscribe(t => _appLaunch.OnNext(t.Second));
@@ -149,19 +149,19 @@ public class StartMenuWindow : Window
 					new Label(Environment.UserName).AddClass("start-menu__username")));
 
 		userButton.Valign = Align.Center;
-		UserSettingsClicked = userButton.CreateButtonReleaseObservable();
+		UserSettingsClicked = userButton.ObserveButtonRelease();
 
 		var settingsButton = new Button(new Image(Assets.Settings.ScaleSimple(24, 24, InterpType.Bilinear)));
 		settingsButton.AddClass("start-menu__settings");
 		settingsButton.Valign = Align.Center;
 		settingsButton.Halign = Align.End;
-		SettingsButtonClicked = settingsButton.CreateButtonReleaseObservable();
+		SettingsButtonClicked = settingsButton.ObserveButtonRelease();
 
 		var powerButton = new Button(new Image(Assets.Power.ScaleSimple(24, 24, InterpType.Bilinear)));
 		powerButton.AddClass("start-menu__power");
 		powerButton.Valign = Align.Center;
 		powerButton.Halign = Align.End;
-		PowerButtonClicked = powerButton.CreateButtonReleaseObservable();
+		PowerButtonClicked = powerButton.ObserveButtonRelease();
 
 		var actionBar = new Box(Orientation.Horizontal, 0);
 		actionBar.Expand = true;

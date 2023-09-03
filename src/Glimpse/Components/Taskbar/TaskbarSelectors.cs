@@ -15,11 +15,11 @@ public class TaskbarSelectors
 			.Select(t =>
 			{
 				var (tasks, pinnedApps) = t;
-				var allGroups = ImmutableList<ApplicationBarGroupViewModel>.Empty;
+				var allGroups = ImmutableList<TaskbarGroupViewModel>.Empty;
 
 				foreach (var pinned in pinnedApps)
 				{
-					allGroups = allGroups.Add(new ApplicationBarGroupViewModel()
+					allGroups = allGroups.Add(new TaskbarGroupViewModel()
 					{
 						ApplicationName = pinned.Name,
 						DesktopFile = pinned,
@@ -34,7 +34,7 @@ public class TaskbarSelectors
 
 					if (matchingGroup == null)
 					{
-						allGroups = allGroups.Add(new ApplicationBarGroupViewModel()
+						allGroups = allGroups.Add(new TaskbarGroupViewModel()
 						{
 							ApplicationName = desktopFile.Name,
 							DesktopFile = desktopFile,
