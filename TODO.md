@@ -5,6 +5,7 @@ Launch status cursor updates
 Start Menu
 ------------
 View all apps button in start menu
+Drag and drop icons
 
 Taskbar
 ------------
@@ -12,6 +13,7 @@ Group icon alert status
 Convert taskbar apps to buttons
 Don't draw window picker window, the box shadow looks bad with rounded corners
 Calendar
+Drag and drop icons
 
 System Tray
 ------------
