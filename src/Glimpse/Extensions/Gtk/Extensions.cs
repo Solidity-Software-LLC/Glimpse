@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using Cairo;
 using Gdk;
 using Glimpse.State;
 using Gtk;
@@ -91,7 +92,10 @@ public static class Extensions
 
 	public static Pixbuf ToPixbuf(this BitmapImage image)
 	{
-		return new Pixbuf(image.Data, Colorspace.Rgb, true, 8, image.Width, image.Height, 4 * image.Width);
+		var surface = new ImageSurface(image.Data, image.Depth == 24 ? Format.RGB24 : Format.Argb32, image.Width, image.Height, 4 * image.Width);
+		var buffer = new Pixbuf(surface, 0, 0, image.Width, image.Height);
+		surface.Dispose();
+		return buffer;
 	}
 
 	public static double AspectRatio(this BitmapImage image)

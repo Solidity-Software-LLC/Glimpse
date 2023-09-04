@@ -13,7 +13,6 @@ Taskbar
 * Convert taskbar apps to buttons
 * Calendar
 * Drag and drop icons
-* Preview screenshot color is sometimes off
 * Screenshots not always working (need to capture when minimizing too)
 
 System Tray

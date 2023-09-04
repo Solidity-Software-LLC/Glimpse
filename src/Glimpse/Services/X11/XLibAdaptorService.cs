@@ -218,17 +218,18 @@ public class XLibAdaptorService : IDisposable
 			{
 				var intBytes = BitConverter.GetBytes(binaryReader.ReadInt32());
 				binaryReader.ReadInt32();
-				imageData[i] = intBytes[3];
-				imageData[i+1] = intBytes[2];
-				imageData[i+2] = intBytes[1];
-				imageData[i+3] = intBytes[0];
+				imageData[i] = intBytes[0];
+				imageData[i+1] = intBytes[1];
+				imageData[i+2] = intBytes[2];
+				imageData[i+3] = intBytes[3];
 			}
 
 			icons.Add(new BitmapImage()
 			{
 				Width = (int) width,
 				Height = (int) height,
-				Data = ImageHelper.ConvertArgbToRgba(imageData, (int) width, (int) height)
+				Depth = 32,
+				Data = imageData
 			});
 		}
 
@@ -339,7 +340,7 @@ public class XLibAdaptorService : IDisposable
 		var imageData = new byte[image.bytes_per_line * image.height];
 		Marshal.Copy(image.data, imageData, 0, imageData.Length);
 
-		var bitmap = new BitmapImage() { Data = imageData, Height = image.height, Width = image.width };
+		var bitmap = new BitmapImage() { Data = imageData, Height = image.height, Width = image.width, Depth = windowAttributes.depth };
 		XLib.XDestroyImage(imagePointer);
 		return bitmap;
 	}
