@@ -65,8 +65,8 @@ public class FreeDesktopService
 	{
 		var lowerCaseAppName = applicationName.ToLower();
 
-		return _desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower() == lowerCaseAppName)
-			?? _desktopFiles.FirstOrDefault(f => f.Name.ToLower().Contains(lowerCaseAppName))
+		return _desktopFiles.FirstOrDefault(f => f.Name.ToLower().Contains(lowerCaseAppName))
+			?? _desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower() == lowerCaseAppName)
 			?? _desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower().Contains(lowerCaseAppName))
 			?? _desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower().Contains(lowerCaseAppName))
 			?? _desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower() == lowerCaseAppName);

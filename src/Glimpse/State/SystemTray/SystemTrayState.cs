@@ -9,15 +9,15 @@ namespace Glimpse.State.SystemTray;
 [FeatureState]
 public class SystemTrayState
 {
-	public ImmutableDictionary<string, SystemTrayItemState> Items = ImmutableDictionary<string, SystemTrayItemState>.Empty;
+	public ImmutableDictionary<string, SystemTrayItemState> Items { get; init; }= ImmutableDictionary<string, SystemTrayItemState>.Empty;
 }
 
 public class SystemTrayItemState
 {
-	public StatusNotifierItemProperties Properties { get; set; }
-	public DbusObjectDescription StatusNotifierItemDescription { get; set; }
-	public DbusObjectDescription DbusMenuDescription { get; set; }
-	public DbusMenuItem RootMenuItem { get; set; }
+	public StatusNotifierItemProperties Properties { get; init; }
+	public DbusObjectDescription StatusNotifierItemDescription { get; init; }
+	public DbusObjectDescription DbusMenuDescription { get; init; }
+	public DbusMenuItem RootMenuItem { get; init; }
 
 	public SystemTrayItemState()
 	{
@@ -40,42 +40,42 @@ public static class SystemTrayItemStateExtensions
 
 public class AddBulkTrayItemsAction
 {
-	public IEnumerable<SystemTrayItemState> Items { get; set; }
+	public IEnumerable<SystemTrayItemState> Items { get; init; }
 }
 
 public class AddTrayItemAction
 {
-	public SystemTrayItemState ItemState { get; set; }
+	public SystemTrayItemState ItemState { get; init; }
 }
 
 public class RemoveTrayItemAction
 {
-	public string ServiceName { get; set; }
+	public string ServiceName { get; init; }
 }
 
 public class UpdateMenuLayoutAction
 {
-	public string ServiceName { get; set; }
-	public DbusMenuItem RootMenuItem { get; set; }
+	public string ServiceName { get; init; }
+	public DbusMenuItem RootMenuItem { get; init; }
 }
 
 public class ActivateApplicationAction
 {
-	public DbusObjectDescription DbusObjectDescription { get; set; }
-	public int X { get; set; }
-	public int Y { get; set; }
+	public DbusObjectDescription DbusObjectDescription { get; init; }
+	public int X { get; init; }
+	public int Y { get; init; }
 }
 
 public class ActivateMenuItemAction
 {
-	public DbusObjectDescription DbusObjectDescription { get; set; }
-	public int MenuItemId { get; set; }
+	public DbusObjectDescription DbusObjectDescription { get; init; }
+	public int MenuItemId { get; init; }
 }
 
 public class UpdateStatusNotifierItemPropertiesAction
 {
-	public string ServiceName { get; set; }
-	public StatusNotifierItemProperties Properties { get; set; }
+	public string ServiceName { get; init; }
+	public StatusNotifierItemProperties Properties { get; init; }
 }
 
 public static class SystemTrayItemStateReducers

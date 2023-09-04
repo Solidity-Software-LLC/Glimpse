@@ -71,12 +71,12 @@ public class X11DisplayServer : IDisplayServer
 
 		_xService.WindowRemoved.Subscribe(w =>
 		{
-			_dispatcher.Dispatch(new RemoveTaskAction() { WindowId = $"{w.Display}_{w.Window}"});
+			_dispatcher.Dispatch(new RemoveTaskAction() { WindowId = $"{w.Display:X}_{w.Window:X}"});
 		});
 
 		_xService.FocusChanged.Subscribe(w =>
 		{
-			_dispatcher.Dispatch(new UpdateFocusAction() { WindowRef = new GenericWindowRef() { Id = $"{w.Display}_{w.Window}", InternalRef = w } });
+			_dispatcher.Dispatch(new UpdateFocusAction() { WindowRef = new GenericWindowRef() { Id = $"{w.Display:X}_{w.Window:X}", InternalRef = w } });
 		});
 	}
 
@@ -98,7 +98,7 @@ public class X11DisplayServer : IDisplayServer
 		return new TaskState()
 		{
 			Title = _xService.GetStringProperty(windowRef, XAtoms.NetWmName),
-			WindowRef = new GenericWindowRef() { Id = $"{windowRef.Display}_{windowRef.Window}", InternalRef = windowRef },
+			WindowRef = new GenericWindowRef() { Id = $"{windowRef.Display:X}_{windowRef.Window:X}", InternalRef = windowRef },
 			Icons = _xService.GetIcons(windowRef),
 			State = _xService.GetAtomArray(windowRef, XAtoms.NetWmState).ToList(),
 			ApplicationName = desktopFile?.Name ?? _xService.GetClassHint(windowRef).res_name,

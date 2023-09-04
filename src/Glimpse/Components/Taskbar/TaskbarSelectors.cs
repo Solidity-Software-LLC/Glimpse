@@ -17,12 +17,12 @@ public class TaskbarSelectors
 				var (tasks, pinnedApps) = t;
 				var allGroups = ImmutableList<TaskbarGroupViewModel>.Empty;
 
-				foreach (var pinned in pinnedApps)
+				foreach (var desktopFile in pinnedApps)
 				{
 					allGroups = allGroups.Add(new TaskbarGroupViewModel()
 					{
-						ApplicationName = pinned.Name,
-						DesktopFile = pinned,
+						Id = desktopFile.IniFile.FilePath,
+						DesktopFile = desktopFile,
 						IsPinned = true
 					});
 				}
@@ -36,7 +36,7 @@ public class TaskbarSelectors
 					{
 						allGroups = allGroups.Add(new TaskbarGroupViewModel()
 						{
-							ApplicationName = desktopFile.Name,
+							Id = task.DesktopFile.IniFile.FilePath,
 							DesktopFile = desktopFile,
 							IsPinned = false,
 							Tasks = ImmutableList<TaskState>.Empty.Add(task)
@@ -44,7 +44,7 @@ public class TaskbarSelectors
 					}
 					else
 					{
-						matchingGroup.Tasks = matchingGroup.Tasks.Add(task);
+						allGroups = allGroups.Replace(matchingGroup, matchingGroup with { Tasks = matchingGroup.Tasks.Add(task) });
 					}
 				}
 

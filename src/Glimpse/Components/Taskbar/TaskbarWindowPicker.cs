@@ -1,6 +1,8 @@
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
 using Glimpse.Extensions.Gtk;
+using Glimpse.Extensions.Reactive;
 using Glimpse.Services.DisplayServer;
 using Glimpse.State;
 using Gtk;
@@ -26,19 +28,14 @@ public class TaskbarWindowPicker : Window
 		Visual = Screen.RgbaVisual;
 
 		var layout = new Box(Orientation.Horizontal, 0);
-
 		Add(layout);
 		this.ObserveEvent(nameof(FocusOutEvent)).Subscribe(_ => Visible = false);
 
-		viewModelObservable.Subscribe(vm =>
+		viewModelObservable.Select(vm => vm.Tasks).UnbundleMany(t => t.WindowRef.Id).Subscribe(taskObservable =>
 		{
-			layout.RemoveAllChildren();
-
-			foreach (var task in vm.Tasks)
-			{
-				var preview = CreateAppPreview(vm, task);
-				layout.PackStart(preview, false, false, 0);
-			}
+			var preview = CreateAppPreview(taskObservable);
+			layout.Add(preview);
+			taskObservable.DistinctUntilChanged().Subscribe(_ => { }, _ => { }, () => layout.Remove(preview));
 		});
 	}
 
@@ -49,22 +46,11 @@ public class TaskbarWindowPicker : Window
 	{
 		Visible = true;
 		ShowAll();
-		GrabFocus();
 	}
 
-	private Widget CreateAppPreview(TaskbarGroupViewModel viewModel, TaskState task)
+	private Widget CreateAppPreview(IObservable<TaskState> taskObservable)
 	{
-		var icon = IconLoader.LoadIcon(viewModel.DesktopFile.IconName, 16)
-			?? IconLoader.LoadIcon(task, 16)
-			?? IconLoader.DefaultAppIcon(16);
-
-		var appIcon = new Image(icon)
-			{
-				Halign = Align.Start
-			}
-			.AddClass("window-picker__app-icon");
-
-		var appName = new Label(task.Title)
+		var appName = new Label()
 			{
 				Ellipsize = EllipsizeMode.End,
 				Justify = Justification.Left,
@@ -74,19 +60,14 @@ public class TaskbarWindowPicker : Window
 			}
 			.AddClass("window-picker__app-name");
 
-		var closeIconBox = new Button()
-			{
-				Halign = Align.End
-			}
+		var appIcon = new Image() { Halign = Align.Start }
+			.AddClass("window-picker__app-icon");
+
+		var closeIconBox = new Button() { Halign = Align.End }
 			.AddClass("window-picker__app-close-button")
 			.AddMany(new Image(Assets.Close.ScaleSimple(12, 12, InterpType.Bilinear)));
 
-		closeIconBox.ObserveButtonRelease().Subscribe(_ => _closeWindow.OnNext(task.WindowRef));
-
-		var screenshotImage = new Image(task.Screenshot.ScaleToFit(100, 200))
-			{
-				Halign = Align.Center
-			}
+		var screenshotImage = new Image() { Halign = Align.Center }
 			.AddClass("window-picker__screenshot");
 
 		var grid = new Grid();
@@ -101,7 +82,11 @@ public class TaskbarWindowPicker : Window
 			.AddMany(grid)
 			.AddHoverHighlighting();
 
-		appPreview.ObserveButtonRelease().Subscribe(_ => _previewWindowClicked.OnNext(task.WindowRef));
+		taskObservable.Select(t => t.Title).DistinctUntilChanged().Subscribe(t => appName.Text = t);
+		taskObservable.Subscribe(t => appIcon.Pixbuf = IconLoader.LoadIcon(t.DesktopFile.IconName, 16) ?? IconLoader.LoadIcon(t, 16) ?? IconLoader.DefaultAppIcon(16));
+		closeIconBox.ObserveButtonRelease().WithLatestFrom(taskObservable).Subscribe(t => _closeWindow.OnNext(t.Second.WindowRef));
+		taskObservable.Select(t => t.Screenshot).DistinctUntilChanged().Subscribe(s => screenshotImage.Pixbuf = s.ScaleToFit(100, 200));
+		appPreview.ObserveButtonRelease().WithLatestFrom(taskObservable).Subscribe(t => _previewWindowClicked.OnNext(t.Second.WindowRef));
 
 		return appPreview;
 	}

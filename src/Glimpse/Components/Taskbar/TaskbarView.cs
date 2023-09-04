@@ -19,7 +19,7 @@ public class TaskbarView : Box
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new GLibSynchronizationContext());
 
-		var forEachObs = viewModelSelector.Select(g => g.Groups).DistinctUntilChanged().UnbundleMany(g => g.ApplicationName);
+		var forEachObs = viewModelSelector.Select(g => g.Groups).DistinctUntilChanged().UnbundleMany(g => g.Id);
 		var forEachGroup = new ForEach<TaskbarGroupViewModel>(forEachObs, viewModelObservable =>
 		{
 			var replayLatestViewModelObservable = viewModelObservable.Replay(1);

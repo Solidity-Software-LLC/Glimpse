@@ -6,15 +6,15 @@ namespace Glimpse.Components.Taskbar;
 
 public record TaskbarViewModel
 {
-	public ImmutableList<TaskbarGroupViewModel> Groups = ImmutableList<TaskbarGroupViewModel>.Empty;
+	public ImmutableList<TaskbarGroupViewModel> Groups { get; init; } = ImmutableList<TaskbarGroupViewModel>.Empty;
 }
 
 public record TaskbarGroupViewModel
 {
-	public ImmutableList<TaskState> Tasks { get; set; } = ImmutableList<TaskState>.Empty;
-	public string ApplicationName { get; set; }
-	public DesktopFile DesktopFile { get; set; }
-	public bool IsPinned { get; set; }
+	public ImmutableList<TaskState> Tasks { get; init; } = ImmutableList<TaskState>.Empty;
+	public string Id { get; init; }
+	public DesktopFile DesktopFile { get; init; }
+	public bool IsPinned { get; init; }
 
 	public virtual bool Equals(TaskbarGroupViewModel other) => ReferenceEquals(this, other);
 }
