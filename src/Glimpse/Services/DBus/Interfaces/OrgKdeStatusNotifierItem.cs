@@ -18,6 +18,16 @@ public class OrgKdeStatusNotifierItem
 		_destination = destination;
 		_path = path;
 
+		var iconUpdated = connection.WatchSignal(
+			new MatchRule
+			{
+				Type = MessageType.Signal,
+				Sender = _destination,
+				Path = _path,
+				Member = "NewIcon",
+				Interface = Interface
+			});
+
 		PropertyChanged = connection.WatchSignal(
 			new MatchRule
 			{
@@ -27,14 +37,8 @@ public class OrgKdeStatusNotifierItem
 				Member = "PropertiesChanged",
 				Interface = "org.freedesktop.DBus.Properties",
 				Arg0 = Interface
-			},
-			(message, _) =>
-			{
-				var reader = message.GetBodyReader();
-				reader.ReadString();
-				List<string> changed = new();
-				return new PropertyChanges<Properties>(ReadProperties(ref reader, changed), changed.ToArray(), reader.ReadArray_as());
 			})
+			.Merge(iconUpdated)
 			.Select(_ => Observable.FromAsync(GetAllPropertiesAsync))
 			.Concat();
 	}

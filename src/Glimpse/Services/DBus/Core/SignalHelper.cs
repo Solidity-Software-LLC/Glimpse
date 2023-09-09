@@ -1,4 +1,5 @@
-﻿using System.Reactive.Linq;
+﻿using System.Reactive;
+using System.Reactive.Linq;
 using Tmds.DBus.Protocol;
 
 namespace Glimpse.Services.DBus.Core;
@@ -21,6 +22,28 @@ public static class SignalHelper
 			Arg0 = @interface
 		};
 		return WatchSignalAsync(connection, rule, reader, handler, emitOnCapturedContext);
+	}
+
+	public static IObservable<Unit> WatchSignal(this Connection connection, MatchRule matchRule)
+	{
+		return Observable.Create<Unit>(async obs =>
+		{
+			return await connection.AddMatchAsync(
+				matchRule,
+				static (_, _) => Unit.Default,
+				static (e, _, _, observerState) =>
+				{
+					var observer = (IObserver<Unit>)observerState;
+
+					if (e != null)
+						observer.OnError(e);
+					else
+						observer.OnNext(Unit.Default);
+				},
+				null,
+				obs,
+				false);
+		});
 	}
 
 	public static IObservable<T> WatchSignal<T>(this Connection connection, MatchRule matchRule, MessageValueReader<T> reader)

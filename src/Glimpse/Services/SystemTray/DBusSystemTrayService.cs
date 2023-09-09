@@ -72,6 +72,7 @@ public class DBusSystemTrayService
 
 		dbusMenuProxy.LayoutUpdated
 			.TakeUntil(itemRemovedObservable)
+			.Throttle(TimeSpan.FromMilliseconds(250))
 			.Subscribe(menu =>
 			{
 				_dispatcher.Dispatch(new UpdateMenuLayoutAction { ServiceName = serviceName, RootMenuItem = DbusMenuItem.From(menu.layout) });

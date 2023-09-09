@@ -2,6 +2,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
 using Glimpse.Extensions.Gtk;
+using Glimpse.Extensions.Reactive;
 using Glimpse.Services.DBus.Interfaces;
 using Glimpse.State.SystemTray;
 using Gtk;
@@ -27,18 +28,28 @@ public class SystemTrayIcon : Button
 		StyleContext.AddClass("system-tray__icon");
 		var hasActivateMethod = false;
 
-		viewModelObservable
+		var image = new Image();
+		image.Valign = Align.Center;
+		Add(image);
+
+		var propertiesObservable = viewModelObservable
 			.TakeUntilDestroyed(this)
 			.Select(s => s.Properties)
-			.Take(1)
+			.DistinctUntilChanged();
+
+		propertiesObservable
+			.DistinctUntilChanged((x, y) => x.Title == y.Title)
 			.Subscribe(properties =>
 			{
 				TooltipText = properties.Title;
 				HasTooltip = !string.IsNullOrEmpty(TooltipText);
-				var image = new Image(properties.CreateIcon(IconTheme.GetForScreen(Screen)).ScaleSimple(24, 24, InterpType.Bilinear));
-				image.Valign = Align.Center;
-				Add(image);
-				ShowAll();
+			});
+
+		propertiesObservable
+			.DistinctUntilChanged((x, y) => x.IconName == y.IconName && x.IconThemePath == y.IconThemePath && x.IconPixmap == y.IconPixmap)
+			.Subscribe(properties =>
+			{
+				image.Pixbuf = properties.CreateIcon(IconTheme.GetForScreen(Screen)).ScaleSimple(24, 24, InterpType.Bilinear);
 			});
 
 		viewModelObservable
@@ -62,16 +73,15 @@ public class SystemTrayIcon : Button
 				foreach (var i in allMenuItems) i.Activated += (_, _) => _menuItemActivatedSubject.OnNext(i.GetDbusMenuItem().Id);
 			});
 
-		Observable.FromEventPattern<ButtonPressEventArgs>(this, nameof(ButtonPressEvent))
-			.TakeUntilDestroyed(this)
-			.Where(e => hasActivateMethod && e.EventArgs.Event.Button == 1 && e.EventArgs.Event.Type == EventType.DoubleButtonPress)
-			.Select(e => e.EventArgs.Event)
-			.Subscribe(e => _applicationActivated.OnNext(((int)e.XRoot, (int)e.YRoot)));
+		this.ObserveButtonRelease()
+			.Where(e => hasActivateMethod && e.Event.Button == 1)
+			.Subscribe(e => _applicationActivated.OnNext(((int)e.Event.XRoot, (int)e.Event.YRoot)));
 
-		Observable.FromEventPattern<ButtonPressEventArgs>(this, nameof(ButtonPressEvent))
-			.TakeUntilDestroyed(this)
-			.Where(e => !hasActivateMethod && e.EventArgs.Event.Button == 1 && e.EventArgs.Event.Type == EventType.ButtonPress)
+		this.ObserveButtonRelease()
+			.Where(e => !hasActivateMethod && e.Event.Button == 1)
 			.Subscribe(_ => _contextMenu.Popup());
+
+		ShowAll();
 	}
 
 	public IObservable<int> MenuItemActivated => _menuItemActivatedSubject;
