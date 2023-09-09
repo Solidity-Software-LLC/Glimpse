@@ -31,6 +31,7 @@ public static class XAtoms
 	public static readonly ulong NetWmStateMaximizedHorz;
 	public static readonly ulong NetWmStateHidden;
 	public static readonly ulong NetWmMoveresize;
+	public static readonly ulong WmClass;
 
 	static XAtoms()
 	{
@@ -57,6 +58,7 @@ public static class XAtoms
 		NetWmStateMaximizedHorz = XLib.XInternAtom(display, "_NET_WM_STATE_MAXIMIZED_HORZ", true);
 		NetWmStateHidden = XLib.XInternAtom(display, "_NET_WM_STATE_HIDDEN", true);
 		NetWmMoveresize = XLib.XInternAtom(display, "_NET_WM_MOVERESIZE", true);
+		WmClass = XLib.XInternAtom(display, "WM_CLASS", true);
 
 		XLib.XCloseDisplay(display);
 	}

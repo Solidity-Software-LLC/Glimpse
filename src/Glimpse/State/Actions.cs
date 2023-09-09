@@ -4,19 +4,14 @@ using Glimpse.Services.FreeDesktop;
 
 namespace Glimpse.State;
 
-public class AddTaskAction
+public class UpdateWindowAction
 {
-	public TaskState Task { get; init; }
+	public WindowProperties WindowProperties { get; set; }
 }
 
-public class RemoveTaskAction
+public class RemoveWindowAction
 {
-	public string WindowId { get; init; }
-}
-
-public class UpdateFocusAction
-{
-	public GenericWindowRef WindowRef { get; init; }
+	public WindowProperties WindowProperties { get; set; }
 }
 
 public class AddTaskbarPinnedDesktopFileAction
@@ -73,4 +68,14 @@ public class UpdateUserAction
 {
 	public string UserName { get; init; }
 	public string IconPath { get; init; }
+}
+
+public class TakeScreenshotAction
+{
+	public IEnumerable<IWindowRef> Windows { get; set; }
+}
+
+public class UpdateScreenshotsAction
+{
+	public IEnumerable<(IWindowRef Window, BitmapImage Screenshot)> Screenshots { get; set; }
 }

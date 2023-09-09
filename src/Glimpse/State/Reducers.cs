@@ -87,28 +87,37 @@ public class Reducers
 	}
 
 	[ReducerMethod]
-	public static RootState ReduceAddTaskAction(RootState state, AddTaskAction action)
+	public static RootState ReduceRemoveWindowAction(RootState state, RemoveWindowAction action)
 	{
-		return state with { TaskbarState = state.TaskbarState with { Tasks = state.TaskbarState.Tasks.Add(action.Task) } };
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceRemoveTaskAction(RootState state, RemoveTaskAction action)
-	{
-		var taskToRemove = state.TaskbarState.Tasks.FirstOrDefault(t => t.WindowRef.Id == action.WindowId);
+		var taskToRemove = state.Windows.FirstOrDefault(t => t.WindowRef.Id == action.WindowProperties.WindowRef.Id);
 		if (taskToRemove == null) return state;
-		return state with { TaskbarState = state.TaskbarState with { Tasks = state.TaskbarState.Tasks.Remove(taskToRemove) } };
+		return state with { Windows = state.Windows.Remove(taskToRemove) };
 	}
 
 	[ReducerMethod]
-	public static RootState ReduceUpdateFocusAction(RootState state, UpdateFocusAction action)
+	public static RootState ReduceUpdateWindowAction(RootState state, UpdateWindowAction action)
 	{
-		return state with { FocusedWindow = action.WindowRef };
+		var windowToReplace = state.Windows.FirstOrDefault(t => t.WindowRef.Id == action.WindowProperties.WindowRef.Id);
+
+		if (windowToReplace == null)
+		{
+			return state with { Windows = state.Windows.Add(action.WindowProperties) };
+		}
+
+		return state with { Windows = state.Windows.Replace(windowToReplace, action.WindowProperties) };
 	}
 
 	[ReducerMethod]
 	public static RootState ReduceUpdateStartMenuSearchTextAction(RootState state, UpdateStartMenuSearchTextAction action)
 	{
 		return state with { StartMenuState = state.StartMenuState with { SearchText = action.SearchText } };
+	}
+
+	[ReducerMethod]
+	public static RootState ReduceUpdateScreenshotsAction(RootState state, UpdateScreenshotsAction action)
+	{
+		var updated = state.Screenshots;
+		foreach (var w in action.Screenshots) updated = updated.SetItem(w.Window, w.Screenshot);
+		return state with { Screenshots = updated };
 	}
 }

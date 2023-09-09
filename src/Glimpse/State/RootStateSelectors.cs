@@ -33,10 +33,6 @@ public class RootStateSelectors
 			.Select(s => s.TaskbarState)
 			.DistinctUntilChanged();
 
-		Tasks = TaskbarState
-			.Select(s => s.Tasks)
-			.DistinctUntilChanged();
-
 		PinnedTaskbarApps = TaskbarState
 			.Select(s => s.PinnedDesktopFiles)
 			.DistinctUntilChanged((x, y) => x.SequenceEqual(y));
@@ -81,5 +77,62 @@ public class RootStateSelectors
 			.DistinctUntilChanged()
 			.Select(s => s.IconPath)
 			.DistinctUntilChanged();
+
+		var windowsObservable = RootState
+			.Select(s => s.Windows)
+			.DistinctUntilChanged();
+
+		var screenshotsObservable = RootState
+			.Select(s => s.Screenshots)
+			.DistinctUntilChanged();
+
+		Tasks = windowsObservable
+			.CombineLatest(AllDesktopFiles, screenshotsObservable)
+			.Select(t =>
+			{
+				var (windows, desktopFiles, screenshots) = t;
+				var result = ImmutableList<TaskState>.Empty;
+
+				foreach (var props in windows)
+				{
+					var screenshot = screenshots.FirstOrDefault(s => s.Key.Id == props.WindowRef.Id);
+
+					var desktopFile = FindAppDesktopFileByName(desktopFiles, props.ClassHintName)
+						?? FindAppDesktopFileByName(desktopFiles, props.ClassHintClass)
+						?? FindAppDesktopFileByName(desktopFiles, props.Title);
+
+					desktopFile ??= new DesktopFile()
+					{
+						Name = props.Title,
+						IconName = "application-default-icon",
+						IniFile = new () { FilePath = Guid.NewGuid().ToString() }
+					};
+
+					result = result.Add(new TaskState()
+					{
+						Title = props.Title,
+						WindowRef = props.WindowRef,
+						Icons = props.Icons,
+						State = props.State,
+						ApplicationName = desktopFile?.Name ?? props.ClassHintName,
+						DesktopFile = desktopFile,
+						AllowedActions = props.AllowActions,
+						Screenshot = screenshot.Value ?? props.Icons.MaxBy(p => p.Width)
+					});
+				}
+
+				return result;
+			});
+	}
+
+	private DesktopFile FindAppDesktopFileByName(ImmutableList<DesktopFile> desktopFiles, string applicationName)
+	{
+		var lowerCaseAppName = applicationName.ToLower();
+
+		return desktopFiles.FirstOrDefault(f => f.Name.ToLower().Contains(lowerCaseAppName))
+			?? desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower() == lowerCaseAppName)
+			?? desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower().Contains(lowerCaseAppName))
+			?? desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower().Contains(lowerCaseAppName))
+			?? desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower() == lowerCaseAppName);
 	}
 }

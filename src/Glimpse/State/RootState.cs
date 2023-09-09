@@ -9,13 +9,26 @@ namespace Glimpse.State;
 public record RootState
 {
 	public TaskbarState TaskbarState { get; init; } = new();
-	public GenericWindowRef FocusedWindow { get; init; } = new();
 	public ImmutableList<DesktopFile> DesktopFiles = ImmutableList<DesktopFile>.Empty;
 	public StartMenuState StartMenuState { get; init; } = new();
 	public UserState UserState { get; init; } = new();
 	public string VolumeCommand { get; init; }
+	public ImmutableList<WindowProperties> Windows { get; init; } = ImmutableList<WindowProperties>.Empty;
+	public ImmutableDictionary<IWindowRef, BitmapImage> Screenshots { get; set; } = ImmutableDictionary<IWindowRef, BitmapImage>.Empty;
 
 	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
+}
+
+public class WindowProperties
+{
+	public IWindowRef WindowRef { get; set; }
+	public string Title { get; init; }
+	public string IconName { get; init; }
+	public List<BitmapImage> Icons { get; init; }
+	public string ClassHintName { get; init; }
+	public string ClassHintClass { get; set; }
+	public List<string> State { get; set; }
+	public AllowedWindowActions[] AllowActions { get; set; }
 }
 
 public record UserState
@@ -28,7 +41,6 @@ public record UserState
 public record TaskbarState
 {
 	public ImmutableList<DesktopFile> PinnedDesktopFiles { get; init; } = ImmutableList<DesktopFile>.Empty;
-	public ImmutableList<TaskState> Tasks { get; init; } = ImmutableList<TaskState>.Empty;
 
 	public virtual bool Equals(TaskbarState other) => ReferenceEquals(this, other);
 }
@@ -49,7 +61,7 @@ public class TaskState
 	public string Title { get; init; }
 	public List<string> State { get; init; }
 	public List<BitmapImage> Icons { get; init; }
-	public GenericWindowRef WindowRef { get; init; }
+	public IWindowRef WindowRef { get; init; }
 	public string ApplicationName { get; init; }
 	public DesktopFile DesktopFile { get; init; }
 	public AllowedWindowActions[] AllowedActions { get; init; }

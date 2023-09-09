@@ -43,7 +43,11 @@ public class TaskbarView : Box
 				.TakeUntil(Observable.FromEventPattern<LeaveNotifyEventArgs>(groupIcon, nameof(LeaveNotifyEvent)))
 				.Repeat()
 				.Where(_ => !windowPicker.Visible)
-				.Subscribe(_ => windowPicker.Popup(), Console.WriteLine, () => { });
+				.Subscribe(t =>
+				{
+					dispatcher.Dispatch(new TakeScreenshotAction() { Windows = t.Second.Tasks.Select(x => x.WindowRef).ToList() });
+					windowPicker.Popup();
+				});
 
 			groupIcon.ContextMenuOpened
 				.Subscribe(_ => contextMenu.Popup());
@@ -61,7 +65,11 @@ public class TaskbarView : Box
 			groupIcon.ButtonRelease
 				.WithLatestFrom(viewModelObservable)
 				.Where(t => t.First.Button == 1 && t.Second.Tasks.Count > 1 && !windowPicker.Visible)
-				.Subscribe(_ => windowPicker.Popup());
+				.Subscribe(t =>
+				{
+					dispatcher.Dispatch(new TakeScreenshotAction() { Windows = t.Second.Tasks.Select(x => x.WindowRef).ToList() });
+					windowPicker.Popup();
+				});
 
 			contextMenu.WindowAction
 				.WithLatestFrom(viewModelObservable)

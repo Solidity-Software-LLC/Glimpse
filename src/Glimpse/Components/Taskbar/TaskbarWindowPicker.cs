@@ -14,8 +14,8 @@ namespace Glimpse.Components.Taskbar;
 
 public class TaskbarWindowPicker : Window
 {
-	private readonly Subject<GenericWindowRef> _previewWindowClicked = new();
-	private readonly Subject<GenericWindowRef> _closeWindow = new();
+	private readonly Subject<IWindowRef> _previewWindowClicked = new();
+	private readonly Subject<IWindowRef> _closeWindow = new();
 
 	public TaskbarWindowPicker(IObservable<TaskbarGroupViewModel> viewModelObservable) : base(WindowType.Toplevel)
 	{
@@ -39,8 +39,8 @@ public class TaskbarWindowPicker : Window
 		});
 	}
 
-	public IObservable<GenericWindowRef> PreviewWindowClicked => _previewWindowClicked;
-	public IObservable<GenericWindowRef> CloseWindow => _closeWindow;
+	public IObservable<IWindowRef> PreviewWindowClicked => _previewWindowClicked;
+	public IObservable<IWindowRef> CloseWindow => _closeWindow;
 
 	public void Popup()
 	{

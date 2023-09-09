@@ -80,9 +80,6 @@ public static class Program
 		var xService = host.Services.GetRequiredService<XLibAdaptorService>();
 		xService.Initialize();
 
-		var displayServer = host.Services.GetRequiredService<X11DisplayServer>();
-		displayServer.Initialize();
-
 		var dbusInterface = host.Services.GetRequiredService<OrgFreedesktopDBus>();
 		await dbusInterface.RequestNameAsync("org.kde.StatusNotifierWatcher", 0);
 

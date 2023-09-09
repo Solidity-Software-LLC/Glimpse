@@ -1,9 +1,9 @@
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
-using System.Text;
-using Glimpse.Extensions;
-using Glimpse.Extensions.Gtk;
+using Glimpse.Extensions.Reactive;
 using Glimpse.Interop.X11;
+using Glimpse.Services.DisplayServer;
 using Glimpse.State;
 using Microsoft.Extensions.Hosting;
 using Task = System.Threading.Tasks.Task;
@@ -14,19 +14,17 @@ public class XLibAdaptorService : IDisposable
 {
 	private XWindowRef _rootWindowRef;
 	private readonly IHostApplicationLifetime _applicationLifetime;
-	private readonly Subject<XWindowRef> _windowCreated = new();
-	private readonly Subject<XWindowRef> _windowRemoved = new();
+	private readonly Subject<IObservable<WindowProperties>> _windows = new();
 	private readonly Subject<XWindowRef> _focusChanged = new();
 	private readonly Subject<(int x, int y)> _startMenuOpen = new();
-	private List<XWindowRef> _knownWindows = new();
+	private readonly Subject<(XAnyEvent someEvent, IntPtr eventPointer)> _events = new();
 
 	public XLibAdaptorService(IHostApplicationLifetime applicationLifetime)
 	{
 		_applicationLifetime = applicationLifetime;
 	}
 
-	public IObservable<XWindowRef> WindowCreated => _windowCreated;
-	public IObservable<XWindowRef> WindowRemoved => _windowRemoved;
+	public IObservable<IObservable<WindowProperties>> Windows => _windows;
 	public IObservable<XWindowRef> FocusChanged => _focusChanged;
 	public IObservable<(int x, int y)> StartMenuOpen => _startMenuOpen;
 
@@ -39,9 +37,92 @@ public class XLibAdaptorService : IDisposable
 
 		_rootWindowRef = new XWindowRef() { Window = rootWindow, Display = display };
 
+		var windowEventMask = EventMask.SubstructureNotifyMask | EventMask.PropertyChangeMask | EventMask.KeyPressMask | EventMask.KeyReleaseMask;
+		var windowEvents = _events.Where(e => e.someEvent.window == rootWindow).Publish();
+
 		XLib.XGrabKey(display, XConstants.KeyCode_Super_L, XConstants.AllModifiers, rootWindow, true, 0, 1);
-		XLib.XSelectInput(display, rootWindow, EventMask.SubstructureNotifyMask | EventMask.PropertyChangeMask | EventMask.KeyPressMask | EventMask.KeyReleaseMask);
+		XLib.XSelectInput(display, rootWindow, windowEventMask);
+
+		windowEvents
+			.Where(t => t.someEvent.type == (int)Event.KeyRelease)
+			.Do(_ => XLib.XUngrabKeyboard(_rootWindowRef.Display, 0))
+			.Select(t => Marshal.PtrToStructure<XKeyEvent>(t.eventPointer))
+			.Subscribe(e => _startMenuOpen.OnNext((e.x_root, e.y_root)));
+
+		windowEvents
+			.ObservePropertyEvent()
+			.ObserveULongArrayProperty(XAtoms.NetClientList)
+			.Select(windows => windows.Select(w => _rootWindowRef with { Window = w }).Where(w => w.IsNormalWindow()).ToArray())
+			.UnbundleMany(w => w)
+			.Subscribe(windowObservable =>
+			{
+				var windowRef = windowObservable.Key;
+				XLib.XSelectInput(windowRef.Display, windowRef.Window, windowEventMask);
+
+				windowObservable
+					.TakeLast(1)
+					.Subscribe(_ => XLib.XSelectInput(windowRef.Display, windowRef.Window, EventMask.NoEventMask));
+
+				var propertyChangeObs = _events.Where(e => e.someEvent.window == windowRef.Window)
+					.TakeUntil(windowObservable.TakeLast(1))
+					.ObservePropertyEvent()
+					.Publish();
+
+				var titleObs = Observable.Return(windowRef.GetStringProperty(XAtoms.NetWmName)).Concat(propertyChangeObs.ObserveStringProperty(XAtoms.NetWmName));
+				var iconObs = Observable.Return(windowRef.GetIcons()).Concat(propertyChangeObs.ObserveIcons(XAtoms.NetWmIcon));
+				var iconNameObs = Observable.Return(windowRef.GetStringProperty(XAtoms.NetWmIconName)).Concat(propertyChangeObs.ObserveStringProperty(XAtoms.NetWmIconName));
+				var stateObs = Observable.Return(windowRef.GetAtomArray(XAtoms.NetWmState).ToList()).Concat(propertyChangeObs.ObserveAtomArray(XAtoms.NetWmState));
+				var allowedActionsObs = Observable.Return(windowRef.GetAtomArray(XAtoms.NetWmAllowedActions).ToList()).Concat(propertyChangeObs.ObserveAtomArray(XAtoms.NetWmAllowedActions)).Select(ParseWindowActions);
+				XLib.XGetClassHint(windowRef.Display, windowRef.Window, out var classHint);
+
+				var windowPropsObs = titleObs
+					.CombineLatest(iconObs, iconNameObs, stateObs, allowedActionsObs)
+					.Select(t => new WindowProperties()
+					{
+						WindowRef = windowRef,
+						ClassHintName = classHint.res_name,
+						ClassHintClass = classHint.res_class,
+						IconName = t.Third,
+						Icons = t.Second,
+						Title = t.First,
+						State = t.Fourth,
+						AllowActions = t.Fifth
+					})
+					.Throttle(TimeSpan.FromMilliseconds(250));
+
+				_windows.OnNext(windowPropsObs);
+				var subscription = propertyChangeObs.Connect();
+				windowObservable.TakeLast(1).Subscribe(_ => subscription.Dispose());
+			});
+
+		windowEvents.Connect();
+
 		Task.Run(() => WatchEvents(_applicationLifetime.ApplicationStopping));
+	}
+
+	private AllowedWindowActions[] ParseWindowActions(List<string> x11WindowActions)
+	{
+		var results = new LinkedList<AllowedWindowActions>();
+
+		foreach (var a in x11WindowActions)
+		{
+			var words = a.ToLower().Split("_", StringSplitOptions.RemoveEmptyEntries);
+			var wordsProperCased = words.Select(s => char.ToUpper(s[0]) + s[1..]);
+			var normalizedName = string.Join("", wordsProperCased.Skip(3));
+
+			if (normalizedName.Contains("Maximize"))
+			{
+				results.AddLast(AllowedWindowActions.Maximize);
+			}
+			else if (Enum.TryParse(normalizedName, out AllowedWindowActions enumValue))
+			{
+				results.AddLast(enumValue);
+			}
+		}
+
+		results.AddLast(AllowedWindowActions.Maximize);
+		results.AddLast(AllowedWindowActions.Minimize);
+		return results.Distinct().ToArray();
 	}
 
 	private void WatchEvents(CancellationToken cancellationToken)
@@ -51,189 +132,14 @@ public class XLibAdaptorService : IDisposable
 			var eventPointer = Marshal.AllocHGlobal(24 * sizeof(long));
 			XLib.XNextEvent(_rootWindowRef.Display, eventPointer);
 			var someEvent = Marshal.PtrToStructure<XAnyEvent>(eventPointer);
-
-			if (someEvent.type == (int)Event.KeyRelease)
-			{
-				XLib.XUngrabKeyboard(_rootWindowRef.Display, 0);
-				var e = Marshal.PtrToStructure<XKeyEvent>(eventPointer);
-				_startMenuOpen.OnNext((e.x_root, e.y_root));
-			}
-			else if (someEvent.type == (int) Event.PropertyNotify)
-			{
-				var e = Marshal.PtrToStructure<XPropertyEvent>(eventPointer);
-
-				if (e.atom == XAtoms.NetClientList)
-				{
-					HandleWindowListUpdate();
-				}
-				else if (e.atom == XAtoms.NetActiveWindow)
-				{
-					var activeWindow = GetULongArray(_rootWindowRef, XAtoms.NetActiveWindow)[0];
-					if (activeWindow == 0) continue;
-					_focusChanged.OnNext(new XWindowRef() { Display = _rootWindowRef.Display, Window = activeWindow });
-				}
-			}
-
+			_events.OnNext((someEvent, eventPointer));
 			XLib.XFree(eventPointer);
 		}
-	}
-
-	private void HandleWindowListUpdate()
-	{
-		var currentWindowList = GetNormalWindows();
-
-		foreach (var w in currentWindowList)
-		{
-			if (_knownWindows.All(x => x.Window != w.Window))
-			{
-				_windowCreated.OnNext(w);
-			}
-		}
-
-		foreach (var w in _knownWindows)
-		{
-			if (currentWindowList.All(x => x.Window != w.Window))
-			{
-				_windowRemoved.OnNext(w);
-			}
-		}
-
-		_knownWindows = currentWindowList;
 	}
 
 	public void Dispose()
 	{
 		XLib.XCloseDisplay(_rootWindowRef.Display);
-	}
-
-	private List<XWindowRef> GetNormalWindows()
-	{
-		var clientList = GetULongArray(_rootWindowRef, XAtoms.NetClientList);
-		var results = new List<XWindowRef>();
-
-		foreach (var c in clientList)
-		{
-			var childWindow = new XWindowRef() { Display = _rootWindowRef.Display, Window = c };
-			var windowType = GetAtomArray(childWindow, XAtoms.NetWmWindowType);
-
-			if (windowType.Any(s => s == "_NET_WM_WINDOW_TYPE_NORMAL"))
-			{
-				results.Add(childWindow);
-			}
-		}
-
-		return results;
-	}
-
-	public XClassHint GetClassHint(XWindowRef windowRef)
-	{
-		XLib.XGetClassHint(windowRef.Display, windowRef.Window, out var classHint);
-		return classHint;
-	}
-
-	public string GetStringProperty(XWindowRef windowRef, ulong property)
-	{
-		var result = XLib.XGetWindowProperty(windowRef.Display, windowRef.Window, property, 0, 1024, false, 0, out var actualTypeReturn, out var actualFormatReturn, out var actualLength, out _, out var dataPointer);
-
-		if (result != 0 || actualTypeReturn == 0)
-		{
-			return null;
-		}
-
-		var atomName = XLib.XGetAtomName(windowRef.Display, actualTypeReturn);
-
-		if (atomName == Atoms.STRING.Name || atomName == Atoms.UTF8_STRING.Name || atomName == Atoms.COMPOUND_TEXT.Name)
-		{
-			var dataSize = (int)(actualLength * (ulong)actualFormatReturn / 8);
-			var propBytes = new byte[dataSize];
-			Marshal.Copy(dataPointer, propBytes, 0, dataSize);
-			return Encoding.UTF8.GetString(propBytes);
-		}
-
-		return null;
-	}
-
-	public ulong[] GetULongArray(XWindowRef windowRef, ulong property)
-	{
-		var result = XLib.XGetWindowProperty(windowRef.Display, windowRef.Window, property, 0, 1024, false, 0, out var actualTypeReturn, out var actualFormatReturn, out var actualLength, out _, out var dataPointer);
-		if (result != 0) return Array.Empty<ulong>();
-		var dataSize = (int)(actualLength * sizeof(ulong));
-		if (dataSize == 0) return Array.Empty<ulong>();
-
-		var data = new byte[dataSize];
-		Marshal.Copy(dataPointer, data, 0, dataSize);
-		using var reader = new BinaryReader(new MemoryStream(data));
-		var atomNames = new LinkedList<ulong>();
-
-		for (var i = 0; i < (int) actualLength; i++)
-		{
-			atomNames.AddLast((ulong) reader.ReadInt64());
-		}
-
-		return atomNames.ToArray();
-	}
-
-	public string[] GetAtomArray(XWindowRef windowRef, ulong property)
-	{
-		var result = XLib.XGetWindowProperty(windowRef.Display, windowRef.Window, property, 0, 1024, false, 0, out var actualTypeReturn, out var actualFormatReturn, out var actualLength, out _, out var dataPointer);
-		if (result != 0) return Array.Empty<string>();
-		var dataSize = (int)(actualLength * (ulong)actualFormatReturn / 8);
-		if (dataSize == 0) return Array.Empty<string>();
-
-		var data = new byte[dataSize];
-		Marshal.Copy(dataPointer, data, 0, dataSize);
-		using var reader = new BinaryReader(new MemoryStream(data));
-		var atomNames = new LinkedList<string>();
-
-		for (var i = 0; i < (int) actualLength; i++)
-		{
-			var atom = (ulong)reader.ReadInt32();
-			if (atom == 0) continue;
-			atomNames.AddLast(XLib.XGetAtomName(windowRef.Display, atom));
-		}
-
-		return atomNames.ToArray();
-	}
-
-	public List<BitmapImage> GetIcons(XWindowRef windowRef)
-	{
-		var success = XLib.XGetWindowProperty(windowRef.Display, windowRef.Window, XAtoms.NetWmIcon, 0, 1024 * 1024 * 10, false, 0, out var actualTypeReturn, out var actualFormatReturn, out var actualLength, out var bytesLeft, out var dataPointer);
-
-		if (success != 0 || actualTypeReturn == 0) return null;
-
-		var data = new byte[actualLength * 8];
-		Marshal.Copy(dataPointer, data, 0, data.Length);
-		XLib.XFree(dataPointer);
-		using var binaryReader = new BinaryReader(new MemoryStream(data));
-		var icons = new List<BitmapImage>();
-
-		while (binaryReader.PeekChar() != -1)
-		{
-			var width = binaryReader.ReadInt64();
-			var height = binaryReader.ReadInt64();
-			var numPixels = width * height;
-			var imageData = new byte[numPixels * sizeof(int)];
-
-			for (var i = 0; i < numPixels * sizeof(int); i += sizeof(int))
-			{
-				var intBytes = BitConverter.GetBytes(binaryReader.ReadInt32());
-				binaryReader.ReadInt32();
-				imageData[i] = intBytes[0];
-				imageData[i+1] = intBytes[1];
-				imageData[i+2] = intBytes[2];
-				imageData[i+3] = intBytes[3];
-			}
-
-			icons.Add(new BitmapImage()
-			{
-				Width = (int) width,
-				Height = (int) height,
-				Depth = 32,
-				Data = imageData
-			});
-		}
-
-		return icons;
 	}
 
 	private LinkedList<ulong> GetParents(XWindowRef windowRef)
@@ -296,14 +202,14 @@ public class XLibAdaptorService : IDisposable
 
 	public void MaximizeWindow(XWindowRef windowRef)
 	{
-		var state = GetULongArray(windowRef, XAtoms.NetWmState);
+		var state = windowRef.GetULongArray(XAtoms.NetWmState);
 		var alreadyMaximized = state.Any(a => a == XAtoms.NetWmStateMaximizedHorz || a == XAtoms.NetWmStateMaximizedVert);
 		ModifyNetWmState(windowRef, new[] { XAtoms.NetWmStateMaximizedHorz, XAtoms.NetWmStateMaximizedVert}, !alreadyMaximized);
 	}
 
 	public void MinimizeWindow(XWindowRef windowRef)
 	{
-		var state = GetULongArray(windowRef, XAtoms.NetWmState);
+		var state = windowRef.GetULongArray(XAtoms.NetWmState);
 		var alreadyIconified = state.Any(a => a == XAtoms.NetWmStateHidden);
 
 		if (alreadyIconified)
@@ -331,9 +237,7 @@ public class XLibAdaptorService : IDisposable
 
 		if (imagePointer == IntPtr.Zero)
 		{
-			var icons = GetIcons(windowRef);
-			var biggestIcon = icons.MaxBy(i => i.Width);
-			return biggestIcon;
+			return null;
 		}
 
 		var image = Marshal.PtrToStructure<XImage>(imagePointer);

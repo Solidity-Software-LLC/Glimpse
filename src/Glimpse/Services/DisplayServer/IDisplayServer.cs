@@ -1,14 +1,17 @@
+using Glimpse.State;
+
 namespace Glimpse.Services.DisplayServer;
 
 public interface IDisplayServer
 {
-	void ToggleWindowVisibility(GenericWindowRef stateWindowRef);
-	void MakeWindowVisible(GenericWindowRef windowRef);
-	void MaximizeWindow(GenericWindowRef windowRef);
-	void MinimizeWindow(GenericWindowRef windowRef);
-	void StartResizing(GenericWindowRef windowRef);
-	void StartMoving(GenericWindowRef windowRef);
-	void CloseWindow(GenericWindowRef windowRef);
+	void ToggleWindowVisibility(IWindowRef stateWindowRef);
+	void MakeWindowVisible(IWindowRef windowRef);
+	void MaximizeWindow(IWindowRef windowRef);
+	void MinimizeWindow(IWindowRef windowRef);
+	void StartResizing(IWindowRef windowRef);
+	void StartMoving(IWindowRef windowRef);
+	void CloseWindow(IWindowRef windowRef);
+	BitmapImage TakeScreenshot(IWindowRef windowRef);
 
 	IObservable<(int x, int y)> StartMenuOpen { get; }
 }
