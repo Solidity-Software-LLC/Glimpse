@@ -15,6 +15,7 @@ public record TaskbarGroupViewModel
 	public string Id { get; init; }
 	public DesktopFile DesktopFile { get; init; }
 	public bool IsPinned { get; init; }
+	public bool DemandsAttention { get; init; }
 
 	public virtual bool Equals(TaskbarGroupViewModel other) => ReferenceEquals(this, other);
 }

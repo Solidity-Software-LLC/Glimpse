@@ -113,7 +113,7 @@ public class RootStateSelectors
 						Title = props.Title,
 						WindowRef = props.WindowRef,
 						Icons = props.Icons,
-						State = props.State,
+						DemandsAttention = props.DemandsAttention,
 						ApplicationName = desktopFile?.Name ?? props.ClassHintName,
 						DesktopFile = desktopFile,
 						AllowedActions = props.AllowActions,

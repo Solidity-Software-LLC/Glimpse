@@ -32,6 +32,7 @@ public static class XAtoms
 	public static readonly ulong NetWmStateHidden;
 	public static readonly ulong NetWmMoveresize;
 	public static readonly ulong WmClass;
+	public static readonly ulong NetWmStateDemandsAttention;
 
 	static XAtoms()
 	{
@@ -59,6 +60,7 @@ public static class XAtoms
 		NetWmStateHidden = XLib.XInternAtom(display, "_NET_WM_STATE_HIDDEN", true);
 		NetWmMoveresize = XLib.XInternAtom(display, "_NET_WM_MOVERESIZE", true);
 		WmClass = XLib.XInternAtom(display, "WM_CLASS", true);
+		NetWmStateDemandsAttention = XLib.XInternAtom(display, "_NET_WM_STATE_DEMANDS_ATTENTION", true);
 
 		XLib.XCloseDisplay(display);
 	}

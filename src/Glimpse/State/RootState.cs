@@ -27,7 +27,7 @@ public class WindowProperties
 	public List<BitmapImage> Icons { get; init; }
 	public string ClassHintName { get; init; }
 	public string ClassHintClass { get; set; }
-	public List<string> State { get; set; }
+	public bool DemandsAttention { get; set; }
 	public AllowedWindowActions[] AllowActions { get; set; }
 }
 
@@ -59,7 +59,7 @@ public record StartMenuState
 public class TaskState
 {
 	public string Title { get; init; }
-	public List<string> State { get; init; }
+	public bool DemandsAttention { get; init; }
 	public List<BitmapImage> Icons { get; init; }
 	public IWindowRef WindowRef { get; init; }
 	public string ApplicationName { get; init; }

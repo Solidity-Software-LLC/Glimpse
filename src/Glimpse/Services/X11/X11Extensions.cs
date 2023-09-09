@@ -25,11 +25,19 @@ public static class X11Extensions
 			.Select(l => l.ToList());
 	}
 
-	public static IObservable<List<string>> ObserveAtomArray(this IObservable<XPropertyEvent> obs, ulong property)
+	public static IObservable<ulong[]> ObserveAtomArray(this IObservable<XPropertyEvent> obs, ulong property)
 	{
 		return obs
 			.Where(e => e.atom == property)
 			.Select(e => GetAtomArray(new XWindowRef() { Window = e.window, Display = e.display }, property))
+			.DistinctUntilChanged();
+	}
+
+	public static IObservable<List<string>> ObserveAtomNameArray(this IObservable<XPropertyEvent> obs, ulong property)
+	{
+		return obs
+			.Where(e => e.atom == property)
+			.Select(e => GetAtomNameArray(new XWindowRef() { Window = e.window, Display = e.display }, property))
 			.DistinctUntilChanged()
 			.Select(l => l.ToList());
 	}
@@ -92,23 +100,36 @@ public static class X11Extensions
 		return atomNames.ToArray();
 	}
 
-	public static string[] GetAtomArray(this XWindowRef windowRef, ulong property)
+	public static ulong[] GetAtomArray(this XWindowRef windowRef, ulong property)
 	{
 		var result = XLib.XGetWindowProperty(windowRef.Display, windowRef.Window, property, 0, 1024, false, 0, out var actualTypeReturn, out var actualFormatReturn, out var actualLength, out _, out var dataPointer);
-		if (result != 0) return Array.Empty<string>();
+		if (result != 0) return Array.Empty<ulong>();
 		var dataSize = (int)(actualLength * (ulong)actualFormatReturn / 8);
-		if (dataSize == 0) return Array.Empty<string>();
+		if (dataSize == 0) return Array.Empty<ulong>();
 
 		var data = new byte[dataSize];
 		Marshal.Copy(dataPointer, data, 0, dataSize);
 		using var reader = new BinaryReader(new MemoryStream(data));
-		var atomNames = new LinkedList<string>();
+		var atoms = new LinkedList<ulong>();
 
 		for (var i = 0; i < (int) actualLength; i++)
 		{
 			var atom = (ulong)reader.ReadInt32();
 			if (atom == 0) continue;
-			atomNames.AddLast(XLib.XGetAtomName(windowRef.Display, atom));
+			atoms.AddLast(atom);
+		}
+
+		return atoms.ToArray();
+	}
+
+	public static string[] GetAtomNameArray(this XWindowRef windowRef, ulong property)
+	{
+		var atoms = windowRef.GetAtomArray(property);
+		var atomNames = new LinkedList<string>();
+
+		for (var i = 0; i < atoms.Length; i++)
+		{
+			atomNames.AddLast(XLib.XGetAtomName(windowRef.Display, atoms[i]));
 		}
 
 		return atomNames.ToArray();
@@ -116,7 +137,7 @@ public static class X11Extensions
 
 	public static bool IsNormalWindow(this XWindowRef windowRef)
 	{
-		return windowRef.GetAtomArray(XAtoms.NetWmWindowType).Contains("_NET_WM_WINDOW_TYPE_NORMAL");
+		return windowRef.GetAtomNameArray(XAtoms.NetWmWindowType).Contains("_NET_WM_WINDOW_TYPE_NORMAL");
 	}
 
 	public static List<BitmapImage> GetIcons(this XWindowRef windowRef)

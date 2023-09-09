@@ -71,8 +71,8 @@ public class XLibAdaptorService : IDisposable
 				var titleObs = Observable.Return(windowRef.GetStringProperty(XAtoms.NetWmName)).Concat(propertyChangeObs.ObserveStringProperty(XAtoms.NetWmName));
 				var iconObs = Observable.Return(windowRef.GetIcons()).Concat(propertyChangeObs.ObserveIcons(XAtoms.NetWmIcon));
 				var iconNameObs = Observable.Return(windowRef.GetStringProperty(XAtoms.NetWmIconName)).Concat(propertyChangeObs.ObserveStringProperty(XAtoms.NetWmIconName));
-				var stateObs = Observable.Return(windowRef.GetAtomArray(XAtoms.NetWmState).ToList()).Concat(propertyChangeObs.ObserveAtomArray(XAtoms.NetWmState));
-				var allowedActionsObs = Observable.Return(windowRef.GetAtomArray(XAtoms.NetWmAllowedActions).ToList()).Concat(propertyChangeObs.ObserveAtomArray(XAtoms.NetWmAllowedActions)).Select(ParseWindowActions);
+				var stateObs = Observable.Return(windowRef.GetAtomArray(XAtoms.NetWmState)).Concat(propertyChangeObs.ObserveAtomArray(XAtoms.NetWmState));
+				var allowedActionsObs = Observable.Return(windowRef.GetAtomNameArray(XAtoms.NetWmAllowedActions).ToList()).Concat(propertyChangeObs.ObserveAtomNameArray(XAtoms.NetWmAllowedActions)).Select(ParseWindowActions);
 				XLib.XGetClassHint(windowRef.Display, windowRef.Window, out var classHint);
 
 				var windowPropsObs = titleObs
@@ -85,8 +85,8 @@ public class XLibAdaptorService : IDisposable
 						IconName = t.Third,
 						Icons = t.Second,
 						Title = t.First,
-						State = t.Fourth,
-						AllowActions = t.Fifth
+						AllowActions = t.Fifth,
+						DemandsAttention = t.Fourth.Contains(XAtoms.NetWmStateDemandsAttention)
 					})
 					.Throttle(TimeSpan.FromMilliseconds(250));
 

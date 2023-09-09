@@ -9,15 +9,12 @@ Start Menu
 
 Taskbar
 ------------
-* Group icon alert status
 * Convert taskbar apps to buttons
 * Calendar
 * Drag and drop icons
-* Screenshots not always working (need to capture when minimizing too)
 
 System Tray
 ------------
-* Update icons in system tray when they change
 * Toggles in system tray context menus
 * Scan for StatusNotifierItems that don't register themselves automatically
 

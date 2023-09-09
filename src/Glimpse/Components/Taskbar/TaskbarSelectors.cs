@@ -39,12 +39,13 @@ public class TaskbarSelectors
 							Id = task.DesktopFile.IniFile.FilePath,
 							DesktopFile = desktopFile,
 							IsPinned = false,
-							Tasks = ImmutableList<TaskState>.Empty.Add(task)
+							Tasks = ImmutableList<TaskState>.Empty.Add(task),
+							DemandsAttention = task.DemandsAttention
 						});
 					}
 					else
 					{
-						allGroups = allGroups.Replace(matchingGroup, matchingGroup with { Tasks = matchingGroup.Tasks.Add(task) });
+						allGroups = allGroups.Replace(matchingGroup, matchingGroup with { Tasks = matchingGroup.Tasks.Add(task), DemandsAttention = matchingGroup.DemandsAttention || task.DemandsAttention });
 					}
 				}
 

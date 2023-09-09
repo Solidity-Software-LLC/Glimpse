@@ -4,6 +4,7 @@ using Cairo;
 using Gdk;
 using Glimpse.Extensions.Gtk;
 using Gtk;
+using Color = Cairo.Color;
 
 namespace Glimpse.Components.Taskbar;
 
@@ -41,10 +42,11 @@ public class TaskbarGroupIcon : EventBox
 		Add(image);
 		ShowAll();
 
+		viewModel.Subscribe(vm => _currentViewModel = vm);
+		viewModel.Select(vm => vm.DemandsAttention).DistinctUntilChanged().Subscribe(_ => QueueDraw());
+
 		viewModel.DistinctUntilChanged(x => x.Tasks.Count).Subscribe(group =>
 		{
-			_currentViewModel = group;
-
 			image.Pixbuf = IconLoader.LoadIcon(group.DesktopFile.IconName, 26)
 				?? IconLoader.LoadIcon(group.Tasks.FirstOrDefault(), 26)
 				?? IconLoader.DefaultAppIcon(26);
@@ -71,17 +73,24 @@ public class TaskbarGroupIcon : EventBox
 		var w = Window.Width;
 		var h = Window.Height;
 
+		var demandsAttention = _currentViewModel.Tasks.Any(t => t.DemandsAttention);
+		var backgroundAlpha = StateFlags.HasFlag(StateFlags.Prelight) ? 0.3
+			: _currentViewModel.Tasks.Count > 0 ? 0.1
+			: 0;
+
+		var backgroundColor = demandsAttention ? new Color(1, 1, 0, backgroundAlpha + 0.4) : new Color(1, 1, 1, backgroundAlpha);
+
 		if (_currentViewModel.Tasks.Count == 0)
 		{
 			cr.Operator = Operator.Over;
-			cr.SetSourceRGBA(1, 1, 1, StateFlags.HasFlag(StateFlags.Prelight) ? 0.3 : 0);
+			cr.SetSourceColor(backgroundColor);
 			cr.RoundedRectangle(0, 0, w, h, 4);
 			cr.Fill();
 		}
 		else if (_currentViewModel.Tasks.Count == 1)
 		{
 			cr.Operator = Operator.Over;
-			cr.SetSourceRGBA(1, 1, 1, StateFlags.HasFlag(StateFlags.Prelight) ? 0.3 : 0.1);
+			cr.SetSourceColor(backgroundColor);
 			cr.RoundedRectangle(0, 0, w, h, 4);
 			cr.Fill();
 		}
@@ -101,7 +110,7 @@ public class TaskbarGroupIcon : EventBox
 			imageContext.Fill();
 
 			imageContext.Operator = Operator.Out;
-			imageContext.SetSourceRGBA(1, 1, 1, StateFlags.HasFlag(StateFlags.Prelight) ? 0.3 : 0.1);
+			imageContext.SetSourceColor(backgroundColor);
 			imageContext.RoundedRectangle(0, 0, w, h, 4);
 			imageContext.Fill();
 
