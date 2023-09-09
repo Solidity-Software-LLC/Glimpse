@@ -81,15 +81,12 @@ public class App : Window
 		var monitorDimensions = monitor.Geometry;
 		SetSizeRequest(monitorDimensions.Width, PanelHeight);
 		Move(monitor.Workarea.Left, monitorDimensions.Height - PanelHeight);
-		ReserveSpace(monitor);
+		ReserveSpace();
 	}
 
-	private void ReserveSpace(Gdk.Monitor monitor)
+	private void ReserveSpace()
 	{
-		var monitorDimensions = monitor.Geometry;
-		var bottomStartX = monitor.Workarea.Left;
-		var bottomEndX = bottomStartX + monitorDimensions.Width;
-		var reservedSpaceLong = new long[] { 0, 0, 0, PanelHeight, 0, 0, 0, 0, 0, 0, bottomStartX, bottomEndX }.SelectMany(BitConverter.GetBytes).ToArray();
+		var reservedSpaceLong = new long[] { 0, 0, 0, PanelHeight, 0, 0, 0, 0, 0, 0, 0, Window.Display.DefaultScreen.RootWindow.Width }.SelectMany(BitConverter.GetBytes).ToArray();
 		Property.Change(Window, Atom.Intern("_NET_WM_STRUT_PARTIAL", false), Atom.Intern("CARDINAL", false), 32, PropMode.Replace, reservedSpaceLong, 12);
 	}
 }
