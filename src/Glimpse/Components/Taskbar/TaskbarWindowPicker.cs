@@ -29,7 +29,7 @@ public class TaskbarWindowPicker : Window
 
 		var layout = new Box(Orientation.Horizontal, 0);
 		Add(layout);
-		this.ObserveEvent(nameof(FocusOutEvent)).Subscribe(_ => Visible = false);
+		this.ObserveEvent(nameof(FocusOutEvent)).Subscribe(_ => ClosePopup());
 
 		viewModelObservable.Select(vm => vm.Tasks).UnbundleMany(t => t.WindowRef.Id).Subscribe(taskObservable =>
 		{
@@ -41,6 +41,11 @@ public class TaskbarWindowPicker : Window
 
 	public IObservable<IWindowRef> PreviewWindowClicked => _previewWindowClicked;
 	public IObservable<IWindowRef> CloseWindow => _closeWindow;
+
+	public void ClosePopup()
+	{
+		Visible = false;
+	}
 
 	public void Popup()
 	{

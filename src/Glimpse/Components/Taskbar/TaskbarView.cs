@@ -17,7 +17,7 @@ namespace Glimpse.Components.Taskbar;
 public class TaskbarView : Box
 {
 	private int? _dragXPosition;
-	private ForEach<TaskbarGroupViewModel> _forEachGroup;
+	private readonly ForEach<TaskbarGroupViewModel> _forEachGroup;
 
 	public TaskbarView(TaskbarSelectors selectors, IDisplayServer displayServer, FreeDesktopService freeDesktopService, IDispatcher dispatcher)
 	{
@@ -37,6 +37,8 @@ public class TaskbarView : Box
 
 			Drag.SourceSet(groupIcon, ModifierType.Button1Mask, null, DragAction.Move);
 
+			groupIcon.ObserveEvent(nameof(DragBegin)).Subscribe(_ => windowPicker.ClosePopup());
+
 			Observable.FromEventPattern(windowPicker, nameof(windowPicker.VisibilityNotifyEvent))
 				.Subscribe(_ => windowPicker.CenterAbove(groupIcon));
 
@@ -52,7 +54,7 @@ public class TaskbarView : Box
 				.Delay(TimeSpan.FromMilliseconds(250), new SynchronizationContextScheduler(new GLibSynchronizationContext()))
 				.TakeUntil(Observable.FromEventPattern<LeaveNotifyEventArgs>(groupIcon, nameof(LeaveNotifyEvent)))
 				.Repeat()
-				.Where(_ => !windowPicker.Visible)
+				.Where(_ => !windowPicker.Visible && _dragXPosition == null)
 				.Subscribe(t =>
 				{
 					dispatcher.Dispatch(new TakeScreenshotAction() { Windows = t.Second.Tasks.Select(x => x.WindowRef).ToList() });
