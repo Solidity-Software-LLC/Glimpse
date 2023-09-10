@@ -7,10 +7,15 @@ public class ForEach<T> : Box
 {
 	public ForEach(IObservable<IObservable<T>> itemsObservable, Func<IObservable<T>, Widget> widgetFactory)
 	{
+		MarginStart = 4;
+		MarginEnd = 4;
+		Spacing = 4;
+		Orientation = Orientation.Horizontal;
+
 		itemsObservable.Subscribe(itemObservable =>
 		{
 			var groupIcon = widgetFactory(itemObservable);
-			PackStart(groupIcon, false, false, 2);
+			Add(groupIcon);
 			ShowAll();
 
 			itemObservable.Subscribe(

@@ -51,6 +51,7 @@ public class TaskbarGroupIcon : EventBox
 				?? IconLoader.LoadIcon(group.Tasks.FirstOrDefault(), 26)
 				?? IconLoader.DefaultAppIcon(26);
 
+			Gtk.Drag.SourceSetIconPixbuf(this, image.Pixbuf);
 			QueueDraw();
 		});
 	}
