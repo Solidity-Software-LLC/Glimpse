@@ -31,7 +31,7 @@ public class TaskbarWindowPicker : Window
 		Add(layout);
 		this.ObserveEvent(nameof(FocusOutEvent)).Subscribe(_ => ClosePopup());
 
-		viewModelObservable.Select(vm => vm.Tasks).UnbundleMany(t => t.WindowRef.Id).Subscribe(taskObservable =>
+		viewModelObservable.Select(vm => vm.Tasks).UnbundleMany(t => t.WindowRef.Id).RemoveIndex().Subscribe(taskObservable =>
 		{
 			var preview = CreateAppPreview(taskObservable);
 			layout.Add(preview);
@@ -90,7 +90,7 @@ public class TaskbarWindowPicker : Window
 		taskObservable.Select(t => t.Title).DistinctUntilChanged().Subscribe(t => appName.Text = t);
 		taskObservable.Subscribe(t => appIcon.Pixbuf = IconLoader.LoadIcon(t.DesktopFile.IconName, 16) ?? IconLoader.LoadIcon(t, 16) ?? IconLoader.DefaultAppIcon(16));
 		closeIconBox.ObserveButtonRelease().WithLatestFrom(taskObservable).Subscribe(t => _closeWindow.OnNext(t.Second.WindowRef));
-		taskObservable.Select(t => t.Screenshot).DistinctUntilChanged().Subscribe(s => screenshotImage.Pixbuf = s.ScaleToFit(100, 200));
+		taskObservable.Select(t => t.Screenshot ?? new BitmapImage() { Data = Array.Empty<byte>(), Depth = 32, Height = 1, Width = 1 }).DistinctUntilChanged().Subscribe(s => screenshotImage.Pixbuf = s.ScaleToFit(100, 200));
 		appPreview.ObserveButtonRelease().WithLatestFrom(taskObservable).Subscribe(t => _previewWindowClicked.OnNext(t.Second.WindowRef));
 
 		return appPreview;

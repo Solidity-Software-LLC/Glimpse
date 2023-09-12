@@ -13,8 +13,17 @@ public record RootState
 	public StartMenuState StartMenuState { get; init; } = new();
 	public UserState UserState { get; init; } = new();
 	public string VolumeCommand { get; init; }
-	public ImmutableList<WindowProperties> Windows { get; init; } = ImmutableList<WindowProperties>.Empty;
 	public ImmutableDictionary<IWindowRef, BitmapImage> Screenshots { get; set; } = ImmutableDictionary<IWindowRef, BitmapImage>.Empty;
+	public ImmutableList<TaskGroup> Groups { get; set; } = ImmutableList<TaskGroup>.Empty;
+
+	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
+}
+
+public record TaskGroup
+{
+	public string Id { get; init; }
+	public DesktopFile DesktopFile { get; init; }
+	public ImmutableList<WindowProperties> Windows { get; init; } = ImmutableList<WindowProperties>.Empty;
 
 	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
 }

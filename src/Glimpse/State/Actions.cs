@@ -4,6 +4,12 @@ using Glimpse.Services.FreeDesktop;
 
 namespace Glimpse.State;
 
+public class UpdateGroupOrderingAction
+{
+	public string GroupId { get; set; }
+	public int NewIndex { get; set; }
+}
+
 public class UpdateWindowAction
 {
 	public WindowProperties WindowProperties { get; set; }

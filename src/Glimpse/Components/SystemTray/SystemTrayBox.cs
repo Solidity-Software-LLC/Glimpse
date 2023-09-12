@@ -28,7 +28,7 @@ public class SystemTrayBox : Box
 
 		PackEnd(volumeButton, false, false, 0);
 
-		trayState.ToObservable().ObserveOn(new GLibSynchronizationContext()).Select(x => x.Items).DistinctUntilChanged().UnbundleMany(i => i.Key).Subscribe(obs =>
+		trayState.ToObservable().ObserveOn(new GLibSynchronizationContext()).Select(x => x.Items).DistinctUntilChanged().UnbundleMany(i => i.Key).RemoveIndex().Subscribe(obs =>
 		{
 			var itemObservable = obs.Select(s => s.Value).DistinctUntilChanged();
 			var systemTrayIcon = new SystemTrayIcon(itemObservable);

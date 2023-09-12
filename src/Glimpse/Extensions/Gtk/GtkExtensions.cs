@@ -20,12 +20,12 @@ public static class GtkExtensions
 		widgets.ForEach(widget.Remove);
 	}
 
-	public static Widget FindChildAtX(this Container widget, int x)
+	public static Widget FindChildAtX(this Container container, int x)
 	{
-		for (var i=0; i<widget.Children.Length; i++)
+		for (var i=0; i<container.Children.Length; i++)
 		{
-			var childWidget = widget.Children[i];
-			childWidget.TranslateCoordinates(widget, 0, 0, out var left, out _);
+			var childWidget = container.Children[i];
+			childWidget.TranslateCoordinates(container, 0, 0, out var left, out _);
 			var right = left + childWidget.Allocation.Width;
 			if (left < 0 || x > right) continue;
 			return childWidget;

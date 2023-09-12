@@ -10,68 +10,34 @@ public static class ReactiveExtensions
 		return obs.DistinctUntilChanged(new FuncEqualityComparer<T>(comparison));
 	}
 
-	public static IObservable<IGroupedObservable<TKey, IEnumerable<TValue>>> Unbundle<TValue, TKey>(this IObservable<IEnumerable<TValue>> source, Func<TValue, TKey> keySelector) where TKey : IEquatable<TKey>
+	public static IObservable<IGroupedObservable<TKey, TValue>> RemoveIndex<TKey, TValue>(this IObservable<IGroupedObservable<TKey, (TValue, int)>> source)
 	{
-		return Observable.Create<IGroupedObservable<TKey, IEnumerable<TValue>>>(obs =>
-		{
-			var groupSubjects = new Dictionary<TKey, Subject<IEnumerable<TValue>>>();
-
-			return source.Subscribe(elements =>
-				{
-					var groupings = elements.GroupBy(keySelector).ToList();
-
-					foreach (var group in groupings)
-					{
-						if (!groupSubjects.ContainsKey(group.Key))
-						{
-							groupSubjects.Add(group.Key, new Subject<IEnumerable<TValue>>());
-							obs.OnNext(new GroupedObservable<TKey, IEnumerable<TValue>>(group.Key, groupSubjects[group.Key]));
-						}
-
-						groupSubjects[group.Key].OnNext(group);
-					}
-
-					foreach (var key in groupSubjects.Keys)
-					{
-						if (groupings.All(e => !e.Key.Equals(key)))
-						{
-							groupSubjects[key].OnCompleted();
-							groupSubjects.Remove(key);
-						}
-					}
-				},
-				e =>
-				{
-					obs.OnError(e);
-					foreach (var s in groupSubjects.Values) s.OnError(e);
-				},
-				() =>
-				{
-					foreach (var s in groupSubjects.Values) s.OnCompleted();
-					obs.OnCompleted();
-				});
-		});
+		return source.Select(s => new GroupedObservable<TKey, TValue>(s.Key, s.Select(i => i.Item1)));
 	}
 
-	public static IObservable<IGroupedObservable<TKey, TValue>> UnbundleMany<TValue, TKey>(this IObservable<IEnumerable<TValue>> source, Func<TValue, TKey> keySelector) where TKey : IEquatable<TKey>
+	public static IObservable<IGroupedObservable<TKey, (TValue, int)>> UnbundleMany<TValue, TKey>(this IObservable<IEnumerable<TValue>> source, Func<TValue, TKey> keySelector) where TKey : IEquatable<TKey>
 	{
-		return Observable.Create<IGroupedObservable<TKey, TValue>>(obs =>
+		return Observable.Create<IGroupedObservable<TKey, (TValue, int)>>(obs =>
 		{
-			var groupSubjects = new Dictionary<TKey, Subject<TValue>>();
+			var groupSubjects = new Dictionary<TKey, Subject<(TValue, int)>>();
 
 			return source.Subscribe(elements =>
 				{
-					foreach (var e in elements)
+					var elementList = new List<TValue>();
+					elementList.AddRange(elements);
+
+					for (var i = 0; i < elementList.Count; i++)
 					{
+						var e = elementList[i];
 						var key = keySelector(e);
 
 						if (!groupSubjects.ContainsKey(key))
 						{
-							groupSubjects.Add(key, new Subject<TValue>());
-							obs.OnNext(new GroupedObservable<TKey, TValue>(key, groupSubjects[key]));
+							groupSubjects.Add(key, new Subject<(TValue, int)>());
+							obs.OnNext(new GroupedObservable<TKey, (TValue, int)>(key, groupSubjects[key]));
 						}
 
-						groupSubjects[key].OnNext(e);
+						groupSubjects[key].OnNext((e, i));
 					}
 
 					foreach (var key in groupSubjects.Keys)

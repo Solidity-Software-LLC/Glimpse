@@ -10,43 +10,38 @@ public class TaskbarSelectors
 
 	public TaskbarSelectors(RootStateSelectors rootStateSelectors)
 	{
-		ViewModel = rootStateSelectors.Tasks
-			.CombineLatest(rootStateSelectors.PinnedTaskbarApps)
+		ViewModel = rootStateSelectors.Groups
+			.CombineLatest(rootStateSelectors.Screenshots, rootStateSelectors.PinnedTaskbarApps)
 			.Select(t =>
 			{
-				var (tasks, pinnedApps) = t;
+				var (groups, screenshots, pinnedApps) = t;
 				var allGroups = ImmutableList<TaskbarGroupViewModel>.Empty;
 
-				foreach (var desktopFile in pinnedApps)
+				foreach (var group in groups)
 				{
+					var desktopFile = group.DesktopFile;
+
 					allGroups = allGroups.Add(new TaskbarGroupViewModel()
 					{
-						Id = desktopFile.IniFile.FilePath,
+						Id = group.Id,
 						DesktopFile = desktopFile,
-						IsPinned = true
-					});
-				}
-
-				foreach (var task in tasks)
-				{
-					var desktopFile = task.DesktopFile;
-					var matchingGroup = allGroups.FirstOrDefault(g => g.DesktopFile.IniFile.FilePath == task.DesktopFile.IniFile.FilePath);
-
-					if (matchingGroup == null)
-					{
-						allGroups = allGroups.Add(new TaskbarGroupViewModel()
+						IsPinned = pinnedApps.Any(a => a.IniFile.FilePath == group.Id),
+						Tasks = group.Windows.Select(w =>
 						{
-							Id = task.DesktopFile.IniFile.FilePath,
-							DesktopFile = desktopFile,
-							IsPinned = false,
-							Tasks = ImmutableList<TaskState>.Empty.Add(task),
-							DemandsAttention = task.DemandsAttention
-						});
-					}
-					else
-					{
-						allGroups = allGroups.Replace(matchingGroup, matchingGroup with { Tasks = matchingGroup.Tasks.Add(task), DemandsAttention = matchingGroup.DemandsAttention || task.DemandsAttention });
-					}
+							return new TaskState()
+							{
+								AllowedActions = w.AllowActions,
+								ApplicationName = desktopFile.Name,
+								DemandsAttention = w.DemandsAttention,
+								DesktopFile = desktopFile,
+								Icons = w.Icons,
+								Title = w.Title,
+								WindowRef = w.WindowRef,
+								Screenshot = screenshots.FirstOrDefault(s => s.Key.Id == w.WindowRef.Id).Value ?? w.Icons?.MaxBy(i => i.Width)
+							};
+						}).ToImmutableList(),
+						DemandsAttention = group.Windows.Any(w => w.DemandsAttention)
+					});
 				}
 
 				return new TaskbarViewModel() { Groups = allGroups };

@@ -6,12 +6,13 @@ Start Menu
 ------------
 * View all apps button in start menu
 * Drag and drop icons
+* Select first app when hitting enter while searching
+* Wildcard searching
 
 Taskbar
 ------------
 * Convert taskbar apps to buttons
 * Calendar
-* Drag and drop icons
 
 System Tray
 ------------

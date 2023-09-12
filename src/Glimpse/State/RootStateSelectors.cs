@@ -3,6 +3,7 @@ using System.Reactive.Linq;
 using Fluxor;
 using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Reactive;
+using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 
 namespace Glimpse.State;
@@ -21,7 +22,8 @@ public class RootStateSelectors
 	public IObservable<string> UserSettingsCommand { get; }
 	public IObservable<string> VolumeCommand { get; }
 	public IObservable<string> UserIconPath { get; }
-	public IObservable<ImmutableList<TaskState>> Tasks { get; }
+	public IObservable<ImmutableList<TaskGroup>> Groups { get; }
+	public IObservable<ImmutableDictionary<IWindowRef,BitmapImage>> Screenshots { get; set; }
 
 	public RootStateSelectors(IState<RootState> rootState)
 	{
@@ -78,61 +80,12 @@ public class RootStateSelectors
 			.Select(s => s.IconPath)
 			.DistinctUntilChanged();
 
-		var windowsObservable = RootState
-			.Select(s => s.Windows)
+		Groups = RootState
+			.Select(s => s.Groups)
 			.DistinctUntilChanged();
 
-		var screenshotsObservable = RootState
+		Screenshots = RootState
 			.Select(s => s.Screenshots)
 			.DistinctUntilChanged();
-
-		Tasks = windowsObservable
-			.CombineLatest(AllDesktopFiles, screenshotsObservable)
-			.Select(t =>
-			{
-				var (windows, desktopFiles, screenshots) = t;
-				var result = ImmutableList<TaskState>.Empty;
-
-				foreach (var props in windows)
-				{
-					var screenshot = screenshots.FirstOrDefault(s => s.Key.Id == props.WindowRef.Id);
-
-					var desktopFile = FindAppDesktopFileByName(desktopFiles, props.ClassHintName)
-						?? FindAppDesktopFileByName(desktopFiles, props.ClassHintClass)
-						?? FindAppDesktopFileByName(desktopFiles, props.Title);
-
-					desktopFile ??= new DesktopFile()
-					{
-						Name = props.Title,
-						IconName = "application-default-icon",
-						IniFile = new () { FilePath = Guid.NewGuid().ToString() }
-					};
-
-					result = result.Add(new TaskState()
-					{
-						Title = props.Title,
-						WindowRef = props.WindowRef,
-						Icons = props.Icons,
-						DemandsAttention = props.DemandsAttention,
-						ApplicationName = desktopFile?.Name ?? props.ClassHintName,
-						DesktopFile = desktopFile,
-						AllowedActions = props.AllowActions,
-						Screenshot = screenshot.Value ?? props.Icons.MaxBy(p => p.Width)
-					});
-				}
-
-				return result;
-			});
-	}
-
-	private DesktopFile FindAppDesktopFileByName(ImmutableList<DesktopFile> desktopFiles, string applicationName)
-	{
-		var lowerCaseAppName = applicationName.ToLower();
-
-		return desktopFiles.FirstOrDefault(f => f.Name.ToLower().Contains(lowerCaseAppName))
-			?? desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower() == lowerCaseAppName)
-			?? desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower().Contains(lowerCaseAppName))
-			?? desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower().Contains(lowerCaseAppName))
-			?? desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower() == lowerCaseAppName);
 	}
 }

@@ -1,6 +1,5 @@
 using System.Reactive;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 
 namespace Glimpse.Extensions.Reactive;
 
@@ -8,7 +7,7 @@ public sealed class GroupedObservable<TKey, TValue> : ObservableBase<TValue>, IG
 {
 	private readonly IObservable<TValue> _subject;
 
-	public GroupedObservable(TKey key, ISubject<TValue> subject)
+	public GroupedObservable(TKey key, IObservable<TValue> subject)
 	{
 		Key = key;
 		_subject = subject;

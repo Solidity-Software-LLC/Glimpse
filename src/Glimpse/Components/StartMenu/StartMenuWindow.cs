@@ -29,8 +29,8 @@ public class StartMenuWindow : Window
 		: base(WindowType.Toplevel)
 	{
 		var iconCache = new Dictionary<string, StartMenuAppIcon>();
-		var allAppsObservable = viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged().UnbundleMany(a => a.IniFile.FilePath);
-		var displayedAppsObservable = viewModelObservable.Select(vm => vm.AppsToDisplay).DistinctUntilChanged().UnbundleMany(a => a.IniFile.FilePath);
+		var allAppsObservable = viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged().UnbundleMany(a => a.IniFile.FilePath).RemoveIndex();
+		var displayedAppsObservable = viewModelObservable.Select(vm => vm.AppsToDisplay).DistinctUntilChanged().UnbundleMany(a => a.IniFile.FilePath).RemoveIndex();
 
 		allAppsObservable.Subscribe(file =>
 		{
