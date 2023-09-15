@@ -61,17 +61,6 @@ public class FreeDesktopService
 		return _desktopFiles.FirstOrDefault(f => f.IniFile.FilePath.Equals(filePath, StringComparison.InvariantCultureIgnoreCase));
 	}
 
-	public DesktopFile FindAppDesktopFileByName(string applicationName)
-	{
-		var lowerCaseAppName = applicationName.ToLower();
-
-		return _desktopFiles.FirstOrDefault(f => f.Name.ToLower().Contains(lowerCaseAppName))
-			?? _desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower() == lowerCaseAppName)
-			?? _desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower().Contains(lowerCaseAppName))
-			?? _desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower().Contains(lowerCaseAppName))
-			?? _desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower() == lowerCaseAppName);
-	}
-
 	private IniFile ReadIniFile(string filePath)
 	{
 		try

@@ -1,7 +1,10 @@
+using System.Reactive.Linq;
 using Gdk;
 using Glimpse.Components.StartMenu;
 using Glimpse.Components.SystemTray;
 using Glimpse.Components.Taskbar;
+using Glimpse.Extensions.Gtk;
+using Glimpse.State;
 using Gtk;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
@@ -13,7 +16,7 @@ public class App : Window
 	private const int PanelHeight = 52;
 	private const string ClockFormat = "h:mm tt\ndddd\nM/d/yyyy";
 
-	public App(SystemTrayBox systemTrayBox, TaskbarView taskbarView, StartMenuLaunchIcon startMenuLaunchIcon) : base(WindowType.Toplevel)
+	public App(SystemTrayBox systemTrayBox, TaskbarView taskbarView, StartMenuLaunchIcon startMenuLaunchIcon, RootStateSelectors selectors) : base(WindowType.Toplevel)
 	{
 		Decorated = false;
 		Resizable = false;
@@ -26,7 +29,7 @@ public class App : Window
 		var centerBox = new Box(Orientation.Horizontal, 0);
 		centerBox.PackStart(startMenuLaunchIcon, false, false, 0);
 		centerBox.PackStart(taskbarView, false, false, 0);
-		centerBox.Halign = Align.Center;
+		centerBox.Halign = Align.Start;
 
 		var clock = CreateClock();
 
@@ -37,9 +40,8 @@ public class App : Window
 		rightBox.Valign = Align.Center;
 
 		var grid = new Grid();
-		grid.Attach(new DrawingArea(), 0, 0, 1, 1);
-		grid.Attach(centerBox, 1, 0, 1, 1);
-		grid.Attach(rightBox, 2, 0, 1, 1);
+		grid.Attach(centerBox, 1, 0, 8, 1);
+		grid.Attach(rightBox, 8, 0, 2, 1);
 		grid.Vexpand = true;
 		grid.Hexpand = true;
 		grid.RowHomogeneous = true;
@@ -48,7 +50,22 @@ public class App : Window
 		Add(grid);
 		ShowAll();
 
+		var groupCountChanged = selectors.Groups.Select(g => g.Count).DistinctUntilChanged().TakeUntilDestroyed(this);
+		var sampler = this.ObserveEvent(nameof(VisibilityNotifyEvent)).Take(1);
+		var firstItem = groupCountChanged.Sample(sampler).Take(1);
+
+		firstItem.Concat(groupCountChanged).Subscribe(numGroups =>
+		{
+			centerBox.MarginStart = ComputeCenterBoxMarginLeft(numGroups);
+		});
+
 		StartClockAsync(clock);
+	}
+
+	private int ComputeCenterBoxMarginLeft(int numGroups)
+	{
+		var taskbarWidth = (numGroups + 1) * 46;
+		return WidthRequest / 2 - taskbarWidth / 2;
 	}
 
 	private Label CreateClock()

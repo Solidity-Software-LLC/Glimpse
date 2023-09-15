@@ -33,6 +33,8 @@ public static class XAtoms
 	public static readonly ulong NetWmMoveresize;
 	public static readonly ulong WmClass;
 	public static readonly ulong NetWmStateDemandsAttention;
+	public static readonly ulong WmProtocols;
+	public static readonly ulong WmDeleteWindow;
 
 	static XAtoms()
 	{
@@ -61,6 +63,8 @@ public static class XAtoms
 		NetWmMoveresize = XLib.XInternAtom(display, "_NET_WM_MOVERESIZE", true);
 		WmClass = XLib.XInternAtom(display, "WM_CLASS", true);
 		NetWmStateDemandsAttention = XLib.XInternAtom(display, "_NET_WM_STATE_DEMANDS_ATTENTION", true);
+		WmProtocols = XLib.XInternAtom(display, "WM_PROTOCOLS", true);
+		WmDeleteWindow = XLib.XInternAtom(display, "WM_DELETE_WINDOW", true);
 
 		XLib.XCloseDisplay(display);
 	}

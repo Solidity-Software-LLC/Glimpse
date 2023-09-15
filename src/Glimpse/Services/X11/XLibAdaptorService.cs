@@ -15,7 +15,6 @@ public class XLibAdaptorService : IDisposable
 	private XWindowRef _rootWindowRef;
 	private readonly IHostApplicationLifetime _applicationLifetime;
 	private readonly Subject<IObservable<WindowProperties>> _windows = new();
-	private readonly Subject<XWindowRef> _focusChanged = new();
 	private readonly Subject<(int x, int y)> _startMenuOpen = new();
 	private readonly Subject<(XAnyEvent someEvent, IntPtr eventPointer)> _events = new();
 
@@ -25,7 +24,6 @@ public class XLibAdaptorService : IDisposable
 	}
 
 	public IObservable<IObservable<WindowProperties>> Windows => _windows;
-	public IObservable<XWindowRef> FocusChanged => _focusChanged;
 	public IObservable<(int x, int y)> StartMenuOpen => _startMenuOpen;
 
 	public void Initialize()
@@ -256,12 +254,14 @@ public class XLibAdaptorService : IDisposable
 		message.window = windowRef.Window;
 		message.format = 32;
 		message.type = (int) Event.ClientMessage;
-		message.message_type = XAtoms.NetCloseWindow;
+		message.message_type = XAtoms.WmProtocols;
 		message.send_event = 1;
+		message.ptr1 = (IntPtr) XAtoms.WmDeleteWindow;
+		message.ptr2 = IntPtr.Zero;
 
 		var pointer = Marshal.AllocHGlobal(24 * sizeof(long));
 		Marshal.StructureToPtr(message, pointer, true);
-		XLib.XSendEvent(windowRef.Display, windowRef.Window, true, (long)EventMask.SubstructureNotifyMask, pointer);
+		XLib.XSendEvent(windowRef.Display, windowRef.Window, false, (long)EventMask.NoEventMask, pointer);
 		XLib.XFlush(windowRef.Display);
 		Marshal.FreeHGlobal(pointer);
 	}
