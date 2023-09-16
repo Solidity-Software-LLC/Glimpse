@@ -77,9 +77,10 @@ public class StartMenuLaunchIcon : Button
 
 		var startMenuWindowId = LibGdk3Interop.gdk_x11_window_get_xid(_startMenuWindow.Window.Handle);
 
-		displayServer.FocusChanged
-			.Where(c => !_contextMenu.Visible)
-			.Where(windowRef => windowRef.Id != startMenuWindowId)
+		displayServer
+			.FocusChanged
+			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
+			.Where(windowRef => _startMenuWindow.Visible && !_contextMenu.Visible && windowRef.Id != startMenuWindowId)
 			.Subscribe(_ => _startMenuWindow.ClosePopup());
 
 		_startMenuWindow

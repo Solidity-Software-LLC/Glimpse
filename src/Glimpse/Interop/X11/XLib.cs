@@ -109,6 +109,20 @@ public class XLib
 	[DllImport("libX11.so.6")]
 	public static extern int XUngrabKeyboard(ulong display, ulong time);
 
+	[DllImport("libX11.so.6")]
+	public static extern IntPtr XSetErrorHandler(XErrorHandlerDelegate del);
+
+	[DllImport("libX11.so.6")]
+	public static extern IntPtr XSetIOErrorHandler(XIOErrorHandlerDelegate del);
+
+	[DllImport("libX11.so.6")]
+	public static extern void XSetIOErrorExitHandler(ulong display, XIOErrorHandlerDelegate handler, IntPtr userData);
+
+	[DllImport("libX11.so.6")]
+	public static extern int XGetErrorText(IntPtr display, int code, IntPtr description, int length);
+
+	[DllImport("libX11.so.6")]
+	public static extern int XGetErrorDatabaseText(IntPtr display, string name, string message, string default_string, IntPtr buffer_return, int length);
 }
 
 public static class XConstants
@@ -117,6 +131,8 @@ public static class XConstants
 	public const int ZPixmap = 2; // This value might vary, please confirm the correct value for your system
 	public const int KeyCode_Super_L = 133;
 	public const int AllModifiers = 1 << 15;
+
+	public const int IsViewable = 2;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -392,3 +408,19 @@ public struct XClientMessageEvent
 	public IntPtr ptr4;
 	public IntPtr ptr5;
 }
+
+[StructLayout(LayoutKind.Sequential)]
+public struct XErrorEvent
+{
+	public int type;
+	public ulong display;
+	public ulong resourceid;
+	public ulong serial;
+	public byte error_code;
+	public byte request_code;
+	public byte minor_code;
+}
+
+public delegate int XErrorHandlerDelegate(IntPtr display, ref XErrorEvent ev);
+
+public delegate int XIOErrorHandlerDelegate(IntPtr display);

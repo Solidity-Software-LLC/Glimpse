@@ -43,10 +43,7 @@ public class XLibAdaptorService : IDisposable
 
 		windowEvents.ObservePropertyEvent()
 			.ObserveULongArrayProperty(XAtoms.NetActiveWindow)
-			.Subscribe(array =>
-			{
-				_focusChanged.OnNext(_rootWindowRef with { Window = array[0] });
-			});
+			.Subscribe(array => _focusChanged.OnNext(_rootWindowRef with { Window = array[0] }));
 
 		windowEvents
 			.ObservePropertyEvent()
@@ -232,6 +229,12 @@ public class XLibAdaptorService : IDisposable
 	public BitmapImage CaptureWindowScreenshot(XWindowRef windowRef)
 	{
 		XLib.XGetWindowAttributes(windowRef.Display, windowRef.Window, out var windowAttributes);
+
+		if (windowAttributes.map_state != XConstants.IsViewable)
+		{
+			return null;
+		}
+
 		var imagePointer = XLib.XGetImage(windowRef.Display, windowRef.Window, 0, 0, windowAttributes.width, windowAttributes.height, XConstants.AllPlanes, XConstants.ZPixmap);
 
 		if (imagePointer == IntPtr.Zero)
