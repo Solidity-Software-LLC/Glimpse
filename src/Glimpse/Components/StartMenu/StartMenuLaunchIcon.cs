@@ -5,6 +5,7 @@ using Fluxor;
 using Gdk;
 using GLib;
 using Glimpse.Extensions.Gtk;
+using Glimpse.Interop;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
@@ -32,6 +33,7 @@ public class StartMenuLaunchIcon : Button
 		_dispatcher = dispatcher;
 		_contextMenu = new Menu() { ReserveToggleSize = false };
 		_startMenuWindow = new StartMenuWindow(viewModelObservable);
+		_startMenuWindow.KeepAbove = true;
 
 		_startMenuWindow
 			.SearchTextUpdated
@@ -73,8 +75,11 @@ public class StartMenuLaunchIcon : Button
 				_freeDesktopService.Run(t.Second);
 			});
 
-		_startMenuWindow.ObserveEvent(nameof(FocusOutEvent))
+		var startMenuWindowId = LibGdk3Interop.gdk_x11_window_get_xid(_startMenuWindow.Window.Handle);
+
+		displayServer.FocusChanged
 			.Where(c => !_contextMenu.Visible)
+			.Where(windowRef => windowRef.Id != startMenuWindowId)
 			.Subscribe(_ => _startMenuWindow.ClosePopup());
 
 		_startMenuWindow
@@ -93,11 +98,12 @@ public class StartMenuLaunchIcon : Button
 			});
 
 		displayServer
-			.StartMenuOpen
+			.StartMenuOpened
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
-			.Subscribe(coords =>
+			.Subscribe(_ =>
 			{
-				var eventMonitor = Window.Display.GetMonitorAtPoint(coords.x, coords.y);
+				Display.GetPointer(out var x, out var y);
+				var eventMonitor = Window.Display.GetMonitorAtPoint(x, y);
 				var windowMonitor = Window.Display.GetMonitorAtWindow(Window);
 
 				if (eventMonitor == windowMonitor)

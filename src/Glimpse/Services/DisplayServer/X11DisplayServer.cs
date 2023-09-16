@@ -1,7 +1,9 @@
 using System.Reactive.Linq;
 using Fluxor;
+using GLib;
 using Glimpse.Services.X11;
 using Glimpse.State;
+using Application = Gtk.Application;
 
 namespace Glimpse.Services.DisplayServer;
 
@@ -9,10 +11,13 @@ public class X11DisplayServer : IDisplayServer
 {
 	private readonly XLibAdaptorService _xService;
 
-	public X11DisplayServer(XLibAdaptorService xService, IDispatcher dispatcher)
+	public X11DisplayServer(XLibAdaptorService xService, IDispatcher dispatcher, Application application)
 	{
 		_xService = xService;
-		StartMenuOpen = _xService.StartMenuOpen;
+
+		var action = (SimpleAction) application.LookupAction("OpenStartMenu");
+		StartMenuOpened = Observable.FromEventPattern(action, nameof(action.Activated)).Select(_ => true);
+		FocusChanged = _xService.FocusChanged.Select(w => (IWindowRef) w);
 
 		_xService.Windows.Subscribe(windowObs =>
 		{
@@ -21,12 +26,13 @@ public class X11DisplayServer : IDisplayServer
 		});
 	}
 
+	public IObservable<bool> StartMenuOpened { get; }
+	public IObservable<IWindowRef> FocusChanged { get; }
+
 	public BitmapImage TakeScreenshot(IWindowRef windowRef)
 	{
 		return _xService.CaptureWindowScreenshot((XWindowRef)windowRef);
 	}
-
-	public IObservable<(int x, int y)> StartMenuOpen { get; }
 
 	public void ToggleWindowVisibility(IWindowRef windowRef)
 	{

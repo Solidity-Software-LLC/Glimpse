@@ -13,5 +13,6 @@ public interface IDisplayServer
 	void CloseWindow(IWindowRef windowRef);
 	BitmapImage TakeScreenshot(IWindowRef windowRef);
 
-	IObservable<(int x, int y)> StartMenuOpen { get; }
+	IObservable<bool> StartMenuOpened { get; }
+	IObservable<IWindowRef> FocusChanged { get; }
 }

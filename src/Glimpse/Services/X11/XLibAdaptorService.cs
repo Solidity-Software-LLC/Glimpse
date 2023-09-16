@@ -15,8 +15,10 @@ public class XLibAdaptorService : IDisposable
 	private XWindowRef _rootWindowRef;
 	private readonly IHostApplicationLifetime _applicationLifetime;
 	private readonly Subject<IObservable<WindowProperties>> _windows = new();
-	private readonly Subject<(int x, int y)> _startMenuOpen = new();
 	private readonly Subject<(XAnyEvent someEvent, IntPtr eventPointer)> _events = new();
+	private readonly Subject<XWindowRef> _focusChanged = new();
+
+	public IObservable<XWindowRef> FocusChanged => _focusChanged;
 
 	public XLibAdaptorService(IHostApplicationLifetime applicationLifetime)
 	{
@@ -24,7 +26,6 @@ public class XLibAdaptorService : IDisposable
 	}
 
 	public IObservable<IObservable<WindowProperties>> Windows => _windows;
-	public IObservable<(int x, int y)> StartMenuOpen => _startMenuOpen;
 
 	public void Initialize()
 	{
@@ -38,14 +39,14 @@ public class XLibAdaptorService : IDisposable
 		var windowEventMask = EventMask.SubstructureNotifyMask | EventMask.PropertyChangeMask | EventMask.KeyPressMask | EventMask.KeyReleaseMask;
 		var windowEvents = _events.Where(e => e.someEvent.window == rootWindow).Publish();
 
-		XLib.XGrabKey(display, XConstants.KeyCode_Super_L, XConstants.AllModifiers, rootWindow, true, 0, 1);
 		XLib.XSelectInput(display, rootWindow, windowEventMask);
 
-		windowEvents
-			.Where(t => t.someEvent.type == (int)Event.KeyRelease)
-			.Do(_ => XLib.XUngrabKeyboard(_rootWindowRef.Display, 0))
-			.Select(t => Marshal.PtrToStructure<XKeyEvent>(t.eventPointer))
-			.Subscribe(e => _startMenuOpen.OnNext((e.x_root, e.y_root)));
+		windowEvents.ObservePropertyEvent()
+			.ObserveULongArrayProperty(XAtoms.NetActiveWindow)
+			.Subscribe(array =>
+			{
+				_focusChanged.OnNext(_rootWindowRef with { Window = array[0] });
+			});
 
 		windowEvents
 			.ObservePropertyEvent()

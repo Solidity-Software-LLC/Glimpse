@@ -11,12 +11,12 @@ using WindowType = Gtk.WindowType;
 
 namespace Glimpse.Components;
 
-public class App : Window
+public class Panel : Window
 {
 	private const int PanelHeight = 52;
 	private const string ClockFormat = "h:mm tt\ndddd\nM/d/yyyy";
 
-	public App(SystemTrayBox systemTrayBox, TaskbarView taskbarView, StartMenuLaunchIcon startMenuLaunchIcon, RootStateSelectors selectors) : base(WindowType.Toplevel)
+	public Panel(SystemTrayBox systemTrayBox, TaskbarView taskbarView, StartMenuLaunchIcon startMenuLaunchIcon, RootStateSelectors selectors) : base(WindowType.Toplevel)
 	{
 		Decorated = false;
 		Resizable = false;

@@ -71,7 +71,7 @@ public class TaskbarGroupContextMenu : Menu
 
 		if (allowedActions.Contains(AllowedWindowActions.Close))
 		{
-			var menuItem = ContextMenuHelper.CreateMenuItem("Close", Assets.Close.ScaleSimple(16, 16, InterpType.Bilinear));
+			var menuItem = ContextMenuHelper.CreateMenuItem("Close Window", Assets.Close.ScaleSimple(16, 16, InterpType.Bilinear));
 			menuItem.ObserveButtonRelease().Subscribe(_ => _windowAction.OnNext(AllowedWindowActions.Close));
 			return menuItem;
 		}

@@ -55,7 +55,7 @@ public class GtkApplicationHostedService : IHostedService
 					.GetMonitors()
 					.Select(m =>
 					{
-						var panel = _serviceProvider.BeginLifetimeScope("panel").Resolve<App>();
+						var panel = _serviceProvider.Resolve<Panel>();
 						panel.DockToBottom(m);
 						return panel;
 					})

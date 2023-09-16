@@ -31,7 +31,7 @@ public static class Program
 		var builder = Host.CreateDefaultBuilder(args)
 			.UseServiceProviderFactory(new AutofacServiceProviderFactory(containerBuilder =>
 			{
-				containerBuilder.RegisterType<App>();
+				containerBuilder.RegisterType<Panel>();
 				containerBuilder.RegisterType<SystemTrayBox>();
 				containerBuilder.RegisterType<TaskbarView>();
 				containerBuilder.RegisterType<TaskbarSelectors>().SingleInstance();
@@ -52,7 +52,12 @@ public static class Program
 						Session = new Connection(Address.Session!),
 						System = new Connection(Address.System!),
 					}).ExternallyOwned();
-				containerBuilder.Register(_ => new Application("org.solidity-software-llc.glimpse", ApplicationFlags.None)).SingleInstance();
+				containerBuilder.Register(_ =>
+				{
+					var app = new Application("org.solidity-software-llc.glimpse", ApplicationFlags.None);
+					app.AddAction(new SimpleAction("OpenStartMenu", null));
+					return app;
+				}).SingleInstance();
 			}))
 			.ConfigureServices(services =>
 			{

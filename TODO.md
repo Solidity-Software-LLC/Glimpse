@@ -16,7 +16,6 @@ Taskbar
 ------------
 * Convert taskbar apps to buttons
 * Calendar
-* Capturing the SUPER_L key is preventing other hotkeys from working
 
 System Tray
 ------------
