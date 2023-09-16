@@ -57,7 +57,7 @@ public record TaskbarState
 public record StartMenuState
 {
 	public ImmutableList<DesktopFile> PinnedDesktopFiles = ImmutableList<DesktopFile>.Empty;
-	public string SearchText { get; init; }
+	public string SearchText { get; init; } = "";
 	public string PowerButtonCommand { get; init; } = "xfce4-session-logout";
 	public string SettingsButtonCommand { get; init; } = "xfce4-settings-manager";
 	public string UserSettingsCommand { get; init; } = "mugshot";

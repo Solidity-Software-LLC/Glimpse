@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using GLib;
+using Glimpse.Extensions;
 using Glimpse.State;
 
 namespace Glimpse.Components.StartMenu;
@@ -12,12 +13,18 @@ public class StartMenuSelectors
 
 	public StartMenuSelectors(RootStateSelectors rootStateSelectors)
 	{
-		var appsToDisplayObservable = rootStateSelectors.SearchText
+		var appsToDisplayObservable = rootStateSelectors.SearchText.Select(s => s?.ToLower())
 			.CombineLatest(
 				rootStateSelectors.PinnedStartMenuApps,
 				rootStateSelectors.AllDesktopFiles)
-			.Select(t => string.IsNullOrEmpty(t.First) ? t.Second
-				: t.Third.Where(d => d.Name.Contains(t.First, StringComparison.InvariantCultureIgnoreCase)).ToImmutableList());
+			.Select(t =>
+			{
+				var (searchText, pinnedApps, allDesktopFiles) = t;
+
+				return string.IsNullOrEmpty(searchText)
+					? pinnedApps
+					: allDesktopFiles.Where(d => searchText.AllCharactersIn(d.Name.ToLower())).ToImmutableList();
+			});
 
 		var actionBarViewModelSelector = rootStateSelectors.PowerButtonCommand
 			.CombineLatest(
