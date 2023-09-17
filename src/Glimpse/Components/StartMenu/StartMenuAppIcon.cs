@@ -11,6 +11,8 @@ public class StartMenuAppIcon : Button
 {
 	public StartMenuAppIcon(IObservable<DesktopFile> desktopFileObservable)
 	{
+		CanFocus = false;
+
 		var name = new Label();
 		name.SetSizeRequest(76, 16);
 		name.Ellipsize = EllipsizeMode.End;

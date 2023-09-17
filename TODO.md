@@ -9,7 +9,6 @@ Start Menu
 * View all apps button in start menu
 * Drag and drop icons
 * Select first app when hitting enter while searching
-* Wildcard searching
 * Add context menu with useful actions to taskbar icon
 
 Taskbar

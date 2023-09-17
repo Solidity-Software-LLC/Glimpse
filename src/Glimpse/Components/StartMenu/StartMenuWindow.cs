@@ -102,12 +102,32 @@ public class StartMenuWindow : Window
 		pinnedAppsGrid.ColumnSpacing = 0;
 		pinnedAppsGrid.MaxChildrenPerLine = 6;
 		pinnedAppsGrid.MinChildrenPerLine = 6;
-		pinnedAppsGrid.SelectionMode = SelectionMode.None;
+		pinnedAppsGrid.SelectionMode = SelectionMode.Single;
 		pinnedAppsGrid.Orientation = Orientation.Horizontal;
 		pinnedAppsGrid.Homogeneous = false;
 		pinnedAppsGrid.Valign = Align.Start;
 		pinnedAppsGrid.Halign = Align.Start;
+		pinnedAppsGrid.ActivateOnSingleClick = true;
 		pinnedAppsGrid.ForEach(displayedAppsObservable, i => iconCache[i.Key]);
+
+		pinnedAppsGrid.ObserveEvent<ChildActivatedArgs>(nameof(pinnedAppsGrid.ChildActivated))
+			.WithLatestFrom(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged())
+			.Subscribe(t =>
+			{
+				var (e, desktopFiles) = t;
+				var appIcon = e.Child.Child as StartMenuAppIcon;
+				var desktopFileId = iconCache.FirstOrDefault(kv => kv.Value == appIcon).Key;
+				if (desktopFileId == null) return;
+				var desktopFile = desktopFiles.FirstOrDefault(d => d.IniFile.FilePath == desktopFileId);
+				if (desktopFile == null) return;
+				_appLaunch.OnNext(desktopFile);
+			});
+
+		_searchEntry.ObserveEvent<KeyReleaseEventArgs>(nameof(KeyReleaseEvent))
+			.Where(e => e.Event.Key == Key.Return || e.Event.Key == Key.KP_Enter)
+			.WithLatestFrom(viewModelObservable.Select(vm => vm.AppsToDisplay).DistinctUntilChanged())
+			.Where(t => t.Second.Any())
+			.Subscribe(t => _appLaunch.OnNext(t.Second.FirstOrDefault()));
 
 		var pinnedAppsScrolledWindow = new ScrolledWindow();
 		pinnedAppsScrolledWindow.Add(pinnedAppsGrid);
