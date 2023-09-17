@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
@@ -18,6 +19,7 @@ public class StartMenuWindow : Window
 	private readonly Subject<DesktopFile> _appLaunch = new();
 	private readonly Subject<DesktopFile> _contextMenuRequested = new();
 	private readonly Entry _searchEntry;
+	private readonly FlowBox _pinnedAppsGrid;
 	private readonly List<(int, int)> _keyCodeRanges = new()
 	{
 		(48, 90),
@@ -49,7 +51,7 @@ public class StartMenuWindow : Window
 				.Subscribe(f => _contextMenuRequested.OnNext(f));
 
 			iconCache.Add(file.Key, appIcon);
-			file.Subscribe(static _ => { }, static _ => { }, () => iconCache.Remove(file.Key));
+			file.Subscribe(f => appIcon.Data["DesktopFile"] = f, static _ => { }, () => iconCache.Remove(file.Key));
 		});
 
 		SkipPagerHint = true;
@@ -95,33 +97,35 @@ public class StartMenuWindow : Window
 			.TakeUntilDestroyed(this)
 			.Subscribe(s => label.Text = s.Length > 0 ? "Search results" : "Pinned");
 
-		var pinnedAppsGrid = new FlowBox();
-		pinnedAppsGrid.MarginStart = 32;
-		pinnedAppsGrid.MarginEnd = 32;
-		pinnedAppsGrid.RowSpacing = 0;
-		pinnedAppsGrid.ColumnSpacing = 0;
-		pinnedAppsGrid.MaxChildrenPerLine = 6;
-		pinnedAppsGrid.MinChildrenPerLine = 6;
-		pinnedAppsGrid.SelectionMode = SelectionMode.Single;
-		pinnedAppsGrid.Orientation = Orientation.Horizontal;
-		pinnedAppsGrid.Homogeneous = false;
-		pinnedAppsGrid.Valign = Align.Start;
-		pinnedAppsGrid.Halign = Align.Start;
-		pinnedAppsGrid.ActivateOnSingleClick = true;
-		pinnedAppsGrid.ForEach(displayedAppsObservable, i => iconCache[i.Key]);
+		_pinnedAppsGrid = new FlowBox();
+		_pinnedAppsGrid.MarginStart = 32;
+		_pinnedAppsGrid.MarginEnd = 32;
+		_pinnedAppsGrid.RowSpacing = 0;
+		_pinnedAppsGrid.ColumnSpacing = 0;
+		_pinnedAppsGrid.MaxChildrenPerLine = 6;
+		_pinnedAppsGrid.MinChildrenPerLine = 6;
+		_pinnedAppsGrid.SelectionMode = SelectionMode.Single;
+		_pinnedAppsGrid.Orientation = Orientation.Horizontal;
+		_pinnedAppsGrid.Homogeneous = false;
+		_pinnedAppsGrid.Valign = Align.Start;
+		_pinnedAppsGrid.Halign = Align.Start;
+		_pinnedAppsGrid.ActivateOnSingleClick = true;
+		_pinnedAppsGrid.ForEach(displayedAppsObservable, i => iconCache[i.Key]);
 
-		pinnedAppsGrid.ObserveEvent<ChildActivatedArgs>(nameof(pinnedAppsGrid.ChildActivated))
-			.WithLatestFrom(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged())
-			.Subscribe(t =>
-			{
-				var (e, desktopFiles) = t;
-				var appIcon = e.Child.Child as StartMenuAppIcon;
-				var desktopFileId = iconCache.FirstOrDefault(kv => kv.Value == appIcon).Key;
-				if (desktopFileId == null) return;
-				var desktopFile = desktopFiles.FirstOrDefault(d => d.IniFile.FilePath == desktopFileId);
-				if (desktopFile == null) return;
-				_appLaunch.OnNext(desktopFile);
-			});
+		viewModelObservable
+			.Select(vm => vm.AppsToDisplay)
+			.DistinctUntilChanged()
+			.Subscribe(_ => _pinnedAppsGrid.InvalidateSort());
+
+		viewModelObservable
+			.Select(vm => vm.SearchText)
+			.DistinctUntilChanged()
+			.WithLatestFrom(viewModelObservable)
+			.Subscribe(t => _pinnedAppsGrid.SortFunc = string.IsNullOrEmpty(t.First) ? (c1, c2) => PinnedSort(c1, c2, t.Second.PinnedStartApps) : AlphabeticalSort);
+
+		_pinnedAppsGrid.ObserveEvent<ChildActivatedArgs>(nameof(_pinnedAppsGrid.ChildActivated))
+			.Select(e => e.Child.Child as StartMenuAppIcon)
+			.Subscribe(appIcon => _appLaunch.OnNext(appIcon.Data["DesktopFile"] as DesktopFile));
 
 		_searchEntry.ObserveEvent<KeyReleaseEventArgs>(nameof(KeyReleaseEvent))
 			.Where(e => e.Event.Key == Key.Return || e.Event.Key == Key.KP_Enter)
@@ -130,7 +134,7 @@ public class StartMenuWindow : Window
 			.Subscribe(t => _appLaunch.OnNext(t.Second.FirstOrDefault()));
 
 		var pinnedAppsScrolledWindow = new ScrolledWindow();
-		pinnedAppsScrolledWindow.Add(pinnedAppsGrid);
+		pinnedAppsScrolledWindow.Add(_pinnedAppsGrid);
 		pinnedAppsScrolledWindow.Expand = true;
 		pinnedAppsScrolledWindow.MarginBottom = 128;
 
@@ -148,6 +152,24 @@ public class StartMenuWindow : Window
 		ShowAll();
 		Hide();
 		_hiddenEntry.Hide();
+	}
+
+	private int PinnedSort(FlowBoxChild child1, FlowBoxChild child2, ImmutableList<DesktopFile> pinnedStartApps)
+	{
+		var first = child1.Child as StartMenuAppIcon;
+		var second = child2.Child as StartMenuAppIcon;
+		var firstDesktopFile = first.Data["DesktopFile"] as DesktopFile;
+		var secondDesktopFile = second.Data["DesktopFile"] as DesktopFile;
+		return pinnedStartApps.IndexOf(firstDesktopFile).CompareTo(pinnedStartApps.IndexOf(secondDesktopFile));
+	}
+
+	private int AlphabeticalSort(FlowBoxChild child1, FlowBoxChild child2)
+	{
+		var first = child1.Child as StartMenuAppIcon;
+		var second = child2.Child as StartMenuAppIcon;
+		var firstDesktopFile = first.Data["DesktopFile"] as DesktopFile;
+		var secondDesktopFile = second.Data["DesktopFile"] as DesktopFile;
+		return firstDesktopFile.Name.CompareTo(secondDesktopFile.Name);
 	}
 
 	private Widget CreateActionBar(IObservable<ActionBarViewModel> viewModel)
@@ -216,13 +238,14 @@ public class StartMenuWindow : Window
 
 	public void ClosePopup()
 	{
-		_searchEntry.Text = "";
-		_hiddenEntry.GrabFocus();
 		Hide();
 	}
 
 	public void Popup()
 	{
+		_searchEntry.Text = "";
+		_hiddenEntry.GrabFocus();
+		_pinnedAppsGrid.UnselectAll();
 		Show();
 	}
 }
