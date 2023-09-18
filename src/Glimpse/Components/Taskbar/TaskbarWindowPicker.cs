@@ -26,6 +26,7 @@ public class TaskbarWindowPicker : Window
 		CanFocus = true;
 		TypeHint = WindowTypeHint.Dialog;
 		Visual = Screen.RgbaVisual;
+		KeepAbove = true;
 
 		var layout = new Box(Orientation.Horizontal, 0);
 		Add(layout);
@@ -49,7 +50,6 @@ public class TaskbarWindowPicker : Window
 
 	public void Popup()
 	{
-		Visible = true;
 		ShowAll();
 	}
 

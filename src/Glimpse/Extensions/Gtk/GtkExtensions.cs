@@ -20,17 +20,32 @@ public static class GtkExtensions
 		widgets.ForEach(widget.Remove);
 	}
 
-	public static Widget FindChildAtX(this Container container, int x)
+	public static int ReplaceChild(this FlowBox box, FlowBoxChild oldWidget, FlowBoxChild newWidget)
+	{
+		var index = Array.FindIndex(box.Children, c => c == oldWidget);
+		var newWidgetIndex = Array.FindIndex(box.Children, c => c == newWidget);
+
+		if (newWidgetIndex != -1)
+		{
+			box.Remove(newWidget);
+		}
+
+		box.Insert(newWidget, index);
+		box.Remove(oldWidget);
+		return index;
+	}
+
+	public static (FlowBoxChild, int) FindChildAtX(this FlowBox container, int x)
 	{
 		for (var i=0; i<container.Children.Length; i++)
 		{
-			var childWidget = container.Children[i];
+			var childWidget = container.Children[i] as FlowBoxChild;
 			childWidget.TranslateCoordinates(container, 0, 0, out var left, out _);
 			var right = left + childWidget.Allocation.Width;
 			if (left < 0 || x > right) continue;
-			return childWidget;
+			return (childWidget, i);
 		}
 
-		return null;
+		return (null, -1);
 	}
 }

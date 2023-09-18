@@ -35,3 +35,12 @@ button:focus {
 	outline: 0;
 	background-color: transparent;
 }
+
+.foreach__dragging-placeholder {
+	border: 1px solid #444444;
+	border-radius: 4px;
+}
+
+flowboxchild {
+	padding: 0;
+}

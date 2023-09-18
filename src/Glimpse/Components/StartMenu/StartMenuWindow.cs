@@ -100,8 +100,8 @@ public class StartMenuWindow : Window
 		_pinnedAppsGrid = new FlowBox();
 		_pinnedAppsGrid.MarginStart = 32;
 		_pinnedAppsGrid.MarginEnd = 32;
-		_pinnedAppsGrid.RowSpacing = 0;
-		_pinnedAppsGrid.ColumnSpacing = 0;
+		_pinnedAppsGrid.RowSpacing = 4;
+		_pinnedAppsGrid.ColumnSpacing = 4;
 		_pinnedAppsGrid.MaxChildrenPerLine = 6;
 		_pinnedAppsGrid.MinChildrenPerLine = 6;
 		_pinnedAppsGrid.SelectionMode = SelectionMode.Single;
@@ -141,7 +141,7 @@ public class StartMenuWindow : Window
 		var layout = new Grid();
 		layout.Expand = true;
 		layout.ColumnHomogeneous = true;
-		layout.Attach(_searchEntry, 2, 0, 4, 1);
+		layout.Attach(_searchEntry, 1, 0, 6, 1);
 		layout.Attach(_hiddenEntry, 1, 0, 1, 1);
 		layout.Attach(label, 1, 1, 6, 1);
 		layout.Attach(pinnedAppsScrolledWindow, 1, 2, 6, 8);

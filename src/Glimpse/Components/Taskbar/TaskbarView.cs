@@ -1,9 +1,9 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using Fluxor;
+using Gdk;
 using GLib;
 using Glimpse.Extensions.Gtk;
-using Glimpse.Extensions.Reactive;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
@@ -19,14 +19,12 @@ public class TaskbarView : Box
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new GLibSynchronizationContext());
 
-		var forEachGroup = new ForEach<TaskbarGroupViewModel, string>(viewModelSelector.Select(g => g.Groups).DistinctUntilChanged(), i => i.Id, viewModelObservable =>
+		var forEachGroup = new ForEach<TaskbarGroupViewModel, string, TaskbarGroupIcon>(viewModelSelector.Select(g => g.Groups).DistinctUntilChanged(), i => i.Id, viewModelObservable =>
 		{
 			var replayLatestViewModelObservable = viewModelObservable.Replay(1);
 			var contextMenu = new TaskbarGroupContextMenu(viewModelObservable);
 			var windowPicker = new TaskbarWindowPicker(viewModelObservable);
-			var groupIcon = new TaskbarGroupIcon(viewModelObservable);
-
-			groupIcon.ObserveEvent(nameof(DragBegin)).Subscribe(_ => windowPicker.ClosePopup());
+			var groupIcon = new TaskbarGroupIcon(viewModelObservable, windowPicker);
 
 			Observable.FromEventPattern(windowPicker, nameof(windowPicker.VisibilityNotifyEvent))
 				.Subscribe(_ => windowPicker.CenterAbove(groupIcon));
@@ -37,11 +35,11 @@ public class TaskbarView : Box
 			windowPicker.CloseWindow
 				.Subscribe(displayServer.CloseWindow);
 
-			Observable.FromEventPattern<EnterNotifyEventArgs>(groupIcon, nameof(EnterNotifyEvent))
+			groupIcon.ObserveEvent<EnterNotifyEventArgs>(nameof(EnterNotifyEvent))
 				.WithLatestFrom(replayLatestViewModelObservable)
 				.Where(t => t.Second.Tasks.Count > 0)
 				.Delay(TimeSpan.FromMilliseconds(250), new SynchronizationContextScheduler(new GLibSynchronizationContext()))
-				.TakeUntil(Observable.FromEventPattern<LeaveNotifyEventArgs>(groupIcon, nameof(LeaveNotifyEvent)))
+				.TakeUntil(groupIcon.ObserveEvent(nameof(LeaveNotifyEvent)).Merge(groupIcon.ObserveEvent(nameof(Unmapped))))
 				.Repeat()
 				.Where(_ => !windowPicker.Visible)
 				.Subscribe(t =>
@@ -90,6 +88,11 @@ public class TaskbarView : Box
 
 			replayLatestViewModelObservable.Connect();
 			return groupIcon;
+		});
+
+		forEachGroup.DragBeginObservable.Subscribe(icon =>
+		{
+			icon.CloseWindowPicker();
 		});
 
 		forEachGroup.OrderingChanged.Subscribe(t =>

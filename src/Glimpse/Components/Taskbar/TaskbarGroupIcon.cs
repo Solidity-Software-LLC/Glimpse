@@ -8,17 +8,24 @@ using Color = Cairo.Color;
 
 namespace Glimpse.Components.Taskbar;
 
-public class TaskbarGroupIcon : EventBox
+public class TaskbarGroupIcon : EventBox, IForEachDraggable
 {
+	private readonly TaskbarWindowPicker _taskbarWindowPicker;
 	private TaskbarGroupViewModel _currentViewModel;
 	private readonly Subject<bool> _contextMenuObservable = new();
 	private readonly Subject<EventButton> _buttonRelease = new();
 
-	public TaskbarGroupIcon(IObservable<TaskbarGroupViewModel> viewModel)
+	public IObservable<Pixbuf> IconWhileDragging { get; }
+	public IObservable<bool> ContextMenuOpened => _contextMenuObservable;
+	public IObservable<EventButton> ButtonRelease => _buttonRelease;
+
+	public TaskbarGroupIcon(IObservable<TaskbarGroupViewModel> viewModel, TaskbarWindowPicker taskbarWindowPicker)
 	{
+		_taskbarWindowPicker = taskbarWindowPicker;
 		Visible = false;
 		Vexpand = false;
 		Valign = Align.Center;
+		Halign = Align.Start;
 		AppPaintable = true;
 		Visual = Screen.RgbaVisual;
 
@@ -45,15 +52,27 @@ public class TaskbarGroupIcon : EventBox
 		viewModel.Subscribe(vm => _currentViewModel = vm);
 		viewModel.Select(vm => vm.DemandsAttention).DistinctUntilChanged().Subscribe(_ => QueueDraw());
 
-		viewModel.DistinctUntilChanged(x => x.Tasks.Count).Subscribe(group =>
-		{
-			image.Pixbuf = IconLoader.LoadIcon(group.DesktopFile.IconName, 26)
-				?? IconLoader.LoadIcon(group.Tasks.FirstOrDefault(), 26)
-				?? IconLoader.DefaultAppIcon(26);
+		var iconObservable = viewModel
+			.DistinctUntilChanged(x => x.Tasks.Count)
+			.Select(group =>
+				IconLoader.LoadIcon(group.DesktopFile.IconName, 26)
+					?? IconLoader.LoadIcon(group.Tasks.FirstOrDefault(), 26)
+					?? IconLoader.DefaultAppIcon(26))
+			.Publish();
 
-			Gtk.Drag.SourceSetIconPixbuf(this, image.Pixbuf);
+		iconObservable.Subscribe(pixbuf =>
+		{
+			image.Pixbuf = pixbuf;
 			QueueDraw();
 		});
+
+		IconWhileDragging = iconObservable.Where(i => i != null).TakeUntilDestroyed(this);
+		iconObservable.Connect();
+	}
+
+	public void CloseWindowPicker()
+	{
+		_taskbarWindowPicker.ClosePopup();
 	}
 
 	protected override bool OnButtonReleaseEvent(EventButton evnt)
@@ -61,9 +80,6 @@ public class TaskbarGroupIcon : EventBox
 		_buttonRelease.OnNext(evnt);
 		return true;
 	}
-
-	public IObservable<bool> ContextMenuOpened => _contextMenuObservable;
-	public IObservable<EventButton> ButtonRelease => _buttonRelease;
 
 	protected override bool OnDrawn(Context cr)
 	{
