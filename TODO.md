@@ -14,6 +14,7 @@ Taskbar
 ------------
 * Convert taskbar apps to buttons
 * Calendar
+* Context menu
 
 System Tray
 ------------

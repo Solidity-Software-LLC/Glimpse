@@ -28,7 +28,7 @@ public class ForEach<TViewModel, TKey, TWidget> : FlowBox where TKey : IEquatabl
 	public IObservable<(TKey, int)> OrderingChanged { get; }
 	public IObservable<TWidget> DragBeginObservable => _dragBeginObservable;
 
-	public ForEach(IObservable<IList<TViewModel>> itemsObservable, Func<TViewModel, TKey> trackBy, Func<IObservable<TViewModel>, TWidget> widgetFactory)
+	public ForEach(IObservable<IList<TViewModel>> itemsObservable, Func<TViewModel, TKey> trackBy, Func<IObservable<TViewModel>, TKey, TWidget> widgetFactory)
 	{
 		MarginStart = 4;
 		MaxChildrenPerLine = 100;
@@ -47,7 +47,8 @@ public class ForEach<TViewModel, TKey, TWidget> : FlowBox where TKey : IEquatabl
 
 		var draggingPlaceholderWidget = new FlowBoxChild()
 		{
-			Valign = Align.Center,
+			Valign = Align.Fill,
+			Halign = Align.Fill,
 			Visible = true,
 			AppPaintable = true,
 		}.AddClass("foreach__dragging-placeholder");
@@ -69,7 +70,9 @@ public class ForEach<TViewModel, TKey, TWidget> : FlowBox where TKey : IEquatabl
 
 		this.ObserveEvent<DragMotionArgs>(nameof(DragMotion)).Subscribe(e =>
 		{
-			var (flowBoxChild, index) = this.FindChildAtX(e.X);
+			var flowBoxChild = GetChildAtPos(e.X, e.Y);
+			if (flowBoxChild == null) return;
+			var index = Array.FindIndex(Children, c => c == flowBoxChild);
 
 			if (flowBoxChild != draggingPlaceholderWidget)
 			{
@@ -83,7 +86,7 @@ public class ForEach<TViewModel, TKey, TWidget> : FlowBox where TKey : IEquatabl
 
 		itemsObservable.UnbundleMany(trackBy).Subscribe(itemObservable =>
 		{
-			var childWidget = widgetFactory(itemObservable.Select(i => i.Item1).DistinctUntilChanged());
+			var childWidget = widgetFactory(itemObservable.Select(i => i.Item1).DistinctUntilChanged(), itemObservable.Key);
 			childWidget.Data[ForEachKey] = itemObservable.Key;
 			var flowBoxChild = childWidget.Parent as FlowBoxChild;
 
@@ -92,18 +95,20 @@ public class ForEach<TViewModel, TKey, TWidget> : FlowBox where TKey : IEquatabl
 				flowBoxChild = new FlowBoxChild().AddMany(childWidget);
 				flowBoxChild.Data[ForEachIndex] = 0;
 				flowBoxChild.Data[ForEachKey] = itemObservable.Key;
-				flowBoxChild.ShowAll();
 				Add(flowBoxChild);
 			}
 
+			flowBoxChild.ShowAll();
+
 			childWidget
 				.ObserveEvent<DragBeginArgs>(nameof(childWidget.DragBegin))
-				.Subscribe(e =>
+				.WithLatestFrom(childWidget.IconWhileDragging)
+				.Subscribe(t =>
 				{
+					if (t.Second != null) Drag.SourceSetIconPixbuf(childWidget, t.Second);
 					_dragBeginObservable.OnNext(childWidget);
 					dragStatus = DragResult.Unknown;
 					SortFunc = null;
-					draggingPlaceholderWidget.Margin = childWidget.Margin;
 					draggingPlaceholderWidget.SetSizeRequest(childWidget.WidthRequest, childWidget.HeightRequest);
 					this.ReplaceChild(flowBoxChild, draggingPlaceholderWidget);
 				});
@@ -122,9 +127,6 @@ public class ForEach<TViewModel, TKey, TWidget> : FlowBox where TKey : IEquatabl
 				.Do(_ => dragStatus = DragResult.Failed)
 				.Subscribe(e => e.RetVal = true);
 
-			childWidget.IconWhileDragging
-				.Subscribe(icon => Drag.SourceSetIconPixbuf(childWidget, icon));
-
 			Drag.SourceSet(childWidget, ModifierType.Button1Mask, null, DragAction.Move);
 
 			itemObservable
@@ -137,7 +139,7 @@ public class ForEach<TViewModel, TKey, TWidget> : FlowBox where TKey : IEquatabl
 						InvalidateSort();
 					},
 					_ => { },
-					() => Remove(childWidget));
+					() => flowBoxChild.Visible = false);
 		});
 	}
 

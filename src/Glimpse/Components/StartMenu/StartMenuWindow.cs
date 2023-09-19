@@ -32,7 +32,6 @@ public class StartMenuWindow : Window
 	{
 		var iconCache = new Dictionary<string, StartMenuAppIcon>();
 		var allAppsObservable = viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged().UnbundleMany(a => a.IniFile.FilePath).RemoveIndex();
-		var displayedAppsObservable = viewModelObservable.Select(vm => vm.AppsToDisplay).DistinctUntilChanged().UnbundleMany(a => a.IniFile.FilePath).RemoveIndex();
 
 		allAppsObservable.Subscribe(file =>
 		{
@@ -97,7 +96,7 @@ public class StartMenuWindow : Window
 			.TakeUntilDestroyed(this)
 			.Subscribe(s => label.Text = s.Length > 0 ? "Search results" : "Pinned");
 
-		_pinnedAppsGrid = new FlowBox();
+		_pinnedAppsGrid = new ForEach<DesktopFile, string, StartMenuAppIcon>(viewModelObservable.Select(vm => vm.AppsToDisplay).DistinctUntilChanged(), i => i.IniFile.FilePath, (i, key) => iconCache[key]);
 		_pinnedAppsGrid.MarginStart = 32;
 		_pinnedAppsGrid.MarginEnd = 32;
 		_pinnedAppsGrid.RowSpacing = 4;
@@ -110,7 +109,6 @@ public class StartMenuWindow : Window
 		_pinnedAppsGrid.Valign = Align.Start;
 		_pinnedAppsGrid.Halign = Align.Start;
 		_pinnedAppsGrid.ActivateOnSingleClick = true;
-		_pinnedAppsGrid.ForEach(displayedAppsObservable, i => iconCache[i.Key]);
 
 		viewModelObservable
 			.Select(vm => vm.AppsToDisplay)

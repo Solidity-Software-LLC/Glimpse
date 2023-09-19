@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using Gdk;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Services.FreeDesktop;
 using Gtk;
@@ -7,7 +8,7 @@ using WrapMode = Pango.WrapMode;
 
 namespace Glimpse.Components.StartMenu;
 
-public class StartMenuAppIcon : Button
+public class StartMenuAppIcon : Button, IForEachDraggable
 {
 	public StartMenuAppIcon(IObservable<DesktopFile> desktopFileObservable)
 	{
@@ -35,12 +36,18 @@ public class StartMenuAppIcon : Button
 
 		desktopFileObservable
 			.TakeUntilDestroyed(this)
-			.Subscribe(desktopFile =>
-			{
-				name.Text = desktopFile.Name;
-				image.Pixbuf = IconLoader.LoadIcon(desktopFile.IconName, 36) ?? IconLoader.DefaultAppIcon(36);
-			});
+			.Subscribe(f => name.Text = f.Name);
+
+		var iconObservable = desktopFileObservable
+			.Select(f => IconLoader.LoadIcon(f.IconName, 36) ?? IconLoader.DefaultAppIcon(36))
+			.Replay(1);
+
+		iconObservable.Subscribe(pixbuf => image.Pixbuf = pixbuf);
+		iconObservable.Connect();
+
+		IconWhileDragging = iconObservable;
 	}
 
 	public IObservable<DesktopFile> ContextMenuRequested { get; }
+	public IObservable<Pixbuf> IconWhileDragging { get; }
 }

@@ -34,18 +34,4 @@ public static class GtkExtensions
 		box.Remove(oldWidget);
 		return index;
 	}
-
-	public static (FlowBoxChild, int) FindChildAtX(this FlowBox container, int x)
-	{
-		for (var i=0; i<container.Children.Length; i++)
-		{
-			var childWidget = container.Children[i] as FlowBoxChild;
-			childWidget.TranslateCoordinates(container, 0, 0, out var left, out _);
-			var right = left + childWidget.Allocation.Width;
-			if (left < 0 || x > right) continue;
-			return (childWidget, i);
-		}
-
-		return (null, -1);
-	}
 }
