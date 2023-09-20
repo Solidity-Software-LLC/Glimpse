@@ -1,11 +1,13 @@
 using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using Fluxor;
 using Gdk;
 using GLib;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Reactive;
 using Glimpse.Services.FreeDesktop;
+using Glimpse.State;
 using Gtk;
 using Key = Gdk.Key;
 using Window = Gtk.Window;
@@ -15,11 +17,13 @@ namespace Glimpse.Components.StartMenu;
 
 public class StartMenuWindow : Window
 {
+	private const string AppViewModelKey = "AppViewModelKey";
+
 	private readonly Entry _hiddenEntry;
 	private readonly Subject<DesktopFile> _appLaunch = new();
 	private readonly Subject<DesktopFile> _contextMenuRequested = new();
 	private readonly Entry _searchEntry;
-	private readonly FlowBox _pinnedAppsGrid;
+	private readonly ForEach<StartMenuAppViewModel, string, StartMenuAppIcon> _apps;
 	private readonly List<(int, int)> _keyCodeRanges = new()
 	{
 		(48, 90),
@@ -27,30 +31,30 @@ public class StartMenuWindow : Window
 		(186, 222)
 	};
 
-	public StartMenuWindow(IObservable<StartMenuViewModel> viewModelObservable)
+	public StartMenuWindow(IObservable<StartMenuViewModel> viewModelObservable, IDispatcher dispatcher)
 		: base(WindowType.Toplevel)
 	{
 		var iconCache = new Dictionary<string, StartMenuAppIcon>();
-		var allAppsObservable = viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged().UnbundleMany(a => a.IniFile.FilePath).RemoveIndex();
+		var allAppsObservable = viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged().UnbundleMany(a => a.DesktopFile.IniFile.FilePath).RemoveIndex();
 
-		allAppsObservable.Subscribe(file =>
+		allAppsObservable.Subscribe(appObs =>
 		{
-			var appIcon = new StartMenuAppIcon(file);
+			var appIcon = new StartMenuAppIcon(appObs);
 			appIcon.Halign = Align.Start;
 			appIcon.Valign = Align.Start;
 			appIcon.Expand = false;
 
 			appIcon.ObserveButtonRelease()
 				.Where(static e => e.Event.Button == 1)
-				.WithLatestFrom(file)
-				.Subscribe(t => _appLaunch.OnNext(t.Second));
+				.WithLatestFrom(appObs)
+				.Subscribe(t => _appLaunch.OnNext(t.Second.DesktopFile));
 
 			appIcon.ContextMenuRequested
 				.TakeUntilDestroyed(appIcon)
 				.Subscribe(f => _contextMenuRequested.OnNext(f));
 
-			iconCache.Add(file.Key, appIcon);
-			file.Subscribe(f => appIcon.Data["DesktopFile"] = f, static _ => { }, () => iconCache.Remove(file.Key));
+			iconCache.Add(appObs.Key, appIcon);
+			appObs.Subscribe(f => appIcon.Data[AppViewModelKey] = f, static _ => { }, () => iconCache.Remove(appObs.Key));
 		});
 
 		SkipPagerHint = true;
@@ -96,43 +100,41 @@ public class StartMenuWindow : Window
 			.TakeUntilDestroyed(this)
 			.Subscribe(s => label.Text = s.Length > 0 ? "Search results" : "Pinned");
 
-		_pinnedAppsGrid = new ForEach<DesktopFile, string, StartMenuAppIcon>(viewModelObservable.Select(vm => vm.AppsToDisplay).DistinctUntilChanged(), i => i.IniFile.FilePath, (i, key) => iconCache[key]);
-		_pinnedAppsGrid.MarginStart = 32;
-		_pinnedAppsGrid.MarginEnd = 32;
-		_pinnedAppsGrid.RowSpacing = 4;
-		_pinnedAppsGrid.ColumnSpacing = 4;
-		_pinnedAppsGrid.MaxChildrenPerLine = 6;
-		_pinnedAppsGrid.MinChildrenPerLine = 6;
-		_pinnedAppsGrid.SelectionMode = SelectionMode.Single;
-		_pinnedAppsGrid.Orientation = Orientation.Horizontal;
-		_pinnedAppsGrid.Homogeneous = false;
-		_pinnedAppsGrid.Valign = Align.Start;
-		_pinnedAppsGrid.Halign = Align.Start;
-		_pinnedAppsGrid.ActivateOnSingleClick = true;
+		_apps = new ForEach<StartMenuAppViewModel, string, StartMenuAppIcon>(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged(), i => i.DesktopFile.IniFile.FilePath, (i, key) => iconCache[key]);
+		_apps.MarginStart = 32;
+		_apps.MarginEnd = 32;
+		_apps.RowSpacing = 4;
+		_apps.ColumnSpacing = 4;
+		_apps.MaxChildrenPerLine = 6;
+		_apps.MinChildrenPerLine = 6;
+		_apps.SelectionMode = SelectionMode.Single;
+		_apps.Orientation = Orientation.Horizontal;
+		_apps.Homogeneous = false;
+		_apps.Valign = Align.Start;
+		_apps.Halign = Align.Start;
+		_apps.ActivateOnSingleClick = true;
+		_apps.SortFunc = (child1, child2) => GetAppViewModel(child1).Index.CompareTo(GetAppViewModel(child2).Index);
+		_apps.FilterFunc = child =>
+		{
+			var vm = GetAppViewModel(child);
+			return vm == null || vm.IsVisible;
+		};
 
-		viewModelObservable
-			.Select(vm => vm.AppsToDisplay)
-			.DistinctUntilChanged()
-			.Subscribe(_ => _pinnedAppsGrid.InvalidateSort());
+		_apps.OrderingChanged
+			.Subscribe(t => dispatcher.Dispatch(new UpdatePinnedAppOrderingAction() { DesktopFileKey = t.Item1, NewIndex = t.Item2 }));
 
-		viewModelObservable
-			.Select(vm => vm.SearchText)
-			.DistinctUntilChanged()
-			.WithLatestFrom(viewModelObservable)
-			.Subscribe(t => _pinnedAppsGrid.SortFunc = string.IsNullOrEmpty(t.First) ? (c1, c2) => PinnedSort(c1, c2, t.Second.PinnedStartApps) : AlphabeticalSort);
-
-		_pinnedAppsGrid.ObserveEvent<ChildActivatedArgs>(nameof(_pinnedAppsGrid.ChildActivated))
-			.Select(e => e.Child.Child as StartMenuAppIcon)
-			.Subscribe(appIcon => _appLaunch.OnNext(appIcon.Data["DesktopFile"] as DesktopFile));
+		_apps.ObserveEvent<ChildActivatedArgs>(nameof(_apps.ChildActivated))
+			.Select(e => GetAppViewModel(e.Child))
+			.Subscribe(vm => _appLaunch.OnNext(vm.DesktopFile));
 
 		_searchEntry.ObserveEvent<KeyReleaseEventArgs>(nameof(KeyReleaseEvent))
 			.Where(e => e.Event.Key == Key.Return || e.Event.Key == Key.KP_Enter)
-			.WithLatestFrom(viewModelObservable.Select(vm => vm.AppsToDisplay).DistinctUntilChanged())
+			.WithLatestFrom(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged())
 			.Where(t => t.Second.Any())
-			.Subscribe(t => _appLaunch.OnNext(t.Second.FirstOrDefault()));
+			.Subscribe(t => _appLaunch.OnNext(t.Second.FirstOrDefault().DesktopFile));
 
 		var pinnedAppsScrolledWindow = new ScrolledWindow();
-		pinnedAppsScrolledWindow.Add(_pinnedAppsGrid);
+		pinnedAppsScrolledWindow.Add(_apps);
 		pinnedAppsScrolledWindow.Expand = true;
 		pinnedAppsScrolledWindow.MarginBottom = 128;
 
@@ -152,22 +154,11 @@ public class StartMenuWindow : Window
 		_hiddenEntry.Hide();
 	}
 
-	private int PinnedSort(FlowBoxChild child1, FlowBoxChild child2, ImmutableList<DesktopFile> pinnedStartApps)
+	private StartMenuAppViewModel GetAppViewModel(FlowBoxChild child)
 	{
-		var first = child1.Child as StartMenuAppIcon;
-		var second = child2.Child as StartMenuAppIcon;
-		var firstDesktopFile = first.Data["DesktopFile"] as DesktopFile;
-		var secondDesktopFile = second.Data["DesktopFile"] as DesktopFile;
-		return pinnedStartApps.IndexOf(firstDesktopFile).CompareTo(pinnedStartApps.IndexOf(secondDesktopFile));
-	}
-
-	private int AlphabeticalSort(FlowBoxChild child1, FlowBoxChild child2)
-	{
-		var first = child1.Child as StartMenuAppIcon;
-		var second = child2.Child as StartMenuAppIcon;
-		var firstDesktopFile = first.Data["DesktopFile"] as DesktopFile;
-		var secondDesktopFile = second.Data["DesktopFile"] as DesktopFile;
-		return firstDesktopFile.Name.CompareTo(secondDesktopFile.Name);
+		var icon = child.Child as StartMenuAppIcon;
+		if (icon == null) return null;
+		return icon.Data[AppViewModelKey] as StartMenuAppViewModel;
 	}
 
 	private Widget CreateActionBar(IObservable<ActionBarViewModel> viewModel)
@@ -243,7 +234,7 @@ public class StartMenuWindow : Window
 	{
 		_searchEntry.Text = "";
 		_hiddenEntry.GrabFocus();
-		_pinnedAppsGrid.UnselectAll();
+		_apps.UnselectAll();
 		Show();
 	}
 }

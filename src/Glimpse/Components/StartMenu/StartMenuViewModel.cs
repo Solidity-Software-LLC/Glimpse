@@ -11,12 +11,18 @@ public class ActionBarViewModel
 	public string PowerButtonCommand { get; set; }
 }
 
+public class StartMenuAppViewModel
+{
+	public int Index { get; set; }
+	public DesktopFile DesktopFile { get; set; }
+	public bool IsVisible { get; set; }
+	public bool IsPinnedToStartMenu { get; set; }
+	public bool IsPinnedToTaskbar { get; set; }
+}
+
 public class StartMenuViewModel
 {
-	public ImmutableList<DesktopFile> AllApps { get; set; }
-	public ImmutableList<DesktopFile> PinnedStartApps { get; set; }
+	public ImmutableList<StartMenuAppViewModel> AllApps { get; set; }
 	public string SearchText { get; set; }
 	public ActionBarViewModel ActionBarViewModel { get; set; }
-	public ImmutableList<DesktopFile> AppsToDisplay { get; set; }
-	public ImmutableList<DesktopFile> PinnedTaskbarApps { get; set; }
 }

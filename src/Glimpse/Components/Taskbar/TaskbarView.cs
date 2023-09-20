@@ -90,6 +90,7 @@ public class TaskbarView : Box
 			return groupIcon;
 		});
 
+		forEachGroup.SortFunc = ForEach.SortByIndex;
 		forEachGroup.DragBeginObservable.Subscribe(icon =>
 		{
 			icon.CloseWindowPicker();

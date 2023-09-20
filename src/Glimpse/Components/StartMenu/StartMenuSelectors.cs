@@ -13,19 +13,6 @@ public class StartMenuSelectors
 
 	public StartMenuSelectors(RootStateSelectors rootStateSelectors)
 	{
-		var appsToDisplayObservable = rootStateSelectors.SearchText.Select(s => s?.ToLower())
-			.CombineLatest(
-				rootStateSelectors.PinnedStartMenuApps,
-				rootStateSelectors.AllDesktopFiles)
-			.Select(t =>
-			{
-				var (searchText, pinnedApps, allDesktopFiles) = t;
-
-				return string.IsNullOrEmpty(searchText)
-					? pinnedApps
-					: allDesktopFiles.Where(d => searchText.AllCharactersIn(d.Name.ToLower())).ToImmutableList();
-			});
-
 		var actionBarViewModelSelector = rootStateSelectors.PowerButtonCommand
 			.CombineLatest(
 				rootStateSelectors.SettingsButtonCommand,
@@ -40,21 +27,44 @@ public class StartMenuSelectors
 			})
 			.DistinctUntilChanged();
 
-		ViewModel = rootStateSelectors.PinnedStartMenuApps
+		var allAppsSelector = rootStateSelectors.AllDesktopFiles
 			.CombineLatest(
-				rootStateSelectors.AllDesktopFiles,
 				rootStateSelectors.SearchText,
-				appsToDisplayObservable,
 				rootStateSelectors.PinnedTaskbarApps,
-				actionBarViewModelSelector)
+				rootStateSelectors.PinnedStartMenuApps)
+			.Select(t =>
+			{
+				var (allDesktopFiles, searchText, pinnedTaskbarApps, pinnedStartMenuApps) = t;
+				var results = ImmutableList<StartMenuAppViewModel>.Empty;
+				var index = 0;
+				var isSearching = !string.IsNullOrEmpty(searchText);
+				var lowerCaseSearchText = searchText.ToLower();
+
+				foreach (var f in allDesktopFiles)
+				{
+					var pinnedIndex = pinnedStartMenuApps.FindIndex(a => a.IniFile.FilePath == f.IniFile.FilePath);
+					var taskbarIndex = pinnedTaskbarApps.FindIndex(a => a.IniFile.FilePath == f.IniFile.FilePath);
+					var isVisible = isSearching ? lowerCaseSearchText.AllCharactersIn(f.Name.ToLower()) : pinnedIndex != -1;
+
+					var appViewModel = new StartMenuAppViewModel();
+					appViewModel.DesktopFile = f;
+					appViewModel.IsPinnedToTaskbar = taskbarIndex != -1;
+					appViewModel.IsPinnedToStartMenu = pinnedIndex != -1;
+					appViewModel.IsVisible = isVisible;
+					appViewModel.Index = isSearching && isVisible ? index++ : pinnedIndex;
+					results = results.Add(appViewModel);
+				}
+
+				return results;
+			});
+
+		ViewModel = allAppsSelector
+			.CombineLatest(rootStateSelectors.SearchText, actionBarViewModelSelector)
 			.Select(t => new StartMenuViewModel()
 			{
-				PinnedStartApps = t.First,
-				AllApps = t.Second,
-				SearchText = t.Third,
-				AppsToDisplay = t.Fourth,
-				PinnedTaskbarApps = t.Fifth,
-				ActionBarViewModel = t.Sixth
+				AllApps = t.First,
+				SearchText = t.Second,
+				ActionBarViewModel = t.Third
 			})
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));
 	}

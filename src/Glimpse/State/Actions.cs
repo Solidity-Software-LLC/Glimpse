@@ -10,6 +10,12 @@ public class UpdateGroupOrderingAction
 	public int NewIndex { get; set; }
 }
 
+public class UpdatePinnedAppOrderingAction
+{
+	public string DesktopFileKey { get; set; }
+	public int NewIndex { get; set; }
+}
+
 public class UpdateWindowAction
 {
 	public WindowProperties WindowProperties { get; set; }

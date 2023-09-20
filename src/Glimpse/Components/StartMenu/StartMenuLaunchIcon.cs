@@ -32,7 +32,7 @@ public class StartMenuLaunchIcon : Button
 		_freeDesktopService = freeDesktopService;
 		_dispatcher = dispatcher;
 		_contextMenu = new Menu() { ReserveToggleSize = false };
-		_startMenuWindow = new StartMenuWindow(viewModelObservable);
+		_startMenuWindow = new StartMenuWindow(viewModelObservable, dispatcher);
 		_startMenuWindow.KeepAbove = true;
 
 		_startMenuWindow
@@ -142,8 +142,8 @@ public class StartMenuLaunchIcon : Button
 			m.ObserveButtonRelease().Subscribe(_ => _freeDesktopService.Run(action));
 		});
 
-		var isPinnedToStart = startMenuViewModel.PinnedStartApps.Any(f => f == desktopFile);
-		var isPinnedToTaskbar = startMenuViewModel.PinnedTaskbarApps.Any(f => f == desktopFile);
+		var isPinnedToStart = startMenuViewModel.AllApps.Any(f => f.IsPinnedToStartMenu && f.DesktopFile == desktopFile);
+		var isPinnedToTaskbar = startMenuViewModel.AllApps.Any(f => f.IsPinnedToTaskbar && f.DesktopFile == desktopFile);
 		var pinStartIcon = isPinnedToStart ? Assets.UnpinIcon : Assets.PinIcon;
 		var pinTaskbarIcon = isPinnedToTaskbar ? Assets.UnpinIcon : Assets.PinIcon;
 		var pinStart = ContextMenuHelper.CreateMenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start", pinStartIcon.ScaleSimple(16, 16, InterpType.Bilinear));

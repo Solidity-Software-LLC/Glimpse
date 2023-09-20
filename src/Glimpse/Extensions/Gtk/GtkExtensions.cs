@@ -22,16 +22,18 @@ public static class GtkExtensions
 
 	public static int ReplaceChild(this FlowBox box, FlowBoxChild oldWidget, FlowBoxChild newWidget)
 	{
-		var index = Array.FindIndex(box.Children, c => c == oldWidget);
-		var newWidgetIndex = Array.FindIndex(box.Children, c => c == newWidget);
+		var displayedChildren = box.Children.Where(c => c.IsMapped).ToArray();
+		var absoluteIndex = Array.FindIndex(box.Children, c => c == oldWidget);
+		var relativeIndex = Array.FindIndex(displayedChildren, c => c == oldWidget);
+		var newWidgetAbsoluteIndex = Array.FindIndex(box.Children, c => c == newWidget);
 
-		if (newWidgetIndex != -1)
+		if (newWidgetAbsoluteIndex != -1)
 		{
 			box.Remove(newWidget);
 		}
 
-		box.Insert(newWidget, index);
+		box.Insert(newWidget, absoluteIndex);
 		box.Remove(oldWidget);
-		return index;
+		return relativeIndex;
 	}
 }

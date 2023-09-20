@@ -184,6 +184,14 @@ public class Reducers
 		return newState;
 	}
 
+	[ReducerMethod]
+	public static RootState ReduceUpdatePinnedAppOrderingAction(RootState state, UpdatePinnedAppOrderingAction action)
+	{
+		var pinnedAppToMove = state.StartMenuState.PinnedDesktopFiles.First(f => f.IniFile.FilePath == action.DesktopFileKey);
+		var newPinnedFiles = state.StartMenuState.PinnedDesktopFiles.Remove(pinnedAppToMove).Insert(action.NewIndex, pinnedAppToMove);
+		return state with { StartMenuState = state.StartMenuState with { PinnedDesktopFiles = newPinnedFiles } };
+	}
+
 	private static DesktopFile FindAppDesktopFileByName(ImmutableList<DesktopFile> desktopFiles, string applicationName)
 	{
 		var lowerCaseAppName = applicationName.ToLower();
