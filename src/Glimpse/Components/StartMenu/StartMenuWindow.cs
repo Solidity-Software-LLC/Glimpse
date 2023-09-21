@@ -1,11 +1,9 @@
-using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Fluxor;
 using Gdk;
 using GLib;
 using Glimpse.Extensions.Gtk;
-using Glimpse.Extensions.Reactive;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
 using Gtk;
@@ -31,32 +29,16 @@ public class StartMenuWindow : Window
 		(186, 222)
 	};
 
+	public IObservable<string> SearchTextUpdated { get; }
+	public IObservable<DesktopFile> AppLaunch => _appLaunch;
+	public IObservable<DesktopFile> ContextMenuRequested => _contextMenuRequested;
+	public IObservable<ButtonReleaseEventArgs> PowerButtonClicked { get; private set; }
+	public IObservable<ButtonReleaseEventArgs> SettingsButtonClicked { get; private set; }
+	public IObservable<ButtonReleaseEventArgs> UserSettingsClicked { get; private set; }
+
 	public StartMenuWindow(IObservable<StartMenuViewModel> viewModelObservable, IDispatcher dispatcher)
 		: base(WindowType.Toplevel)
 	{
-		var iconCache = new Dictionary<string, StartMenuAppIcon>();
-		var allAppsObservable = viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged().UnbundleMany(a => a.DesktopFile.IniFile.FilePath).RemoveIndex();
-
-		allAppsObservable.Subscribe(appObs =>
-		{
-			var appIcon = new StartMenuAppIcon(appObs);
-			appIcon.Halign = Align.Start;
-			appIcon.Valign = Align.Start;
-			appIcon.Expand = false;
-
-			appIcon.ObserveButtonRelease()
-				.Where(static e => e.Event.Button == 1)
-				.WithLatestFrom(appObs)
-				.Subscribe(t => _appLaunch.OnNext(t.Second.DesktopFile));
-
-			appIcon.ContextMenuRequested
-				.TakeUntilDestroyed(appIcon)
-				.Subscribe(f => _contextMenuRequested.OnNext(f));
-
-			iconCache.Add(appObs.Key, appIcon);
-			appObs.Subscribe(f => appIcon.Data[AppViewModelKey] = f, static _ => { }, () => iconCache.Remove(appObs.Key));
-		});
-
 		SkipPagerHint = true;
 		SkipTaskbarHint = true;
 		Decorated = false;
@@ -100,7 +82,24 @@ public class StartMenuWindow : Window
 			.TakeUntilDestroyed(this)
 			.Subscribe(s => label.Text = s.Length > 0 ? "Search results" : "Pinned");
 
-		_apps = new ForEach<StartMenuAppViewModel, string, StartMenuAppIcon>(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged(), i => i.DesktopFile.IniFile.FilePath, (i, key) => iconCache[key]);
+		_apps = ForEach.Create(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged(), i => i.DesktopFile.IniFile.FilePath, (appObs, _) =>
+		{
+			var appIcon = new StartMenuAppIcon(appObs);
+			appIcon.Halign = Align.Start;
+			appIcon.Valign = Align.Start;
+			appIcon.Expand = false;
+
+			appIcon.ObserveButtonRelease()
+				.Where(static e => e.Event.Button == 1)
+				.WithLatestFrom(appObs)
+				.Subscribe(t => _appLaunch.OnNext(t.Second.DesktopFile));
+
+			appIcon.ContextMenuRequested
+				.Subscribe(f => _contextMenuRequested.OnNext(f));
+
+			return appIcon;
+		});
+
 		_apps.MarginStart = 32;
 		_apps.MarginEnd = 32;
 		_apps.RowSpacing = 4;
@@ -113,18 +112,13 @@ public class StartMenuWindow : Window
 		_apps.Valign = Align.Start;
 		_apps.Halign = Align.Start;
 		_apps.ActivateOnSingleClick = true;
-		_apps.SortFunc = (child1, child2) => GetAppViewModel(child1).Index.CompareTo(GetAppViewModel(child2).Index);
-		_apps.FilterFunc = child =>
-		{
-			var vm = GetAppViewModel(child);
-			return vm == null || vm.IsVisible;
-		};
+		_apps.FilterFunc = c => _apps.GetViewModel(c)?.IsVisible ?? true;
 
 		_apps.OrderingChanged
 			.Subscribe(t => dispatcher.Dispatch(new UpdatePinnedAppOrderingAction() { DesktopFileKey = t.Item1, NewIndex = t.Item2 }));
 
 		_apps.ObserveEvent<ChildActivatedArgs>(nameof(_apps.ChildActivated))
-			.Select(e => GetAppViewModel(e.Child))
+			.Select(e => _apps.GetViewModel(e.Child))
 			.Subscribe(vm => _appLaunch.OnNext(vm.DesktopFile));
 
 		_searchEntry.ObserveEvent<KeyReleaseEventArgs>(nameof(KeyReleaseEvent))
@@ -152,13 +146,6 @@ public class StartMenuWindow : Window
 		ShowAll();
 		Hide();
 		_hiddenEntry.Hide();
-	}
-
-	private StartMenuAppViewModel GetAppViewModel(FlowBoxChild child)
-	{
-		var icon = child.Child as StartMenuAppIcon;
-		if (icon == null) return null;
-		return icon.Data[AppViewModelKey] as StartMenuAppViewModel;
 	}
 
 	private Widget CreateActionBar(IObservable<ActionBarViewModel> viewModel)
@@ -200,13 +187,6 @@ public class StartMenuWindow : Window
 		actionBar.AddMany(userButton, new Label(Environment.MachineName) { Expand = true }, settingsButton, powerButton);
 		return actionBar;
 	}
-
-	public IObservable<string> SearchTextUpdated { get; }
-	public IObservable<DesktopFile> AppLaunch => _appLaunch;
-	public IObservable<DesktopFile> ContextMenuRequested => _contextMenuRequested;
-	public IObservable<ButtonReleaseEventArgs> PowerButtonClicked { get; private set; }
-	public IObservable<ButtonReleaseEventArgs> SettingsButtonClicked { get; private set; }
-	public IObservable<ButtonReleaseEventArgs> UserSettingsClicked { get; private set; }
 
 	[ConnectBefore]
 	protected override bool OnKeyPressEvent(EventKey evnt)

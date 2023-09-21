@@ -1,7 +1,6 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using Fluxor;
-using Gdk;
 using GLib;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Services.DisplayServer;
@@ -19,7 +18,7 @@ public class TaskbarView : Box
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new GLibSynchronizationContext());
 
-		var forEachGroup = new ForEach<TaskbarGroupViewModel, string, TaskbarGroupIcon>(viewModelSelector.Select(g => g.Groups).DistinctUntilChanged(), i => i.Id, (viewModelObservable, _) =>
+		var forEachGroup = ForEach.Create(viewModelSelector.Select(g => g.Groups).DistinctUntilChanged(), i => i.Id, (viewModelObservable, _) =>
 		{
 			var replayLatestViewModelObservable = viewModelObservable.Replay(1);
 			var contextMenu = new TaskbarGroupContextMenu(viewModelObservable);
@@ -90,16 +89,19 @@ public class TaskbarView : Box
 			return groupIcon;
 		});
 
-		forEachGroup.SortFunc = ForEach.SortByIndex;
-		forEachGroup.DragBeginObservable.Subscribe(icon =>
-		{
-			icon.CloseWindowPicker();
-		});
-
-		forEachGroup.OrderingChanged.Subscribe(t =>
-		{
-			dispatcher.Dispatch(new UpdateGroupOrderingAction() { GroupId = t.Item1, NewIndex = t.Item2 });
-		});
+		forEachGroup.MarginStart = 4;
+		forEachGroup.MaxChildrenPerLine = 100;
+		forEachGroup.MinChildrenPerLine = 100;
+		forEachGroup.RowSpacing = 0;
+		forEachGroup.ColumnSpacing = 4;
+		forEachGroup.Orientation = Orientation.Horizontal;
+		forEachGroup.Homogeneous = false;
+		forEachGroup.Valign = Align.Center;
+		forEachGroup.Halign = Align.Start;
+		forEachGroup.SelectionMode = SelectionMode.None;
+		forEachGroup.Expand = false;
+		forEachGroup.DragBeginObservable.Subscribe(icon => icon.CloseWindowPicker());
+		forEachGroup.OrderingChanged.Subscribe(t => dispatcher.Dispatch(new UpdateGroupOrderingAction() { GroupId = t.Item1, NewIndex = t.Item2 }));
 
 		Add(forEachGroup);
 	}

@@ -21,53 +21,54 @@ public enum DragResult
 
 public enum ForEachDataKeys
 {
-	ForEachModel,
-	ForEachKey,
-	ForEachIndex
+	Key,
+	Index,
+	Model
 }
 
 public static class ForEach
 {
-	public static int SortByIndex(FlowBoxChild child1, FlowBoxChild child2)
+	public static ForEach<TViewModel, TKey, TWidget> Create<TViewModel, TKey, TWidget>(
+		IObservable<IList<TViewModel>> itemsObservable,
+		Func<TViewModel, TKey> trackBy,
+		Func<IObservable<TViewModel>, TKey, TWidget> widgetFactory)
+			where TKey : IEquatable<TKey>
+			where TWidget : Widget, IForEachDraggable
 	{
-		var index1 = (int)child1.Data[ForEachDataKeys.ForEachIndex];
-		var index2 = (int)child2.Data[ForEachDataKeys.ForEachIndex];
+		return new ForEach<TViewModel, TKey, TWidget>(itemsObservable, trackBy, widgetFactory);
+	}
+
+	public static TViewModel GetViewModel<TViewModel, TKey, TWidget>(
+		this ForEach<TViewModel, TKey, TWidget> forEachWidget,
+		FlowBoxChild child)
+		where TKey : IEquatable<TKey>
+		where TWidget : Widget, IForEachDraggable
+		where TViewModel : class
+	{
+		return child.Data[ForEachDataKeys.Model] as TViewModel;
+	}
+
+	public static int SortByItemIndex(FlowBoxChild child1, FlowBoxChild child2)
+	{
+		var index1 = (int)child1.Data[ForEachDataKeys.Index];
+		var index2 = (int)child2.Data[ForEachDataKeys.Index];
 		return index1.CompareTo(index2);
 	}
 }
 
-public class ForEach<TViewModel, TKey, TWidget> : FlowBox where TKey : IEquatable<TKey> where TWidget : Widget, IForEachDraggable
+public class ForEach<TViewModel, TKey, TWidget> : FlowBox
+	where TKey : IEquatable<TKey>
+	where TWidget : Widget, IForEachDraggable
 {
 	private readonly Subject<TWidget> _dragBeginObservable = new();
 
 	public IObservable<(TKey, int)> OrderingChanged { get; }
 	public IObservable<TWidget> DragBeginObservable => _dragBeginObservable;
-	private FlowBoxSortFunc _sortFunc;
-
-	public FlowBoxSortFunc SortFunc
-	{
-		set
-		{
-			base.SortFunc = value;
-			_sortFunc = value;
-		}
-	}
 
 	public ForEach(IObservable<IList<TViewModel>> itemsObservable, Func<TViewModel, TKey> trackBy, Func<IObservable<TViewModel>, TKey, TWidget> widgetFactory)
 	{
-		MarginStart = 4;
-		MaxChildrenPerLine = 100;
-		MinChildrenPerLine = 100;
-		RowSpacing = 0;
-		ColumnSpacing = 4;
-		Orientation = Orientation.Horizontal;
-		Homogeneous = false;
-		Valign = Align.Center;
-		Halign = Align.Start;
-		SelectionMode = SelectionMode.None;
-		Expand = false;
-
 		Drag.DestSet(this, 0, null, 0);
+		SortFunc = ForEach.SortByItemIndex;
 
 		var draggingPlaceholderWidget = new FlowBoxChild()
 		{
@@ -85,7 +86,7 @@ public class ForEach<TViewModel, TKey, TWidget> : FlowBox where TKey : IEquatabl
 			{
 				var sourceWidget = Drag.GetSourceWidget(e.Context).Parent as FlowBoxChild;
 				var index = this.ReplaceChild(draggingPlaceholderWidget, sourceWidget);
-				return ((TKey)sourceWidget.Data[ForEachDataKeys.ForEachKey], index);
+				return ((TKey)sourceWidget.Data[ForEachDataKeys.Key], index);
 			})
 			.Publish();
 
@@ -111,17 +112,12 @@ public class ForEach<TViewModel, TKey, TWidget> : FlowBox where TKey : IEquatabl
 		itemsObservable.UnbundleMany(trackBy).Subscribe(itemObservable =>
 		{
 			var childWidget = widgetFactory(itemObservable.Select(i => i.Item1).DistinctUntilChanged(), itemObservable.Key);
-			childWidget.Data[ForEachDataKeys.ForEachKey] = itemObservable.Key;
-			var flowBoxChild = childWidget.Parent as FlowBoxChild;
+			childWidget.Data[ForEachDataKeys.Key] = itemObservable.Key;
 
-			if (flowBoxChild == null)
-			{
-				flowBoxChild = new FlowBoxChild().AddMany(childWidget);
-				flowBoxChild.Data[ForEachDataKeys.ForEachIndex] = 0;
-				flowBoxChild.Data[ForEachDataKeys.ForEachKey] = itemObservable.Key;
-				Add(flowBoxChild);
-			}
-
+			var flowBoxChild = new FlowBoxChild().AddMany(childWidget);
+			flowBoxChild.Data[ForEachDataKeys.Index] = 0;
+			flowBoxChild.Data[ForEachDataKeys.Key] = itemObservable.Key;
+			Add(flowBoxChild);
 			flowBoxChild.ShowAll();
 
 			childWidget
@@ -143,8 +139,8 @@ public class ForEach<TViewModel, TKey, TWidget> : FlowBox where TKey : IEquatabl
 				.Subscribe(_ =>
 				{
 					Remove(draggingPlaceholderWidget);
-					Insert(flowBoxChild, (int) flowBoxChild.Data[ForEachDataKeys.ForEachIndex]);
-					SortFunc = _sortFunc;
+					Insert(flowBoxChild, (int) flowBoxChild.Data[ForEachDataKeys.Index]);
+					SortFunc =  ForEach.SortByItemIndex;
 				});
 
 			childWidget
@@ -155,9 +151,14 @@ public class ForEach<TViewModel, TKey, TWidget> : FlowBox where TKey : IEquatabl
 			Drag.SourceSet(childWidget, ModifierType.Button1Mask, null, DragAction.Move);
 
 			itemObservable
+				.Select(i => i.Item1)
+				.DistinctUntilChanged()
+				.Subscribe(i => flowBoxChild.Data[ForEachDataKeys.Model] = i);
+
+			itemObservable
 				.Select(i => i.Item2)
 				.DistinctUntilChanged()
-				.Subscribe(i => flowBoxChild.Data[ForEachDataKeys.ForEachIndex] = i, _ => { }, () => Remove(flowBoxChild));
+				.Subscribe(i => flowBoxChild.Data[ForEachDataKeys.Index] = i, _ => { }, () => Remove(flowBoxChild));
 		});
 
 		itemsObservable.Subscribe(_ =>
@@ -165,6 +166,5 @@ public class ForEach<TViewModel, TKey, TWidget> : FlowBox where TKey : IEquatabl
 			InvalidateSort();
 			InvalidateFilter();
 		});
-
 	}
 }

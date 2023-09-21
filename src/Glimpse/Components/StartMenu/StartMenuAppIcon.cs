@@ -32,7 +32,11 @@ public class StartMenuAppIcon : Button, IForEachDraggable
 
 		Add(appIconContainer);
 		StyleContext.AddClass("start-menu__app-icon");
-		ContextMenuRequested = this.CreateContextMenuObservable().WithLatestFrom(desktopFileObservable).Select(t => t.Second.DesktopFile);
+
+		ContextMenuRequested = this.CreateContextMenuObservable()
+			.TakeUntilDestroyed(this)
+			.WithLatestFrom(desktopFileObservable)
+			.Select(t => t.Second.DesktopFile);
 
 		desktopFileObservable
 			.TakeUntilDestroyed(this)

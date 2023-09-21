@@ -35,7 +35,7 @@ public class StartMenuSelectors
 			.Select(t =>
 			{
 				var (allDesktopFiles, searchText, pinnedTaskbarApps, pinnedStartMenuApps) = t;
-				var results = ImmutableList<StartMenuAppViewModel>.Empty;
+				var results = new LinkedList<StartMenuAppViewModel>();
 				var index = 0;
 				var isSearching = !string.IsNullOrEmpty(searchText);
 				var lowerCaseSearchText = searchText.ToLower();
@@ -52,10 +52,10 @@ public class StartMenuSelectors
 					appViewModel.IsPinnedToStartMenu = pinnedIndex != -1;
 					appViewModel.IsVisible = isVisible;
 					appViewModel.Index = isSearching && isVisible ? index++ : pinnedIndex;
-					results = results.Add(appViewModel);
+					results.AddLast(appViewModel);
 				}
 
-				return results;
+				return results.OrderBy(r => r.Index).ToImmutableList();
 			});
 
 		ViewModel = allAppsSelector
