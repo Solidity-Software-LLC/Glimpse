@@ -10,7 +10,7 @@ public class TaskbarSelectors
 
 	public TaskbarSelectors(RootStateSelectors rootStateSelectors)
 	{
-		ViewModel = rootStateSelectors.Groups
+		var viewModelObs = rootStateSelectors.Groups
 			.CombineLatest(rootStateSelectors.Screenshots, rootStateSelectors.PinnedTaskbarApps)
 			.Select(t =>
 			{
@@ -45,6 +45,10 @@ public class TaskbarSelectors
 				}
 
 				return new TaskbarViewModel() { Groups = allGroups };
-			});
+			})
+			.Replay(1);
+
+		ViewModel = viewModelObs;
+		viewModelObs.Connect();
 	}
 }

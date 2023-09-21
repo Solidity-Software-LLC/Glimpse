@@ -1,3 +1,4 @@
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
@@ -68,7 +69,7 @@ public class XLibAdaptorService : IDisposable
 				var iconObs = Observable.Return(windowRef.GetIcons()).Concat(propertyChangeObs.ObserveIcons(XAtoms.NetWmIcon));
 				var iconNameObs = Observable.Return(windowRef.GetStringProperty(XAtoms.NetWmIconName)).Concat(propertyChangeObs.ObserveStringProperty(XAtoms.NetWmIconName));
 				var stateObs = Observable.Return(windowRef.GetAtomArray(XAtoms.NetWmState)).Concat(propertyChangeObs.ObserveAtomArray(XAtoms.NetWmState));
-				var allowedActionsObs = Observable.Return(windowRef.GetAtomNameArray(XAtoms.NetWmAllowedActions).ToList()).Concat(propertyChangeObs.ObserveAtomNameArray(XAtoms.NetWmAllowedActions)).Select(ParseWindowActions);
+				var allowedActionsObs = Observable.Return(windowRef.GetAtomNameArray(XAtoms.NetWmAllowedActions).ToList()).Concat(propertyChangeObs.ObserveAtomNameArray(XAtoms.NetWmAllowedActions)).Select(ParseWindowActions).DistinctUntilChanged((s1, s2) => s1.SequenceEqual(s2));
 				XLib.XGetClassHint(windowRef.Display, windowRef.Window, out var classHint);
 
 				var windowPropsObs = titleObs
@@ -84,11 +85,14 @@ public class XLibAdaptorService : IDisposable
 						AllowActions = t.Fifth,
 						DemandsAttention = t.Fourth.Contains(XAtoms.NetWmStateDemandsAttention)
 					})
-					.Throttle(TimeSpan.FromMilliseconds(250));
+					.Throttle(TimeSpan.FromMilliseconds(250))
+					.DistinctUntilChanged()
+					.TakeUntil(windowObservable.TakeLast(1))
+					.Replay(1);
 
 				_windows.OnNext(windowPropsObs);
-				var subscription = propertyChangeObs.Connect();
-				windowObservable.TakeLast(1).Subscribe(_ => subscription.Dispose());
+				windowPropsObs.Connect();
+				propertyChangeObs.Connect();
 			});
 
 		windowEvents.Connect();

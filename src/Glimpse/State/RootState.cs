@@ -28,7 +28,7 @@ public record TaskGroup
 	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
 }
 
-public class WindowProperties
+public record WindowProperties
 {
 	public IWindowRef WindowRef { get; set; }
 	public string Title { get; init; }
