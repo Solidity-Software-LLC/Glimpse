@@ -2,6 +2,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Cairo;
 using Gdk;
+using Glimpse.Components.Shared.ForEach;
 using Glimpse.Extensions.Gtk;
 using Gtk;
 using Color = Cairo.Color;
@@ -23,11 +24,12 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 	{
 		_taskbarWindowPicker = taskbarWindowPicker;
 		Visible = false;
-		Vexpand = false;
-		Valign = Align.Center;
-		Halign = Align.Start;
+		Expand = false;
+		Valign = Align.Fill;
+		Halign = Align.Fill;
 		AppPaintable = true;
 		Visual = Screen.RgbaVisual;
+		this.AddClass("taskbar__group-icon");
 
 		this.CreateContextMenuObservable().Subscribe(_ => _contextMenuObservable.OnNext(true));
 		AddEvents((int)(EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
@@ -44,7 +46,6 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 			QueueDraw();
 		});
 
-		SetSizeRequest(42, 42);
 		var image = new Image();
 		Add(image);
 		ShowAll();

@@ -1,5 +1,6 @@
 using System.Reactive.Linq;
 using Gdk;
+using Glimpse.Components.Shared.ForEach;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Services.FreeDesktop;
 using Gtk;
@@ -8,14 +9,16 @@ using WrapMode = Pango.WrapMode;
 
 namespace Glimpse.Components.StartMenu;
 
-public class StartMenuAppIcon : Button, IForEachDraggable
+public class StartMenuAppIcon : EventBox, IForEachDraggable
 {
 	public StartMenuAppIcon(IObservable<StartMenuAppViewModel> desktopFileObservable)
 	{
 		CanFocus = false;
 
+		this.AddHoverHighlighting();
+		this.AddClass("start-menu__app-icon-container");
+
 		var name = new Label();
-		name.SetSizeRequest(76, 16);
 		name.Ellipsize = EllipsizeMode.End;
 		name.Lines = 2;
 		name.LineWrap = true;
@@ -31,7 +34,6 @@ public class StartMenuAppIcon : Button, IForEachDraggable
 		appIconContainer.Halign = Align.Center;
 
 		Add(appIconContainer);
-		StyleContext.AddClass("start-menu__app-icon");
 
 		ContextMenuRequested = this.CreateContextMenuObservable()
 			.TakeUntilDestroyed(this)

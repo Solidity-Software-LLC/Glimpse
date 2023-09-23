@@ -20,20 +20,13 @@ public static class GtkExtensions
 		widgets.ForEach(widget.Remove);
 	}
 
-	public static int ReplaceChild(this FlowBox box, FlowBoxChild oldWidget, FlowBoxChild newWidget)
+	public static string TryGetValidFilePath(this string uri)
 	{
-		var displayedChildren = box.Children.Where(c => c.IsMapped).ToArray();
-		var absoluteIndex = Array.FindIndex(box.Children, c => c == oldWidget);
-		var relativeIndex = Array.FindIndex(displayedChildren, c => c == oldWidget);
-		var newWidgetAbsoluteIndex = Array.FindIndex(box.Children, c => c == newWidget);
-
-		if (newWidgetAbsoluteIndex != -1)
-		{
-			box.Remove(newWidget);
-		}
-
-		box.Insert(newWidget, absoluteIndex);
-		box.Remove(oldWidget);
-		return relativeIndex;
+		if (string.IsNullOrEmpty(uri)) return null;
+		if (!uri.EndsWith(".desktop", StringComparison.InvariantCultureIgnoreCase)) return null;
+		if (!uri.StartsWith("file:///", StringComparison.InvariantCultureIgnoreCase)) return null;
+		var f = uri.Replace("file:///", "");
+		if (!File.Exists(f)) return null;
+		return f;
 	}
 }

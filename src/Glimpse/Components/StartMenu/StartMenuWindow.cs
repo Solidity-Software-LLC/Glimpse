@@ -3,6 +3,7 @@ using System.Reactive.Subjects;
 using Fluxor;
 using Gdk;
 using GLib;
+using Glimpse.Components.Shared.ForEach;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
@@ -15,13 +16,11 @@ namespace Glimpse.Components.StartMenu;
 
 public class StartMenuWindow : Window
 {
-	private const string AppViewModelKey = "AppViewModelKey";
-
 	private readonly Entry _hiddenEntry;
 	private readonly Subject<DesktopFile> _appLaunch = new();
 	private readonly Subject<DesktopFile> _contextMenuRequested = new();
 	private readonly Entry _searchEntry;
-	private readonly ForEach<StartMenuAppViewModel, string, StartMenuAppIcon> _apps;
+	private readonly ForEachFlowBox<StartMenuAppViewModel, StartMenuAppIcon> _apps;
 	private readonly List<(int, int)> _keyCodeRanges = new()
 	{
 		(48, 90),
@@ -53,13 +52,12 @@ public class StartMenuWindow : Window
 		_hiddenEntry.IsEditable = false;
 
 		_searchEntry = new Entry("");
-		_searchEntry.Expand = true;
 		_searchEntry.IsEditable = true;
 		_searchEntry.Valign = Align.Center;
-		_searchEntry.AddClass("start-menu__search-input");
-		_searchEntry.Halign = Align.Fill;
+		_searchEntry.Halign = Align.Center;
 		_searchEntry.PrimaryIconStock = Stock.Find;
 		_searchEntry.PlaceholderText = "Search all applications";
+		_searchEntry.AddClass("start-menu__search-input");
 
 		SearchTextUpdated = Observable.Return("")
 			.Merge(Observable.FromEventPattern(_searchEntry, nameof(_searchEntry.TextInserted)).Select(_ => _searchEntry.Text))
@@ -69,10 +67,6 @@ public class StartMenuWindow : Window
 
 		var label = new Label("Pinned");
 		label.Halign = Align.Start;
-		label.Valign = Align.End;
-		label.MarginStart = 58;
-		label.MarginBottom = 16;
-		label.Expand = true;
 		label.StyleContext.AddClass("start-menu__label-pinned");
 
 		viewModelObservable
@@ -82,12 +76,9 @@ public class StartMenuWindow : Window
 			.TakeUntilDestroyed(this)
 			.Subscribe(s => label.Text = s.Length > 0 ? "Search results" : "Pinned");
 
-		_apps = ForEach.Create(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged(), i => i.DesktopFile.IniFile.FilePath, (appObs, _) =>
+		_apps = ForEachExtensions.Create(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged(), i => i.DesktopFile.IniFile.FilePath, appObs =>
 		{
 			var appIcon = new StartMenuAppIcon(appObs);
-			appIcon.Halign = Align.Start;
-			appIcon.Valign = Align.Start;
-			appIcon.Expand = false;
 
 			appIcon.ObserveButtonRelease()
 				.Where(static e => e.Event.Button == 1)
@@ -97,22 +88,26 @@ public class StartMenuWindow : Window
 			appIcon.ContextMenuRequested
 				.Subscribe(f => _contextMenuRequested.OnNext(f));
 
+			appObs
+				.Select(v => v.DesktopFile.IniFile.FilePath)
+				.DistinctUntilChanged()
+				.Subscribe(p => appIcon.Data[ForEachDataKeys.Uri] = "file:///" + p);
+
 			return appIcon;
 		});
 
-		_apps.MarginStart = 32;
-		_apps.MarginEnd = 32;
-		_apps.RowSpacing = 4;
-		_apps.ColumnSpacing = 4;
+		_apps.RowSpacing = 0;
+		_apps.ColumnSpacing = 0;
 		_apps.MaxChildrenPerLine = 6;
 		_apps.MinChildrenPerLine = 6;
 		_apps.SelectionMode = SelectionMode.Single;
 		_apps.Orientation = Orientation.Horizontal;
-		_apps.Homogeneous = false;
+		_apps.Homogeneous = true;
 		_apps.Valign = Align.Start;
 		_apps.Halign = Align.Start;
 		_apps.ActivateOnSingleClick = true;
 		_apps.FilterFunc = c => _apps.GetViewModel(c)?.IsVisible ?? true;
+		_apps.AddClass("start-menu__apps");
 
 		_apps.OrderingChanged
 			.Subscribe(t => dispatcher.Dispatch(new UpdatePinnedAppOrderingAction() { DesktopFileKey = t.Item1, NewIndex = t.Item2 }));
@@ -128,9 +123,9 @@ public class StartMenuWindow : Window
 			.Subscribe(t => _appLaunch.OnNext(t.Second.FirstOrDefault().DesktopFile));
 
 		var pinnedAppsScrolledWindow = new ScrolledWindow();
+		pinnedAppsScrolledWindow.Vexpand = true;
 		pinnedAppsScrolledWindow.Add(_apps);
-		pinnedAppsScrolledWindow.Expand = true;
-		pinnedAppsScrolledWindow.MarginBottom = 128;
+		pinnedAppsScrolledWindow.AddClass("start-menu__apps-scroll-window");
 
 		var layout = new Grid();
 		layout.Expand = true;

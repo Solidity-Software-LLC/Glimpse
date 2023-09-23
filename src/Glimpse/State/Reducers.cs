@@ -164,6 +164,8 @@ public class Reducers
 	[ReducerMethod]
 	public static RootState ReduceUpdateGroupOrderingAction(RootState state, UpdateGroupOrderingAction action)
 	{
+		if (action.GroupId == null) return state;
+
 		var groupToMove = state.Groups.First(g => g.Id == action.GroupId);
 		var newGroups = state.Groups.Remove(groupToMove).Insert(action.NewIndex, groupToMove);
 		var newState = state with { Groups = newGroups };

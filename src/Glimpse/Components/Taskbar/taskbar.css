@@ -32,3 +32,14 @@
 .window-picker__app-close-button:hover {
 	background-color: rgba(255, 0, 0, 0.5);
 }
+
+.taskbar__container flowboxchild {
+	min-width: 42px;
+	min-height: 42px;
+	padding: 0 2px 0 2px;
+}
+
+.taskbar__container .foreach__dragging-placeholder {
+	min-width: 40px;
+	min-height: 40px;
+}
