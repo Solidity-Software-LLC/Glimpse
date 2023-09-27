@@ -64,6 +64,7 @@ public class StartMenuSelectors
 			{
 				AllApps = t.First,
 				SearchText = t.Second,
+				DisableDragAndDrop = t.Second.Length > 0,
 				ActionBarViewModel = t.Third
 			})
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));

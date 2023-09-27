@@ -80,11 +80,6 @@ public class StartMenuWindow : Window
 		{
 			var appIcon = new StartMenuAppIcon(appObs);
 
-			appIcon.ObserveButtonRelease()
-				.Where(static e => e.Event.Button == 1)
-				.WithLatestFrom(appObs)
-				.Subscribe(t => _appLaunch.OnNext(t.Second.DesktopFile));
-
 			appIcon.ContextMenuRequested
 				.Subscribe(f => _contextMenuRequested.OnNext(f));
 
@@ -108,6 +103,7 @@ public class StartMenuWindow : Window
 		_apps.ActivateOnSingleClick = true;
 		_apps.FilterFunc = c => _apps.GetViewModel(c)?.IsVisible ?? true;
 		_apps.AddClass("start-menu__apps");
+		_apps.DisableDragAndDrop = viewModelObservable.Select(vm => vm.DisableDragAndDrop).DistinctUntilChanged();
 
 		_apps.OrderingChanged
 			.Subscribe(t => dispatcher.Dispatch(new UpdatePinnedAppOrderingAction() { DesktopFileKey = t.Item1, NewIndex = t.Item2 }));

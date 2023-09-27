@@ -24,5 +24,6 @@ public class StartMenuViewModel
 {
 	public ImmutableList<StartMenuAppViewModel> AllApps { get; set; }
 	public string SearchText { get; set; }
+	public bool DisableDragAndDrop { get; set; }
 	public ActionBarViewModel ActionBarViewModel { get; set; }
 }

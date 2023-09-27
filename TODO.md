@@ -7,13 +7,11 @@ General
 Start Menu
 ------------
 * View all apps button in start menu
-* Drag and drop icons
 * Add context menu with useful actions to taskbar icon
 * Disable DnD when searching?
 
 Taskbar
 ------------
-* Convert taskbar apps to buttons
 * Calendar
 * Context menu
 * Make window picker disappear if you leave the launcher icon and don't move to the window

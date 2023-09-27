@@ -1,11 +1,15 @@
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using Gdk;
+using GLib;
 using Glimpse.Components.StartMenu;
 using Glimpse.Components.SystemTray;
 using Glimpse.Components.Taskbar;
 using Glimpse.Extensions.Gtk;
 using Glimpse.State;
 using Gtk;
+using DateTime = System.DateTime;
+using Task = System.Threading.Tasks.Task;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
 
@@ -50,14 +54,16 @@ public class Panel : Window
 		Add(grid);
 		ShowAll();
 
-		var groupCountChanged = selectors.Groups.Select(g => g.Count).DistinctUntilChanged().TakeUntilDestroyed(this);
-		var sampler = this.ObserveEvent(nameof(VisibilityNotifyEvent)).Take(1);
-		var firstItem = groupCountChanged.Sample(sampler).Take(1);
-
-		firstItem.Concat(groupCountChanged).Subscribe(numGroups =>
-		{
-			centerBox.MarginStart = ComputeCenterBoxMarginLeft(numGroups);
-		});
+		selectors
+			.Groups
+			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
+			.Select(g => g.Count)
+			.DistinctUntilChanged()
+			.TakeUntilDestroyed(this)
+			.Subscribe(numGroups =>
+			{
+				centerBox.MarginStart = ComputeCenterBoxMarginLeft(numGroups);
+			});
 
 		StartClockAsync(clock);
 	}

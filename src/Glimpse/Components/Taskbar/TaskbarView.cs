@@ -56,6 +56,9 @@ public class TaskbarView : Box
 			groupIcon.ContextMenuOpened
 				.Subscribe(_ => contextMenu.Popup());
 
+			groupIcon.ObserveEvent<ButtonPressEventArgs>(nameof(groupIcon.ButtonPressEvent))
+				.Subscribe(_ => windowPicker.ClosePopup());
+
 			groupIcon.ButtonRelease
 				.WithLatestFrom(viewModelObservable)
 				.Where(t => t.First.Button == 1 && t.Second.Tasks.Count == 0)
