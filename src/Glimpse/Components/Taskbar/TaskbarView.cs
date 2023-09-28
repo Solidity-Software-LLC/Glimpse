@@ -53,6 +53,16 @@ public class TaskbarView : Box
 					windowPicker.Popup();
 				});
 
+			groupIcon.ObserveEvent(nameof(LeaveNotifyEvent)).Merge(windowPicker.ObserveEvent(nameof(LeaveNotifyEvent)))
+				.Delay(TimeSpan.FromMilliseconds(250), new SynchronizationContextScheduler(new GLibSynchronizationContext()))
+				.TakeUntil(groupIcon.ObserveEvent(nameof(EnterNotifyEvent)).Merge(windowPicker.ObserveEvent(nameof(EnterNotifyEvent))))
+				.Repeat()
+				.Where(_ => windowPicker.Visible)
+				.Subscribe(t =>
+				{
+					windowPicker.ClosePopup();
+				});
+
 			groupIcon.ContextMenuOpened
 				.Subscribe(_ => contextMenu.Popup());
 

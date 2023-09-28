@@ -14,8 +14,6 @@ Taskbar
 ------------
 * Calendar
 * Context menu
-* Make window picker disappear if you leave the launcher icon and don't move to the window
-
 
 System Tray
 ------------
