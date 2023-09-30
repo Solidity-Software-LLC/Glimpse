@@ -1,25 +1,40 @@
 using System.Reactive.Linq;
 using System.Text.Json;
 using Fluxor;
+using Fluxor.Selectors;
 using Glimpse.Components.StartMenu;
+using Glimpse.Extensions.Fluxor;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
 
 namespace Glimpse.Services.Configuration;
 
+public static class ConfigurationSelectors
+{
+	public static ISelector<ConfigurationFile> Config => SelectorFactory.CreateSelector(
+		RootStateSelectors.PinnedTaskbarApps,
+		StartMenuSelectors.PinnedStartMenuApps,
+		StartMenuSelectors.PowerButtonCommand,
+		(pinnedTaskbarApps, pinnedStartMenuApps, powerButtonCommand) =>
+		{
+			var newConfig = new ConfigurationFile { PowerButtonCommand = powerButtonCommand };
+			newConfig.Taskbar.PinnedLaunchers.AddRange(pinnedTaskbarApps.Select(d => d.IniFile.FilePath));
+			newConfig.StartMenu.PinnedLaunchers.AddRange(pinnedStartMenuApps.Select(d => d.IniFile.FilePath));
+			return newConfig;
+		});
+}
+
 public class ConfigurationService
 {
 	private readonly FreeDesktopService _freeDesktopService;
 	private readonly IDispatcher _dispatcher;
-	private readonly RootStateSelectors _rootStateSelectors;
-	private readonly StartMenuSelectors _startMenuSelectors;
+	private readonly IStore _store;
 
-	public ConfigurationService(FreeDesktopService freeDesktopService, IDispatcher dispatcher, RootStateSelectors rootStateSelectors, StartMenuSelectors startMenuSelectors)
+	public ConfigurationService(FreeDesktopService freeDesktopService, IDispatcher dispatcher, IStore store)
 	{
 		_freeDesktopService = freeDesktopService;
 		_dispatcher = dispatcher;
-		_rootStateSelectors = rootStateSelectors;
-		_startMenuSelectors = startMenuSelectors;
+		_store = store;
 	}
 
 	public void Initialize()
@@ -59,16 +74,10 @@ public class ConfigurationService
 			_dispatcher.Dispatch(new AddStartMenuPinnedDesktopFileAction() { DesktopFile = desktopFile });
 		}
 
-		_rootStateSelectors.PinnedTaskbarApps
-			.CombineLatest(_startMenuSelectors.PinnedStartMenuApps, _startMenuSelectors.PowerButtonCommand)
-			.Skip(1)
-			.Subscribe(t =>
-			{
-				Console.WriteLine("Writing");
-				var newConfig = new ConfigurationFile { PowerButtonCommand = t.Third };
-				newConfig.Taskbar.PinnedLaunchers.AddRange(t.First.Select(d => d.IniFile.FilePath));
-				newConfig.StartMenu.PinnedLaunchers.AddRange(t.Second.Select(d => d.IniFile.FilePath));
-				File.WriteAllText(configFile, JsonSerializer.Serialize(newConfig, new JsonSerializerOptions(JsonSerializerDefaults.General) { WriteIndented = true }));
-			});
+		_store.SubscribeSelector(ConfigurationSelectors.Config).ToObservable().Skip(1).Subscribe(f =>
+		{
+			Console.WriteLine("Writing");
+			File.WriteAllText(configFile, JsonSerializer.Serialize(f, new JsonSerializerOptions(JsonSerializerDefaults.General) { WriteIndented = true }));
+		});
 	}
 }

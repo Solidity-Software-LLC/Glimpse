@@ -2,8 +2,10 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Fluxor;
+using Fluxor.Selectors;
 using Gdk;
 using GLib;
+using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Interop;
 using Glimpse.Services.DisplayServer;
@@ -22,12 +24,13 @@ public class StartMenuLaunchIcon : Button
 	private readonly StartMenuWindow _startMenuWindow;
 	private readonly Menu _contextMenu;
 
-	public StartMenuLaunchIcon(FreeDesktopService freeDesktopService, IDispatcher dispatcher, StartMenuSelectors selectors, IDisplayServer displayServer)
+	public StartMenuLaunchIcon(FreeDesktopService freeDesktopService, IDispatcher dispatcher, IDisplayServer displayServer, IStore store)
 	{
-		var viewModelObservable = selectors
-			.ViewModel
+		var viewModelObservable = store.SubscribeSelector(StartMenuSelectors.ViewModel)
+			.ToObservable()
 			.TakeUntilDestroyed(this)
-			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));
+			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
+			.Replay(1);
 
 		_freeDesktopService = freeDesktopService;
 		_dispatcher = dispatcher;
@@ -124,6 +127,8 @@ public class StartMenuLaunchIcon : Button
 		CanFocus = false;
 		StyleContext.AddClass("start-menu__launch-icon");
 		Add(new Image(Assets.MenuIcon.ScaleSimple(38, 38, InterpType.Bilinear)));
+
+		viewModelObservable.Connect();
 	}
 
 	private void LaunchApp(DesktopFile desktopFile)

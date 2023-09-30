@@ -1,14 +1,18 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using Fluxor;
+using Fluxor.Selectors;
 using Gdk;
 using GLib;
 using Glimpse.Components.StartMenu;
 using Glimpse.Components.SystemTray;
 using Glimpse.Components.Taskbar;
+using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
 using Glimpse.State;
 using Gtk;
 using DateTime = System.DateTime;
+using Monitor = Gdk.Monitor;
 using Task = System.Threading.Tasks.Task;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
@@ -20,7 +24,7 @@ public class Panel : Window
 	private const int PanelHeight = 52;
 	private const string ClockFormat = "h:mm tt\ndddd\nM/d/yyyy";
 
-	public Panel(SystemTrayBox systemTrayBox, TaskbarView taskbarView, StartMenuLaunchIcon startMenuLaunchIcon, RootStateSelectors selectors) : base(WindowType.Toplevel)
+	public Panel(SystemTrayBox systemTrayBox, TaskbarView taskbarView, StartMenuLaunchIcon startMenuLaunchIcon, IStore store) : base(WindowType.Toplevel)
 	{
 		Decorated = false;
 		Resizable = false;
@@ -54,8 +58,8 @@ public class Panel : Window
 		Add(grid);
 		ShowAll();
 
-		selectors
-			.Groups
+
+		store.SubscribeSelector(RootStateSelectors.Groups).ToObservable()
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
 			.Select(g => g.Count)
 			.DistinctUntilChanged()
@@ -99,7 +103,7 @@ public class Panel : Window
 		}
 	}
 
-	public void DockToBottom(Gdk.Monitor monitor)
+	public void DockToBottom(Monitor monitor)
 	{
 		var monitorDimensions = monitor.Geometry;
 		SetSizeRequest(monitorDimensions.Width, PanelHeight);

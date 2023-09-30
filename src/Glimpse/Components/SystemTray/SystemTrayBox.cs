@@ -1,5 +1,6 @@
 using System.Reactive.Linq;
 using Fluxor;
+using Fluxor.Selectors;
 using Gdk;
 using GLib;
 using Glimpse.Extensions.Fluxor;
@@ -14,7 +15,7 @@ namespace Glimpse.Components.SystemTray;
 
 public class SystemTrayBox : Box
 {
-	public SystemTrayBox(IState<SystemTrayState> trayState, IDispatcher dispatcher, RootStateSelectors rootStateSelectors, FreeDesktopService freeDesktopService) : base(Orientation.Horizontal, 0)
+	public SystemTrayBox(IState<SystemTrayState> trayState, IDispatcher dispatcher, IStore store, FreeDesktopService freeDesktopService) : base(Orientation.Horizontal, 0)
 	{
 		StyleContext.AddClass("system-tray__taskbar-container");
 
@@ -23,7 +24,7 @@ public class SystemTrayBox : Box
 			.AddMany(new Image(Assets.Volume.ScaleSimple(24, 24, InterpType.Bilinear)));
 
 		volumeButton.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent))
-			.WithLatestFrom(rootStateSelectors.VolumeCommand)
+			.WithLatestFrom(store.SubscribeSelector(RootStateSelectors.VolumeCommand).ToObservable())
 			.Subscribe(t => freeDesktopService.Run(t.Second));
 
 		PackEnd(volumeButton, false, false, 0);

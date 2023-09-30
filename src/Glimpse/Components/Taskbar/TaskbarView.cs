@@ -1,8 +1,10 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using Fluxor;
+using Fluxor.Selectors;
 using GLib;
 using Glimpse.Components.Shared.ForEach;
+using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
@@ -13,11 +15,14 @@ namespace Glimpse.Components.Taskbar;
 
 public class TaskbarView : Box
 {
-	public TaskbarView(TaskbarSelectors selectors, IDisplayServer displayServer, FreeDesktopService freeDesktopService, IDispatcher dispatcher)
+	public TaskbarView(IStore store, IDisplayServer displayServer, FreeDesktopService freeDesktopService, IDispatcher dispatcher)
 	{
-		var viewModelSelector = selectors.ViewModel
+		var viewModelSelector = store
+			.SubscribeSelector(TaskbarSelectors.ViewModel)
+			.ToObservable()
 			.TakeUntilDestroyed(this)
-			.ObserveOn(new GLibSynchronizationContext());
+			.ObserveOn(new GLibSynchronizationContext())
+			.Replay(1);
 
 		var forEachGroup = ForEachExtensions.Create(viewModelSelector.Select(g => g.Groups).DistinctUntilChanged(), i => i.Id, viewModelObservable =>
 		{
@@ -123,5 +128,7 @@ public class TaskbarView : Box
 		forEachGroup.DragBeginObservable.Subscribe(icon => icon.CloseWindowPicker());
 
 		Add(forEachGroup);
+
+		viewModelSelector.Connect();
 	}
 }

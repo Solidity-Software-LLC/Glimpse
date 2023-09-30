@@ -14,7 +14,6 @@ using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.Services.SystemTray;
 using Glimpse.Services.X11;
-using Glimpse.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tmds.DBus.Protocol;
@@ -34,7 +33,6 @@ public static class Program
 				containerBuilder.RegisterType<Panel>();
 				containerBuilder.RegisterType<SystemTrayBox>();
 				containerBuilder.RegisterType<TaskbarView>();
-				containerBuilder.RegisterType<TaskbarSelectors>().SingleInstance();
 				containerBuilder.RegisterType<StartMenuLaunchIcon>();
 				containerBuilder.RegisterType<FreeDesktopService>().SingleInstance();
 				containerBuilder.RegisterType<X11DisplayServer>().As<X11DisplayServer>().As<IDisplayServer>().SingleInstance();
@@ -42,8 +40,6 @@ public static class Program
 				containerBuilder.RegisterType<IntrospectionService>();
 				containerBuilder.RegisterType<ConfigurationService>().SingleInstance();
 				containerBuilder.RegisterType<XLibAdaptorService>().SingleInstance();
-				containerBuilder.RegisterType<RootStateSelectors>().SingleInstance();
-				containerBuilder.RegisterType<StartMenuSelectors>().SingleInstance();
 				containerBuilder.RegisterType<OrgFreedesktopAccounts>().SingleInstance();
 				containerBuilder.RegisterType<OrgKdeStatusNotifierWatcher>().SingleInstance();
 				containerBuilder.Register(c => new OrgFreedesktopDBus(c.Resolve<Connections>().Session, Connection.DBusServiceName, Connection.DBusObjectPath)).SingleInstance();

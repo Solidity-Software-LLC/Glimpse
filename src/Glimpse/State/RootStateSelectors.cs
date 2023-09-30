@@ -1,59 +1,26 @@
 using System.Collections.Immutable;
-using System.Reactive.Linq;
-using Fluxor;
-using Glimpse.Extensions.Fluxor;
-using Glimpse.Extensions.Reactive;
+using Fluxor.Selectors;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 
 namespace Glimpse.State;
 
-public class RootStateSelectors
+public static class RootStateSelectors
 {
-	public IObservable<RootState> RootState { get; }
-	public IObservable<TaskbarState> TaskbarState { get; }
-	public IObservable<ImmutableList<DesktopFile>> PinnedTaskbarApps { get; }
-	public IObservable<ImmutableList<DesktopFile>> AllDesktopFiles { get; }
-	public IObservable<string> VolumeCommand { get; }
-	public IObservable<string> UserIconPath { get; }
-	public IObservable<ImmutableList<TaskGroup>> Groups { get; }
-	public IObservable<ImmutableDictionary<IWindowRef,BitmapImage>> Screenshots { get; set; }
+	public static ISelector<RootState> RootState => SelectorFactory.CreateFeatureSelector<RootState>();
+	public static ISelector<TaskbarState> TaskbarState => SelectorFactory.CreateSelector(RootState, s => s.TaskbarState);
+	public static ISelector<ImmutableList<DesktopFile>> PinnedTaskbarApps => SelectorFactory.CreateSelector(TaskbarState, s => s.PinnedDesktopFiles);
+	public static ISelector<ImmutableList<DesktopFile>> DesktopFiles => SelectorFactory.CreateSelector(RootState, s => s.DesktopFiles);
 
-	public RootStateSelectors(IState<RootState> rootState)
-	{
-		RootState = rootState
-			.ToObservable()
-			.DistinctUntilChanged();
+	public static ISelector<ImmutableList<DesktopFile>> AllDesktopFiles =>
+		SelectorFactory.CreateSelector(DesktopFiles, s => s
+			.OrderBy(f => f.Name)
+			.Where(f => !string.IsNullOrEmpty(f.Name) && !string.IsNullOrEmpty(f.Exec.FullExec))
+			.ToImmutableList());
 
-		TaskbarState = RootState
-			.Select(s => s.TaskbarState)
-			.DistinctUntilChanged();
-
-		PinnedTaskbarApps = TaskbarState
-			.Select(s => s.PinnedDesktopFiles)
-			.DistinctUntilChanged((x, y) => x.SequenceEqual(y));
-
-		AllDesktopFiles = RootState
-			.Select(s => s.DesktopFiles)
-			.DistinctUntilChanged()
-			.Select(s => s.OrderBy(f => f.Name).Where(f => !string.IsNullOrEmpty(f.Name) && !string.IsNullOrEmpty(f.Exec.FullExec)).ToImmutableList());
-
-		VolumeCommand = RootState
-			.Select(s => s.VolumeCommand)
-			.DistinctUntilChanged();
-
-		UserIconPath = RootState
-			.Select(s => s.UserState)
-			.DistinctUntilChanged()
-			.Select(s => s.IconPath)
-			.DistinctUntilChanged();
-
-		Groups = RootState
-			.Select(s => s.Groups)
-			.DistinctUntilChanged();
-
-		Screenshots = RootState
-			.Select(s => s.Screenshots)
-			.DistinctUntilChanged();
-	}
+	public static ISelector<string> VolumeCommand => SelectorFactory.CreateSelector(RootState, s => s.VolumeCommand);
+	public static ISelector<UserState> UserState => SelectorFactory.CreateSelector(RootState, s => s.UserState);
+	public static ISelector<string> UserIconPath => SelectorFactory.CreateSelector(UserState, s => s.IconPath);
+	public static ISelector<ImmutableList<TaskGroup>> Groups => SelectorFactory.CreateSelector(RootState, s => s.Groups);
+	public static ISelector<ImmutableDictionary<IWindowRef, BitmapImage>> Screenshots => SelectorFactory.CreateSelector(RootState, s => s.Screenshots);
 }

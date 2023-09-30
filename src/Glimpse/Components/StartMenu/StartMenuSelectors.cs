@@ -1,124 +1,83 @@
 using System.Collections.Immutable;
-using System.Reactive.Concurrency;
-using System.Reactive.Linq;
-using Fluxor;
-using GLib;
+using Fluxor.Selectors;
 using Glimpse.Extensions;
-using Glimpse.Extensions.Fluxor;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
-using Glimpse.Extensions.Reactive;
-using DateTime = System.DateTime;
 
 namespace Glimpse.Components.StartMenu;
 
-public class StartMenuSelectors
+public static class StartMenuSelectors
 {
-	public IObservable<StartMenuViewModel> ViewModel { get; }
-	public IObservable<StartMenuState> StartMenuState { get; }
-	public IObservable<ImmutableList<DesktopFile>> PinnedStartMenuApps { get; }
-	public IObservable<string> SearchText { get; }
-	public IObservable<string> PowerButtonCommand { get; }
-	public IObservable<string> SettingsButtonCommand { get; }
-	public IObservable<string> UserSettingsCommand { get; }
+	public static ISelector<StartMenuState> StartMenuState => SelectorFactory.CreateFeatureSelector<StartMenuState>();
+	public static ISelector<ImmutableList<DesktopFile>> PinnedStartMenuApps => SelectorFactory.CreateSelector(StartMenuState, s => s.PinnedDesktopFiles);
+	public static ISelector<string> SearchText => SelectorFactory.CreateSelector(StartMenuState, s => s.SearchText);
+	public static ISelector<string> PowerButtonCommand => SelectorFactory.CreateSelector(StartMenuState, s => s.PowerButtonCommand);
+	public static ISelector<string> SettingsButtonCommand => SelectorFactory.CreateSelector(StartMenuState, s => s.SettingsButtonCommand);
+	public static ISelector<string> UserSettingsCommand => SelectorFactory.CreateSelector(StartMenuState, s => s.UserSettingsCommand);
+	public static ISelector<ImmutableDictionary<StartMenuChips, StartMenuAppFilteringChip>> Chips => SelectorFactory.CreateSelector(StartMenuState, s => s.Chips);
 
-	public StartMenuSelectors(RootStateSelectors rootStateSelectors, IState<StartMenuState> startMenuState)
-	{
-		StartMenuState = startMenuState
-			.ToObservable()
-			.DistinctUntilChanged();
+	public static ISelector<ActionBarViewModel> ActionBarViewModelSelector => SelectorFactory.CreateSelector(
+		PowerButtonCommand,
+		SettingsButtonCommand,
+		UserSettingsCommand,
+		RootStateSelectors.UserIconPath,
+		(powerButtonCommand, settingsButtonCommand, userSettingsCommand, userIconPath) => new ActionBarViewModel()
+		{
+			PowerButtonCommand = powerButtonCommand,
+			SettingsButtonCommand = settingsButtonCommand,
+			UserSettingsCommand = userSettingsCommand,
+			UserIconPath = userIconPath
+		});
 
-		PinnedStartMenuApps = StartMenuState
-			.Select(s => s.PinnedDesktopFiles)
-			.DistinctUntilChanged((x, y) => x.SequenceEqual(y));
+	public static ISelector<ImmutableList<StartMenuAppViewModel>> AllAppsSelector => SelectorFactory.CreateSelector(
+		RootStateSelectors.AllDesktopFiles,
+		SearchText,
+		RootStateSelectors.PinnedTaskbarApps,
+		PinnedStartMenuApps,
+		Chips,
+		(allDesktopFiles, searchText, pinnedTaskbarApps, pinnedStartMenuApps, chips) =>
+		{
+			var results = new LinkedList<StartMenuAppViewModel>();
+			var index = 0;
+			var isShowingSearchResults = chips[StartMenuChips.SearchResults].IsSelected;
+			var isShowingPinned = chips[StartMenuChips.Pinned].IsSelected;
+			var isShowingAllApps = chips[StartMenuChips.AllApps].IsSelected;
+			var lowerCaseSearchText = searchText.ToLower();
 
-		SearchText = StartMenuState
-			.Select(s => s.SearchText)
-			.DistinctUntilChanged();
-
-		PowerButtonCommand = StartMenuState
-			.Select(s => s.PowerButtonCommand)
-			.DistinctUntilChanged();
-
-		SettingsButtonCommand = StartMenuState
-			.Select(s => s.SettingsButtonCommand)
-			.DistinctUntilChanged();
-
-		UserSettingsCommand = StartMenuState
-			.Select(s => s.UserSettingsCommand)
-			.DistinctUntilChanged();
-
-		var chipsSelector = StartMenuState
-			.Select(s => s.Chips)
-			.DistinctUntilChanged();
-
-		var actionBarViewModelSelector = PowerButtonCommand
-			.CombineLatest(
-				SettingsButtonCommand,
-				UserSettingsCommand,
-				rootStateSelectors.UserIconPath)
-			.Select(t => new ActionBarViewModel()
+			foreach (var f in allDesktopFiles)
 			{
-				PowerButtonCommand = t.First,
-				SettingsButtonCommand = t.Second,
-				UserSettingsCommand = t.Third,
-				UserIconPath = t.Fourth
-			})
-			.DistinctUntilChanged();
+				var pinnedIndex = pinnedStartMenuApps.FindIndex(a => a.IniFile.FilePath == f.IniFile.FilePath);
+				var taskbarIndex = pinnedTaskbarApps.FindIndex(a => a.IniFile.FilePath == f.IniFile.FilePath);
+				var isSearchMatch = isShowingSearchResults && lowerCaseSearchText.AllCharactersIn(f.Name.ToLower());
+				var isPinned = pinnedIndex != -1;
+				var isVisible = isShowingAllApps || (isShowingSearchResults && isSearchMatch) || (isShowingPinned && isPinned);
 
-		var allAppsSelector = rootStateSelectors.AllDesktopFiles
-			.CombineLatest(
-				SearchText,
-				rootStateSelectors.PinnedTaskbarApps,
-				PinnedStartMenuApps,
-				chipsSelector)
-			.Select(t =>
+				var appViewModel = new StartMenuAppViewModel();
+				appViewModel.DesktopFile = f;
+				appViewModel.IsPinnedToTaskbar = taskbarIndex != -1;
+				appViewModel.IsPinnedToStartMenu = pinnedIndex != -1;
+				appViewModel.IsVisible = isVisible;
+				appViewModel.Index = (isShowingSearchResults || isShowingAllApps) && isVisible ? index++ : pinnedIndex;
+				results.AddLast(appViewModel);
+			}
+
+			return results.OrderBy(r => r.Index).ToImmutableList();
+		});
+
+	public static ISelector<StartMenuViewModel> ViewModel => SelectorFactory.CreateSelector(
+		AllAppsSelector,
+		SearchText,
+		ActionBarViewModelSelector,
+		Chips,
+		(allApps, searchText, actionBarViewModel, chips) =>
+		{
+			return new StartMenuViewModel()
 			{
-				var (allDesktopFiles, searchText, pinnedTaskbarApps, pinnedStartMenuApps, chips) = t;
-				var results = new LinkedList<StartMenuAppViewModel>();
-				var index = 0;
-				var isShowingSearchResults = chips[StartMenuChips.SearchResults].IsSelected;
-				var isShowingPinned = chips[StartMenuChips.Pinned].IsSelected;
-				var isShowingAllApps = chips[StartMenuChips.AllApps].IsSelected;
-				var lowerCaseSearchText = searchText.ToLower();
-
-				foreach (var f in allDesktopFiles)
-				{
-					var pinnedIndex = pinnedStartMenuApps.FindIndex(a => a.IniFile.FilePath == f.IniFile.FilePath);
-					var taskbarIndex = pinnedTaskbarApps.FindIndex(a => a.IniFile.FilePath == f.IniFile.FilePath);
-					var isSearchMatch = isShowingSearchResults && lowerCaseSearchText.AllCharactersIn(f.Name.ToLower());
-					var isPinned = pinnedIndex != -1;
-					var isVisible = isShowingAllApps || (isShowingSearchResults && isSearchMatch) || (isShowingPinned && isPinned);
-
-					var appViewModel = new StartMenuAppViewModel();
-					appViewModel.DesktopFile = f;
-					appViewModel.IsPinnedToTaskbar = taskbarIndex != -1;
-					appViewModel.IsPinnedToStartMenu = pinnedIndex != -1;
-					appViewModel.IsVisible = isVisible;
-					appViewModel.Index = (isShowingSearchResults || isShowingAllApps) && isVisible ? index++ : pinnedIndex;
-					results.AddLast(appViewModel);
-				}
-
-				return results.OrderBy(r => r.Index).ToImmutableList();
-			});
-
-		var viewModelObs = allAppsSelector
-			.CombineLatest(
-				SearchText,
-				actionBarViewModelSelector,
-				chipsSelector)
-			.Select(t => new StartMenuViewModel()
-			{
-				AllApps = t.First,
-				SearchText = t.Second,
-				DisableDragAndDrop = t.Second.Length > 0,
-				ActionBarViewModel = t.Third,
-				Chips = t.Fourth
-			})
-			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
-			.Publish();
-
-		ViewModel = viewModelObs;
-		viewModelObs.Connect();
-	}
+				AllApps = allApps,
+				SearchText = searchText,
+				DisableDragAndDrop = searchText.Length > 0,
+				ActionBarViewModel = actionBarViewModel,
+				Chips = chips
+			};
+		});
 }
