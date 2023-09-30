@@ -20,22 +20,19 @@
 .start-menu__search-input {
 	margin-top: 16px;
 	min-height: 28px;
-	min-width: 576px;
+	min-width: 560px;
 	border: 1px solid #444444;
 	border-radius: 15px;
 	background-color: rgba(33, 33, 33, 1);
 }
 
-.start-menu__label-pinned {
-	font-weight: bold;
-	font-size: 12px;
-	min-width: 96px;
-	margin-top: 32px;
+.start-menu__chips {
+	margin-top: 16px;
 	margin-left: 32px;
 }
 
 .start-menu__apps-scroll-window {
-	margin: 8px 0 128px 32px;
+	margin: 24px 0 128px 32px;
 }
 
 .start-menu_apps {

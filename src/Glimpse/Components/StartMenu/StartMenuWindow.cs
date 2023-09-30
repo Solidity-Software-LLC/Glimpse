@@ -1,12 +1,13 @@
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Fluxor;
 using Gdk;
 using GLib;
+using Glimpse.Components.Shared;
 using Glimpse.Components.Shared.ForEach;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Services.FreeDesktop;
-using Glimpse.State;
 using Gtk;
 using Key = Gdk.Key;
 using Window = Gtk.Window;
@@ -63,18 +64,29 @@ public class StartMenuWindow : Window
 			.Merge(Observable.FromEventPattern(_searchEntry, nameof(_searchEntry.TextInserted)).Select(_ => _searchEntry.Text))
 			.Merge(Observable.FromEventPattern(_searchEntry, nameof(_searchEntry.TextDeleted)).Select(_ => _searchEntry.Text))
 			.TakeUntilDestroyed(this)
+			.Throttle(TimeSpan.FromMilliseconds(100), new SynchronizationContextScheduler(new GLibSynchronizationContext()))
 			.DistinctUntilChanged();
 
-		var label = new Label("Pinned");
-		label.Halign = Align.Start;
-		label.StyleContext.AddClass("start-menu__label-pinned");
+		var chipsObs = viewModelObservable.Select(vm => vm.Chips).DistinctUntilChanged();
+		var pinnedChip = new Chip("Pinned", chipsObs.Select(c => c[StartMenuChips.Pinned]));
+		var allAppsChip = new Chip("All Apps", chipsObs.Select(c => c[StartMenuChips.AllApps]));
+		var searchResultsChip = new Chip("Search results", chipsObs.Select(c => c[StartMenuChips.SearchResults]));
 
-		viewModelObservable
-			.Select(s => s.SearchText)
-			.Where(s => s != null)
-			.DistinctUntilChanged()
-			.TakeUntilDestroyed(this)
-			.Subscribe(s => label.Text = s.Length > 0 ? "Search results" : "Pinned");
+		pinnedChip.ObserveEvent(nameof(ButtonReleaseEvent))
+			.Subscribe(_ => dispatcher.Dispatch(new UpdateAppFilteringChip() { Chip = StartMenuChips.Pinned }));
+
+		allAppsChip.ObserveEvent(nameof(ButtonReleaseEvent))
+			.Subscribe(_ => dispatcher.Dispatch(new UpdateAppFilteringChip() { Chip = StartMenuChips.AllApps }));
+
+		searchResultsChip.ObserveEvent(nameof(ButtonReleaseEvent))
+			.Subscribe(_ => dispatcher.Dispatch(new UpdateAppFilteringChip() { Chip = StartMenuChips.SearchResults }));
+
+		var chipBox = new Box(Orientation.Horizontal, 4);
+		chipBox.Halign = Align.Start;
+		chipBox.Add(pinnedChip);
+		chipBox.Add(allAppsChip);
+		chipBox.Add(searchResultsChip);
+		chipBox.AddClass("start-menu__chips");
 
 		_apps = ForEachExtensions.Create(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged(), i => i.DesktopFile.IniFile.FilePath, appObs =>
 		{
@@ -128,7 +140,7 @@ public class StartMenuWindow : Window
 		layout.ColumnHomogeneous = true;
 		layout.Attach(_searchEntry, 1, 0, 6, 1);
 		layout.Attach(_hiddenEntry, 1, 0, 1, 1);
-		layout.Attach(label, 1, 1, 6, 1);
+		layout.Attach(chipBox, 1, 1, 6, 1);
 		layout.Attach(pinnedAppsScrolledWindow, 1, 2, 6, 8);
 		layout.Attach(CreateActionBar(viewModelObservable.Select(vm => vm.ActionBarViewModel).DistinctUntilChanged()), 1, 10, 6, 1);
 		layout.StyleContext.AddClass("start-menu__window");

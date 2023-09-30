@@ -1,6 +1,7 @@
 using System.Reactive.Linq;
 using System.Text.Json;
 using Fluxor;
+using Glimpse.Components.StartMenu;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
 
@@ -11,12 +12,14 @@ public class ConfigurationService
 	private readonly FreeDesktopService _freeDesktopService;
 	private readonly IDispatcher _dispatcher;
 	private readonly RootStateSelectors _rootStateSelectors;
+	private readonly StartMenuSelectors _startMenuSelectors;
 
-	public ConfigurationService(FreeDesktopService freeDesktopService, IDispatcher dispatcher, RootStateSelectors rootStateSelectors)
+	public ConfigurationService(FreeDesktopService freeDesktopService, IDispatcher dispatcher, RootStateSelectors rootStateSelectors, StartMenuSelectors startMenuSelectors)
 	{
 		_freeDesktopService = freeDesktopService;
 		_dispatcher = dispatcher;
 		_rootStateSelectors = rootStateSelectors;
+		_startMenuSelectors = startMenuSelectors;
 	}
 
 	public void Initialize()
@@ -57,7 +60,7 @@ public class ConfigurationService
 		}
 
 		_rootStateSelectors.PinnedTaskbarApps
-			.CombineLatest(_rootStateSelectors.PinnedStartMenuApps, _rootStateSelectors.PowerButtonCommand)
+			.CombineLatest(_startMenuSelectors.PinnedStartMenuApps, _startMenuSelectors.PowerButtonCommand)
 			.Skip(1)
 			.Subscribe(t =>
 			{

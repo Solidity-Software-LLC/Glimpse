@@ -46,3 +46,31 @@ button:focus {
 flowboxchild {
 	padding: 0;
 }
+
+.chip__label-container {
+	border: 1px solid #444444;
+	border-radius: 16px;
+}
+
+.chip__label-container--unselected:hover {
+	background-color: rgb(66, 66, 66);
+}
+
+.chip__label-container--unselected:active {
+	background-color: rgb(100, 100, 100);
+}
+
+.chip__label-container--selected {
+	background-color: #db9beb;
+}
+
+.chip__label {
+	font-size: 11px;
+	min-height: 28px;
+	padding-left: 16px;
+	padding-right: 16px;
+}
+
+.chip__label-container--selected .chip__label {
+	color: black;
+}

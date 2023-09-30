@@ -19,24 +19,6 @@ public class Reducers
 	}
 
 	[ReducerMethod]
-	public static RootState ReduceUpdateUserSettingsCommandAction(RootState state, UpdateUserSettingsCommandAction action)
-	{
-		return state with { StartMenuState = state.StartMenuState with {  UserSettingsCommand = action.Command } };
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceUpdateSettingsButtonCommandAction(RootState state, UpdateSettingsButtonCommandAction action)
-	{
-		return state with { StartMenuState = state.StartMenuState with { SettingsButtonCommand = action.Command } };
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceUpdateDesktopFilesAction(RootState state, UpdatePowerButtonCommandAction action)
-	{
-		return state with { StartMenuState = state.StartMenuState with { PowerButtonCommand = action.Command } };
-	}
-
-	[ReducerMethod]
 	public static RootState ReduceUpdateDesktopFilesAction(RootState state, UpdateDesktopFilesAction action)
 	{
 		return state with { DesktopFiles = action.DesktopFiles };
@@ -54,18 +36,6 @@ public class Reducers
 		}
 
 		return newState with { TaskbarState = newState.TaskbarState with { PinnedDesktopFiles = newState.TaskbarState.PinnedDesktopFiles.Add(action.DesktopFile) } };
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceAddStartMenuPinnedDesktopFileAction(RootState state, AddStartMenuPinnedDesktopFileAction action)
-	{
-		return state with
-		{
-			StartMenuState = state.StartMenuState with
-			{
-				PinnedDesktopFiles = state.StartMenuState.PinnedDesktopFiles.Add(action.DesktopFile)
-			}
-		};
 	}
 
 	[ReducerMethod]
@@ -88,20 +58,6 @@ public class Reducers
 		}
 
 		return newState with { TaskbarState = newState.TaskbarState with { PinnedDesktopFiles = pinnedApps.Remove(desktopFile) } };
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceToggleStartMenuPinningAction(RootState state, ToggleStartMenuPinningAction action)
-	{
-		var pinnedApps = state.StartMenuState.PinnedDesktopFiles;
-		var desktopFileToRemove = pinnedApps.FirstOrDefault(a => a.IniFile.FilePath == action.DesktopFile.IniFile.FilePath);
-
-		if (desktopFileToRemove != null)
-		{
-			return state with { StartMenuState = state.StartMenuState with { PinnedDesktopFiles = pinnedApps.Remove(desktopFileToRemove) } };
-		}
-
-		return state with { StartMenuState = state.StartMenuState with { PinnedDesktopFiles = pinnedApps.Add(action.DesktopFile) } };
 	}
 
 	[ReducerMethod]
@@ -148,12 +104,6 @@ public class Reducers
 	}
 
 	[ReducerMethod]
-	public static RootState ReduceUpdateStartMenuSearchTextAction(RootState state, UpdateStartMenuSearchTextAction action)
-	{
-		return state with { StartMenuState = state.StartMenuState with { SearchText = action.SearchText } };
-	}
-
-	[ReducerMethod]
 	public static RootState ReduceUpdateScreenshotsAction(RootState state, UpdateScreenshotsAction action)
 	{
 		var updated = state.Screenshots;
@@ -184,14 +134,6 @@ public class Reducers
 		}
 
 		return newState;
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceUpdatePinnedAppOrderingAction(RootState state, UpdatePinnedAppOrderingAction action)
-	{
-		var pinnedAppToMove = state.StartMenuState.PinnedDesktopFiles.First(f => f.IniFile.FilePath == action.DesktopFileKey);
-		var newPinnedFiles = state.StartMenuState.PinnedDesktopFiles.Remove(pinnedAppToMove).Insert(action.NewIndex, pinnedAppToMove);
-		return state with { StartMenuState = state.StartMenuState with { PinnedDesktopFiles = newPinnedFiles } };
 	}
 
 	private static DesktopFile FindAppDesktopFileByName(ImmutableList<DesktopFile> desktopFiles, string applicationName)

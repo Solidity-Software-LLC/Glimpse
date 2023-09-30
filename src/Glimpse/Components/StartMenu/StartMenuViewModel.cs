@@ -26,4 +26,5 @@ public class StartMenuViewModel
 	public string SearchText { get; set; }
 	public bool DisableDragAndDrop { get; set; }
 	public ActionBarViewModel ActionBarViewModel { get; set; }
+	public ImmutableDictionary<StartMenuChips, StartMenuAppFilteringChip> Chips { get; set; }
 }

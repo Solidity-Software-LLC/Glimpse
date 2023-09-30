@@ -15,7 +15,7 @@ public class StartMenuAppIcon : EventBox, IForEachDraggable
 	{
 		CanFocus = false;
 
-		this.AddHoverHighlighting();
+		this.AddButtonStates();
 		this.AddClass("start-menu__app-icon-container");
 
 		var name = new Label();

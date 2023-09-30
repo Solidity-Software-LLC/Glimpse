@@ -16,11 +16,12 @@ public static class Extensions
 			.Select(e => e.EventArgs);
 	}
 
-	public static T AddHoverHighlighting<T>(this T widget) where T : Widget
+	public static T AddButtonStates<T>(this T widget) where T : Widget
 	{
-		widget.AddEvents((int)(EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
+		widget.AddEvents((int)(EventMask.ButtonPressMask | EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
 		widget.EnterNotifyEvent += (_, _) => widget.SetStateFlags(StateFlags.Prelight, true);
 		widget.LeaveNotifyEvent += (_, _) => widget.SetStateFlags(StateFlags.Normal, true);
+		widget.ObserveEvent(nameof(widget.ButtonPressEvent)).Subscribe(_ => widget.SetStateFlags(StateFlags.Active, true));
 		return widget;
 	}
 
@@ -81,6 +82,12 @@ public static class Extensions
 	public static T AddClass<T>(this T widget, params string[] classes) where T : Widget
 	{
 		foreach (var c in classes) widget.StyleContext.AddClass(c);
+		return widget;
+	}
+
+	public static T RemoveClass<T>(this T widget, params string[] classes) where T : Widget
+	{
+		foreach (var c in classes) widget.StyleContext.RemoveClass(c);
 		return widget;
 	}
 

@@ -6,9 +6,8 @@ General
 
 Start Menu
 ------------
-* View all apps button in start menu
 * Add context menu with useful actions to taskbar icon
-* Disable DnD when searching?
+* Hover descriptions for apps
 
 Taskbar
 ------------

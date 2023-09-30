@@ -10,7 +10,6 @@ public record RootState
 {
 	public TaskbarState TaskbarState { get; init; } = new();
 	public ImmutableList<DesktopFile> DesktopFiles = ImmutableList<DesktopFile>.Empty;
-	public StartMenuState StartMenuState { get; init; } = new();
 	public UserState UserState { get; init; } = new();
 	public string VolumeCommand { get; init; }
 	public ImmutableDictionary<IWindowRef, BitmapImage> Screenshots { get; set; } = ImmutableDictionary<IWindowRef, BitmapImage>.Empty;
@@ -52,17 +51,6 @@ public record TaskbarState
 	public ImmutableList<DesktopFile> PinnedDesktopFiles { get; init; } = ImmutableList<DesktopFile>.Empty;
 
 	public virtual bool Equals(TaskbarState other) => ReferenceEquals(this, other);
-}
-
-public record StartMenuState
-{
-	public ImmutableList<DesktopFile> PinnedDesktopFiles = ImmutableList<DesktopFile>.Empty;
-	public string SearchText { get; init; } = "";
-	public string PowerButtonCommand { get; init; } = "xfce4-session-logout";
-	public string SettingsButtonCommand { get; init; } = "xfce4-settings-manager";
-	public string UserSettingsCommand { get; init; } = "mugshot";
-
-	public virtual bool Equals(StartMenuState other) => ReferenceEquals(this, other);
 }
 
 public class TaskState

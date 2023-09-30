@@ -85,7 +85,7 @@ public class TaskbarWindowPicker : Window
 		var appPreview = new EventBox()
 			.AddClass("window-picker__app-events")
 			.AddMany(grid)
-			.AddHoverHighlighting();
+			.AddButtonStates();
 
 		taskObservable.Select(t => t.Title).DistinctUntilChanged().Subscribe(t => appName.Text = t);
 		taskObservable.Subscribe(t => appIcon.Pixbuf = IconLoader.LoadIcon(t.DesktopFile.IconName, 16) ?? IconLoader.LoadIcon(t, 16) ?? IconLoader.DefaultAppIcon(16));
