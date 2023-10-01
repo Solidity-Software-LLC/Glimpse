@@ -94,11 +94,18 @@ public class StartMenuLaunchIcon : Button
 
 		_buttonRelease
 			.TakeUntilDestroyed(this)
-			.Where(_ => !_startMenuWindow.Visible)
 			.Subscribe(_ =>
 			{
-				_startMenuWindow.Popup();
-				StyleContext.AddClass("start-menu__launch-icon--open");
+				if (!_startMenuWindow.Visible)
+				{
+					_startMenuWindow.Popup();
+					this.AddClass("start-menu__launch-icon--open");
+				}
+				else
+				{
+					_startMenuWindow.ClosePopup();
+					this.RemoveClass("start-menu__launch-icon--open");
+				}
 			});
 
 		displayServer
