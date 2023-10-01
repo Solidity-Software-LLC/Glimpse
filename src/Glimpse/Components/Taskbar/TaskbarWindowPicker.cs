@@ -17,7 +17,7 @@ public class TaskbarWindowPicker : Window
 	private readonly Subject<IWindowRef> _previewWindowClicked = new();
 	private readonly Subject<IWindowRef> _closeWindow = new();
 
-	public TaskbarWindowPicker(IObservable<TaskbarGroupViewModel> viewModelObservable) : base(WindowType.Toplevel)
+	public TaskbarWindowPicker(IObservable<TaskbarGroupViewModel> viewModelObservable) : base(WindowType.Popup)
 	{
 		SkipPagerHint = true;
 		SkipTaskbarHint = true;
