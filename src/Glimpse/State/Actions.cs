@@ -40,6 +40,11 @@ public class UpdateVolumeCommandAction
 	public string Command { get; init; }
 }
 
+public class UpdateTaskManagerCommandAction
+{
+	public string Command { get; set; }
+}
+
 public class UpdateUserAction
 {
 	public string UserName { get; init; }

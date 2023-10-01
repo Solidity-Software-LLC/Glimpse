@@ -8,6 +8,7 @@ public record ConfigurationFile
 	public string SettingsButtonCommand { get; set; } = "xfce4-settings-manager";
 	public string UserSettingsCommand { get; set; } = "mugshot";
 	public string VolumeCommand { get; set; } = "pavucontrol";
+	public string TaskManagerCommand { get; set; } = "xfce4-taskmanager";
 }
 
 public class StartMenuConfiguration

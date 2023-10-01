@@ -13,6 +13,12 @@ public class Reducers
 	}
 
 	[ReducerMethod]
+	public static RootState ReduceUpdateTaskManagerCommandAction(RootState state, UpdateTaskManagerCommandAction action)
+	{
+		return state with { TaskbarState = state.TaskbarState with { TaskManagerCommand = action.Command } };
+	}
+
+	[ReducerMethod]
 	public static RootState ReduceUpdateUserAction(RootState state, UpdateUserAction action)
 	{
 		return state with { UserState = state.UserState with { UserName = action.UserName, IconPath = action.IconPath } };

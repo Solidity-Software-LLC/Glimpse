@@ -23,4 +23,5 @@ public static class RootStateSelectors
 	public static ISelector<string> UserIconPath => SelectorFactory.CreateSelector(UserState, s => s.IconPath);
 	public static ISelector<ImmutableList<TaskGroup>> Groups => SelectorFactory.CreateSelector(RootState, s => s.Groups);
 	public static ISelector<ImmutableDictionary<IWindowRef, BitmapImage>> Screenshots => SelectorFactory.CreateSelector(RootState, s => s.Screenshots);
+	public static ISelector<string> TaskManagerCommand => SelectorFactory.CreateSelector(TaskbarState, s => s.TaskManagerCommand);
 }

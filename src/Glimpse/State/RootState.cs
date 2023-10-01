@@ -49,6 +49,7 @@ public record UserState
 public record TaskbarState
 {
 	public ImmutableList<DesktopFile> PinnedDesktopFiles { get; init; } = ImmutableList<DesktopFile>.Empty;
+	public string TaskManagerCommand { get; init; }
 
 	public virtual bool Equals(TaskbarState other) => ReferenceEquals(this, other);
 }

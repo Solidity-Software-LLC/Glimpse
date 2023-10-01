@@ -9,6 +9,7 @@ using Glimpse.Components.SystemTray;
 using Glimpse.Components.Taskbar;
 using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
+using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
 using Gtk;
 using DateTime = System.DateTime;
@@ -24,7 +25,7 @@ public class Panel : Window
 	private const int PanelHeight = 52;
 	private const string ClockFormat = "h:mm tt\ndddd\nM/d/yyyy";
 
-	public Panel(SystemTrayBox systemTrayBox, TaskbarView taskbarView, StartMenuLaunchIcon startMenuLaunchIcon, IStore store) : base(WindowType.Toplevel)
+	public Panel(SystemTrayBox systemTrayBox, TaskbarView taskbarView, StartMenuLaunchIcon startMenuLaunchIcon, IStore store, FreeDesktopService freeDesktopService) : base(WindowType.Toplevel)
 	{
 		Decorated = false;
 		Resizable = false;
@@ -58,7 +59,6 @@ public class Panel : Window
 		Add(grid);
 		ShowAll();
 
-
 		store.SubscribeSelector(RootStateSelectors.Groups).ToObservable()
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
 			.Select(g => g.Count)
@@ -70,6 +70,21 @@ public class Panel : Window
 			});
 
 		StartClockAsync(clock);
+
+		var taskManagerObs = store
+			.SubscribeSelector(RootStateSelectors.TaskManagerCommand)
+			.ToObservable()
+			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));
+
+		var taskManagerMenuItem = ContextMenuHelper.CreateMenuItem("Task Manager", Assets.TaskManager.ScaleSimple(16, 16, InterpType.Bilinear));
+		taskManagerMenuItem.ObserveButtonRelease().WithLatestFrom(taskManagerObs).Subscribe(t => freeDesktopService.Run(t.Second));
+
+		var menu = new Gtk.Menu();
+		menu.ReserveToggleSize = false;
+		menu.Add(taskManagerMenuItem);
+		menu.ShowAll();
+
+		this.CreateContextMenuObservable().Subscribe(t => menu.Popup());
 	}
 
 	private int ComputeCenterBoxMarginLeft(int numGroups)
