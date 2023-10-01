@@ -119,8 +119,16 @@ public class StartMenuLaunchIcon : Button
 
 				if (eventMonitor == windowMonitor)
 				{
-					_startMenuWindow.Popup();
-					StyleContext.AddClass("start-menu__launch-icon--open");
+					if (_startMenuWindow.IsVisible)
+					{
+						_startMenuWindow.ClosePopup();
+						this.RemoveClass("start-menu__launch-icon--open");
+					}
+					else
+					{
+						_startMenuWindow.Popup();
+						StyleContext.AddClass("start-menu__launch-icon--open");
+					}
 				}
 			});
 

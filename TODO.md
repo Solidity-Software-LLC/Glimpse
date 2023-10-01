@@ -12,7 +12,6 @@ Start Menu
 Taskbar
 ------------
 * Calendar
-* Context menu
 
 System Tray
 ------------
