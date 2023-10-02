@@ -29,4 +29,17 @@ public static class GtkExtensions
 		if (!File.Exists(f)) return null;
 		return f;
 	}
+
+	public static bool ContainsPoint(this Widget widget, int px, int py)
+	{
+		if (!widget.IsVisible) return false;
+		widget.Window.GetGeometry(out var x, out var y, out var width, out var height);
+		return px >= x && py >= y && px < x + width && py < y + height;
+	}
+
+	public static bool IsPointerInside(this Widget widget)
+	{
+		widget.Display.GetPointer(out var px, out var py);
+		return widget.ContainsPoint(px, py);
+	}
 }

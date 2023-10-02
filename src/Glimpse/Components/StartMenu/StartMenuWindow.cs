@@ -64,7 +64,7 @@ public class StartMenuWindow : Window
 			.Merge(Observable.FromEventPattern(_searchEntry, nameof(_searchEntry.TextInserted)).Select(_ => _searchEntry.Text))
 			.Merge(Observable.FromEventPattern(_searchEntry, nameof(_searchEntry.TextDeleted)).Select(_ => _searchEntry.Text))
 			.TakeUntilDestroyed(this)
-			.Throttle(TimeSpan.FromMilliseconds(100), new SynchronizationContextScheduler(new GLibSynchronizationContext()))
+			.Throttle(TimeSpan.FromMilliseconds(50), new SynchronizationContextScheduler(new GLibSynchronizationContext()))
 			.DistinctUntilChanged();
 
 		var chipsObs = viewModelObservable.Select(vm => vm.Chips).DistinctUntilChanged();

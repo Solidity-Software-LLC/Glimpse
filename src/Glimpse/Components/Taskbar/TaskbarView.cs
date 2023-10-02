@@ -43,30 +43,36 @@ public class TaskbarView : Box
 				.Subscribe(displayServer.MakeWindowVisible);
 
 			windowPicker.CloseWindow
+				.WithLatestFrom(viewModelObservable.Select(vm => vm.Tasks.Count).DistinctUntilChanged())
+				.Where(t => t.Second == 1)
+				.Subscribe(_ => windowPicker.ClosePopup());
+
+			windowPicker.CloseWindow
 				.Subscribe(displayServer.CloseWindow);
+
+			var cancelOpen = groupIcon.ObserveEvent(nameof(LeaveNotifyEvent))
+				.Merge(groupIcon.ObserveEvent(nameof(Unmapped)));
 
 			groupIcon.ObserveEvent<EnterNotifyEventArgs>(nameof(EnterNotifyEvent))
 				.WithLatestFrom(replayLatestViewModelObservable)
 				.Where(t => t.Second.Tasks.Count > 0)
-				.Delay(TimeSpan.FromMilliseconds(250), new SynchronizationContextScheduler(new GLibSynchronizationContext()))
-				.TakeUntil(groupIcon.ObserveEvent(nameof(LeaveNotifyEvent)).Merge(groupIcon.ObserveEvent(nameof(Unmapped))))
-				.Repeat()
+				.Select(t => Observable.Timer(TimeSpan.FromMilliseconds(250), new SynchronizationContextScheduler(new GLibSynchronizationContext())).TakeUntil(cancelOpen).Select(_ => t.Second))
+				.Switch()
 				.Where(_ => !windowPicker.Visible)
 				.Subscribe(t =>
 				{
-					dispatcher.Dispatch(new TakeScreenshotAction() { Windows = t.Second.Tasks.Select(x => x.WindowRef).ToList() });
+					dispatcher.Dispatch(new TakeScreenshotAction() { Windows = t.Tasks.Select(x => x.WindowRef).ToList() });
 					windowPicker.Popup();
 				});
 
+			var cancelClose = groupIcon.ObserveEvent(nameof(EnterNotifyEvent))
+				.Merge(windowPicker.ObserveEvent(nameof(EnterNotifyEvent)));
+
 			groupIcon.ObserveEvent(nameof(LeaveNotifyEvent)).Merge(windowPicker.ObserveEvent(nameof(LeaveNotifyEvent)))
-				.Delay(TimeSpan.FromMilliseconds(250), new SynchronizationContextScheduler(new GLibSynchronizationContext()))
-				.TakeUntil(groupIcon.ObserveEvent(nameof(EnterNotifyEvent)).Merge(windowPicker.ObserveEvent(nameof(EnterNotifyEvent))))
-				.Repeat()
-				.Where(_ => windowPicker.Visible)
-				.Subscribe(t =>
-				{
-					windowPicker.ClosePopup();
-				});
+				.Select(_ => Observable.Timer(TimeSpan.FromMilliseconds(250), new SynchronizationContextScheduler(new GLibSynchronizationContext())).TakeUntil(cancelClose))
+				.Switch()
+				.Where(_ => !windowPicker.IsPointerInside())
+				.Subscribe(_ => windowPicker.ClosePopup());
 
 			groupIcon.ContextMenuOpened
 				.Subscribe(_ => contextMenu.Popup());
