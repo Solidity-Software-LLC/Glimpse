@@ -70,8 +70,8 @@ public static class Extensions
 	public static IObservable<bool> CreateContextMenuObservable(this Widget widget)
 	{
 		var buttonPressObs = widget.ObserveEvent<ButtonPressEventArgs>(nameof(widget.ButtonPressEvent))
-			.Do(e => e.RetVal = true)
 			.Where(e => e.Event.Button == 3 && e.Event.Type == EventType.ButtonPress)
+			.Do(e => e.RetVal = true)
 			.Select(_ => true);
 
 		var popupMenuObs = widget.ObserveEvent<PopupMenuArgs>(nameof(widget.PopupMenu))
