@@ -14,6 +14,7 @@ public class FreeDesktopService
 	private readonly IDispatcher _dispatcher;
 	private readonly OrgFreedesktopAccounts _freedesktopAccounts;
 	private ImmutableList<DesktopFile> _desktopFiles;
+	private IObservable<object> _desktopFileChanged = Observable.Empty<object>();
 
 	public FreeDesktopService(IDispatcher dispatcher, OrgFreedesktopAccounts freedesktopAccounts)
 	{
@@ -32,17 +33,29 @@ public class FreeDesktopService
 
 		var dataDirectories = environmentVariables["XDG_DATA_DIRS"].ToString().Split(":", StringSplitOptions.RemoveEmptyEntries).ToList();
 		dataDirectories.Add(Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local/share"));
+		dataDirectories = dataDirectories.Distinct().Select(d => Path.Join(d, "applications")).Where(Directory.Exists).ToList();
 
-		_desktopFiles = dataDirectories
-			.Distinct()
-			.Select(d => Path.Join(d, "applications"))
-			.Where(Directory.Exists)
-			.SelectMany(d => Directory.EnumerateFiles(d, "*.desktop", SearchOption.AllDirectories))
-			.Select(d => DesktopFile.From(ReadIniFile(d)))
-			.Where(t => t != null)
-			.ToImmutableList();
+		foreach (var d in dataDirectories)
+		{
+			var watcher = new FileSystemWatcher();
+			watcher.Filter = "*.desktop";
+			watcher.Path = d;
+			watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
+			watcher.EnableRaisingEvents = true;
 
-		_dispatcher.Dispatch(new UpdateDesktopFilesAction() { DesktopFiles = _desktopFiles });
+			_desktopFileChanged = _desktopFileChanged
+				.Merge(Observable.FromEventPattern(watcher, nameof(watcher.Changed)))
+				.Merge(Observable.FromEventPattern(watcher, nameof(watcher.Deleted)))
+				.Merge(Observable.FromEventPattern(watcher, nameof(watcher.Created)))
+				.Merge(Observable.FromEventPattern(watcher, nameof(watcher.Renamed)));
+		}
+
+		_desktopFileChanged.Throttle(TimeSpan.FromSeconds(1)).Subscribe(_ =>
+		{
+			LoadDesktopFiles(dataDirectories);
+		});
+
+		LoadDesktopFiles(dataDirectories);
 
 		var userObjectPath = await _freedesktopAccounts.FindUserByNameAsync(Environment.UserName);
 		var userService = new OrgFreedesktopAccountsUser(connections.System, "org.freedesktop.Accounts", userObjectPath);
@@ -54,6 +67,17 @@ public class FreeDesktopService
 			{
 				_dispatcher.Dispatch(new UpdateUserAction() { UserName = p.UserName, IconPath = p.IconFile });
 			});
+	}
+
+	private void LoadDesktopFiles(IEnumerable<string> dataDirectories)
+	{
+		_desktopFiles = dataDirectories
+			.SelectMany(d => Directory.EnumerateFiles(d, "*.desktop", SearchOption.AllDirectories))
+			.Select(d => DesktopFile.From(ReadIniFile(d)))
+			.Where(t => t != null)
+			.ToImmutableList();
+
+		_dispatcher.Dispatch(new UpdateDesktopFilesAction() { DesktopFiles = _desktopFiles });
 	}
 
 	public DesktopFile FindAppDesktopFileByPath(string filePath)
