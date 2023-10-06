@@ -1,8 +1,6 @@
 General
 ------------
 * Launch status cursor updates
-* Icons need to update when theme changes
-* Changing icon themes causes the pinned start menu apps to not load
 
 Start Menu
 ------------

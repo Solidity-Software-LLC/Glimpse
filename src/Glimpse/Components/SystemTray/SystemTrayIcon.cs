@@ -45,11 +45,17 @@ public class SystemTrayIcon : Button
 				HasTooltip = !string.IsNullOrEmpty(TooltipText);
 			});
 
+		var iconTheme = IconTheme.GetForScreen(Screen);
+
+		var iconThemeChanged = iconTheme.ObserveChange()
+			.WithLatestFrom(propertiesObservable)
+			.Select(t => t.Second);
+
 		propertiesObservable
-			.DistinctUntilChanged((x, y) => x.IconName == y.IconName && x.IconThemePath == y.IconThemePath && x.IconPixmap == y.IconPixmap)
+			.Merge(iconThemeChanged)
 			.Subscribe(properties =>
 			{
-				image.Pixbuf = properties.CreateIcon(IconTheme.GetForScreen(Screen)).ScaleSimple(24, 24, InterpType.Bilinear);
+				image.Pixbuf = iconTheme.LoadIcon(properties).ScaleSimple(24, 24, InterpType.Bilinear);
 			});
 
 		viewModelObservable

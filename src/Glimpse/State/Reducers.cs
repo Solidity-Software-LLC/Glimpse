@@ -96,7 +96,7 @@ public class Reducers
 		var desktopFile = FindAppDesktopFileByName(state.DesktopFiles, action.WindowProperties.ClassHintName)
 			?? FindAppDesktopFileByName(state.DesktopFiles, action.WindowProperties.ClassHintClass)
 			?? FindAppDesktopFileByName(state.DesktopFiles, action.WindowProperties.Title)
-			?? new() { Name = action.WindowProperties.Title, IconName = "application-default-icon", IniFile = new () { FilePath = action.WindowProperties.ClassHintName } };
+			?? new() { Name = action.WindowProperties.Title, IniFile = new () { FilePath = action.WindowProperties.ClassHintName } };
 
 		group = state.Groups.FirstOrDefault(g => g.Id == desktopFile.IniFile.FilePath);
 

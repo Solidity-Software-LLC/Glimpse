@@ -11,7 +11,7 @@ namespace Glimpse.Components.StartMenu;
 
 public class StartMenuAppIcon : EventBox, IForEachDraggable
 {
-	public StartMenuAppIcon(IObservable<StartMenuAppViewModel> desktopFileObservable)
+	public StartMenuAppIcon(IObservable<StartMenuAppViewModel> viewModelObservable)
 	{
 		CanFocus = false;
 
@@ -37,16 +37,17 @@ public class StartMenuAppIcon : EventBox, IForEachDraggable
 
 		ContextMenuRequested = this.CreateContextMenuObservable()
 			.TakeUntilDestroyed(this)
-			.WithLatestFrom(desktopFileObservable)
+			.WithLatestFrom(viewModelObservable)
 			.Select(t => t.Second.DesktopFile);
 
-		desktopFileObservable
+		viewModelObservable
 			.TakeUntilDestroyed(this)
 			.Subscribe(f => name.Text = f.DesktopFile.Name);
 
-		var iconObservable = desktopFileObservable
-			.Select(f => IconLoader.LoadIcon(f.DesktopFile.IconName, 36) ?? IconLoader.DefaultAppIcon(36))
-			.Replay(1);
+		var iconNameObs = viewModelObservable.Select(vm => vm.DesktopFile.IconName).DistinctUntilChanged();
+		var iconTheme = IconTheme.GetForScreen(Screen);
+		var iconThemeChanged = iconTheme.ObserveChange().WithLatestFrom(viewModelObservable).Select(t => t.Second.DesktopFile.IconName);
+		var iconObservable = iconNameObs.Merge(iconThemeChanged).Select(f => iconTheme.LoadIcon(f, 36)).Replay(1);
 
 		iconObservable.Subscribe(pixbuf => image.Pixbuf = pixbuf);
 		iconObservable.Connect();

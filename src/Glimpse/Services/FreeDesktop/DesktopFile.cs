@@ -4,8 +4,8 @@ namespace Glimpse.Services.FreeDesktop;
 
 public class DesktopFile
 {
-	public string Name { get; set; }
-	public string IconName { get; set; } = "application-default-icon";
+	public string Name { get; set; } = "";
+	public string IconName { get; set; } = "";
 	public string StartupWmClass { get; set; } = "";
 	public DesktopFileExec Exec { get; set; } = new();
 	public List<DesktopFileAction> Actions { get; set; } = new();
@@ -93,19 +93,5 @@ public class DesktopFile
 		}
 
 		return results;
-	}
-}
-
-public static class DesktopFileExtensions
-{
-	public static DesktopFile FindByApplicationName(this IEnumerable<DesktopFile> files, string applicationName)
-	{
-		var lowerCaseAppName = applicationName.ToLower();
-
-		return files.FirstOrDefault(f => f.StartupWmClass.ToLower() == lowerCaseAppName)
-			?? files.FirstOrDefault(f => f.Name.ToLower().Contains(lowerCaseAppName))
-			?? files.FirstOrDefault(f => f.StartupWmClass.ToLower().Contains(lowerCaseAppName))
-			?? files.FirstOrDefault(f => f.Exec.Executable.ToLower().Contains(lowerCaseAppName))
-			?? files.FirstOrDefault(f => f.Exec.Executable.ToLower() == lowerCaseAppName);
 	}
 }

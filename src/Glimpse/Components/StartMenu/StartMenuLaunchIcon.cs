@@ -154,7 +154,7 @@ public class StartMenuLaunchIcon : Button
 
 	private void OpenContextMenu(DesktopFile desktopFile, StartMenuViewModel startMenuViewModel)
 	{
-		var menuItems = ContextMenuHelper.CreateDesktopFileActions(desktopFile);
+		var menuItems = ContextMenuHelper.CreateDesktopFileActions(desktopFile, IconTheme.GetForScreen(Screen));
 
 		menuItems.ForEach(m =>
 		{
@@ -166,9 +166,9 @@ public class StartMenuLaunchIcon : Button
 		var isPinnedToTaskbar = startMenuViewModel.AllApps.Any(f => f.IsPinnedToTaskbar && f.DesktopFile == desktopFile);
 		var pinStartIcon = isPinnedToStart ? Assets.UnpinIcon : Assets.PinIcon;
 		var pinTaskbarIcon = isPinnedToTaskbar ? Assets.UnpinIcon : Assets.PinIcon;
-		var pinStart = ContextMenuHelper.CreateMenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start", pinStartIcon.ScaleSimple(16, 16, InterpType.Bilinear));
+		var pinStart = ContextMenuHelper.CreateMenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start", Observable.Return(pinStartIcon.ScaleSimple(16, 16, InterpType.Bilinear)));
 		pinStart.ObserveButtonRelease().Subscribe(_ => _dispatcher.Dispatch(new ToggleStartMenuPinningAction() { DesktopFile = desktopFile }));
-		var pinTaskbar = ContextMenuHelper.CreateMenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar", pinTaskbarIcon.ScaleSimple(16, 16, InterpType.Bilinear));
+		var pinTaskbar = ContextMenuHelper.CreateMenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar", Observable.Return(pinTaskbarIcon.ScaleSimple(16, 16, InterpType.Bilinear)));
 		pinTaskbar.ObserveButtonRelease().Subscribe(_ => _dispatcher.Dispatch(new ToggleTaskbarPinningAction() { DesktopFile = desktopFile }));
 
 		_contextMenu.RemoveAllChildren();

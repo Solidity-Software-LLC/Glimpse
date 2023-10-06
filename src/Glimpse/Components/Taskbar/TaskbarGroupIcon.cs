@@ -53,21 +53,18 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 		viewModel.Subscribe(vm => _currentViewModel = vm);
 		viewModel.Select(vm => vm.DemandsAttention).DistinctUntilChanged().Subscribe(_ => QueueDraw());
 
+		var iconTheme = IconTheme.GetForScreen(Screen);
+
 		var iconObservable = viewModel
 			.DistinctUntilChanged(x => x.Tasks.Count)
-			.Select(group =>
-				IconLoader.LoadIcon(group.DesktopFile.IconName, 26)
-					?? IconLoader.LoadIcon(group.Tasks.FirstOrDefault(), 26)
-					?? IconLoader.DefaultAppIcon(26))
+			.Merge(iconTheme.ObserveChange().WithLatestFrom(viewModel).Select(t => t.Second))
+			.Select(group => iconTheme.LoadIcon(group, 26))
+			.TakeUntilDestroyed(this)
+			.Where(i => i != null)
 			.Publish();
 
-		iconObservable.Subscribe(pixbuf =>
-		{
-			image.Pixbuf = pixbuf;
-			QueueDraw();
-		});
-
-		IconWhileDragging = iconObservable.Where(i => i != null).TakeUntilDestroyed(this);
+		IconWhileDragging = iconObservable;
+		iconObservable.Subscribe(pixbuf => image.Pixbuf = pixbuf);
 		iconObservable.Connect();
 	}
 
