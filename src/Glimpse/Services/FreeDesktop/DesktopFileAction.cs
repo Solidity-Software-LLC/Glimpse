@@ -4,11 +4,13 @@ namespace Glimpse.Services.FreeDesktop;
 
 public class DesktopFileAction
 {
+	public string Id { get; set; }
 	public string ActionName { get; set; }
 	public string IconName { get; set; }
 	public string Exec { get; set; }
+	public string DesktopFilePath { get; set; }
 
-	public static DesktopFileAction Parse(IniSection section)
+	public static DesktopFileAction Parse(IniSection section, string desktopFilePath)
 	{
 		section.NameValuePairs.TryGetValue("Name", out var actionName);
 		section.NameValuePairs.TryGetValue("Exec", out var exec);
@@ -16,9 +18,11 @@ public class DesktopFileAction
 
 		return new DesktopFileAction()
 		{
+			Id = section.Header.Split(" ").Last(),
 			ActionName = actionName,
 			IconName = iconName,
-			Exec = exec
+			Exec = exec,
+			DesktopFilePath = desktopFilePath
 		};
 	}
 }

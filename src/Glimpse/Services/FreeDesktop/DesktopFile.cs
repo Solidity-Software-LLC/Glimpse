@@ -89,7 +89,7 @@ public class DesktopFile
 				continue;
 			}
 
-			results.Add(DesktopFileAction.Parse(actionSection));
+			results.Add(DesktopFileAction.Parse(actionSection, file.FilePath));
 		}
 
 		return results;

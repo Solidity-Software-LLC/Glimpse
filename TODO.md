@@ -1,7 +1,3 @@
-General
-------------
-* Launch status cursor updates
-
 Start Menu
 ------------
 * Add context menu with useful actions to taskbar icon
