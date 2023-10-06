@@ -104,7 +104,9 @@ public class FreeDesktopService
 
 	public void Run(DesktopFile desktopFile)
 	{
-		Run(desktopFile.Exec.FullExec);
+		var startInfo = new ProcessStartInfo("setsid", "xdg-open " + desktopFile.IniFile.FilePath);
+		startInfo.WorkingDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+		Process.Start(startInfo);
 	}
 
 	public void Run(DesktopFileAction action)

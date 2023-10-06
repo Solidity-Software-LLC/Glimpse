@@ -60,8 +60,7 @@ public static class IconThemeExtensions
 
 	private static Pixbuf LoadIconFromTaskState(TaskState task, int size)
 	{
-		if (task == null) return null;
-		if (!task.Icons.Any()) return null;
+		if (task == null || task.Icons == null || !task.Icons.Any()) return null;
 
 		var biggestIcon = task.Icons.MaxBy(i => i.Width);
 
