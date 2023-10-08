@@ -107,8 +107,9 @@ public class FreeDesktopService
 
 	public void Run(DesktopFile desktopFile)
 	{
-		var gDesktopFile = LibGdk3Interop.g_desktop_app_info_new_from_filename(desktopFile.IniFile.FilePath);
-		LibGdk3Interop.g_app_info_launch(gDesktopFile, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+		var startInfo = new ProcessStartInfo("setsid", "xdg-open " + desktopFile.IniFile.FilePath);
+		startInfo.WorkingDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
+		Process.Start(startInfo);
 	}
 
 	public void Run(DesktopFileAction action)
