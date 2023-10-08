@@ -18,7 +18,7 @@ public class Assets
 	{
 		UnpinIcon = Pixbuf.LoadFromResource("unpin.png");
 		PinIcon = Pixbuf.LoadFromResource("pin.png");
-		Close = Pixbuf.LoadFromResource("close.png");
+		Close = LoadSvg("close.svg");
 		MenuIcon = Pixbuf.LoadFromResource("tux.png");
 		Power = LoadSvg("power-outline.svg");
 		Person = LoadSvg("person-circle-outline.svg");

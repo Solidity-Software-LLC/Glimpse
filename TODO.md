@@ -21,6 +21,5 @@ Packaging
 
 Technical
 ------------
-* Replace PNG with SVG
 * Make all widgets use CSS where possible
 * Error handling / logging
