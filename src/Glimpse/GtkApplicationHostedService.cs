@@ -1,3 +1,4 @@
+using System.Reactive.Linq;
 using System.Text;
 using Autofac;
 using Gdk;
@@ -47,21 +48,14 @@ public class GtkApplicationHostedService : IHostedService
 					allCss.AppendLine(cssFileStream.ReadToEnd());
 				}
 
+				var display = Display.Default;
 				var screenCss = new CssProvider();
 				screenCss.LoadFromData(allCss.ToString());
-				StyleContext.AddProviderForScreen(Display.Default.DefaultScreen, screenCss, uint.MaxValue);
+				StyleContext.AddProviderForScreen(display.DefaultScreen, screenCss, uint.MaxValue);
 
-				var panels = Display.Default
-					.GetMonitors()
-					.Select(m =>
-					{
-						var panel = _serviceProvider.Resolve<Panel>();
-						panel.DockToBottom(m);
-						return panel;
-					})
-					.ToList();
-
-				panels.ForEach(_application.AddWindow);
+				Observable.FromEventPattern<MonitorAddedArgs>(display, nameof(display.MonitorAdded)).Subscribe(_ => LoadPanels(display));
+				Observable.FromEventPattern<MonitorRemovedArgs>(display, nameof(display.MonitorRemoved)).Subscribe(_ => LoadPanels(display));
+				LoadPanels(display);
 				Application.Run();
 			}
 			catch (Exception e)
@@ -71,6 +65,24 @@ public class GtkApplicationHostedService : IHostedService
 		}, cancellationToken);
 
 		return Task.CompletedTask;
+	}
+
+	private void LoadPanels(Display display)
+	{
+		var windows = _application.Windows.ToList();
+		windows.ForEach(_application.RemoveWindow);
+
+		var panels = display
+			.GetMonitors()
+			.Select(m =>
+			{
+				var panel = _serviceProvider.Resolve<Panel>();
+				panel.DockToBottom(m);
+				return panel;
+			})
+			.ToList();
+
+		panels.ForEach(_application.AddWindow);
 	}
 
 	public Task StopAsync(CancellationToken cancellationToken)
