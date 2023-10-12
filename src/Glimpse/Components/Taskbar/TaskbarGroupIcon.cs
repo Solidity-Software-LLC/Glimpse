@@ -58,8 +58,9 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 		var iconObservable = viewModel
 			.DistinctUntilChanged(x => x.Tasks.Count)
 			.Merge(iconTheme.ObserveChange().WithLatestFrom(viewModel).Select(t => t.Second))
-			.Select(group => iconTheme.LoadIcon(group, 26))
 			.TakeUntilDestroyed(this)
+			.CombineLatest(this.ObserveEvent(nameof(SizeAllocated)))
+			.Select(t => iconTheme.LoadIcon(t.First, 26))
 			.Where(i => i != null)
 			.Publish();
 

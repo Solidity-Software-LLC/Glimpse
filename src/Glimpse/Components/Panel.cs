@@ -22,7 +22,6 @@ namespace Glimpse.Components;
 
 public class Panel : Window
 {
-	private const int PanelHeight = 52;
 	private const string ClockFormat = "h:mm tt\ndddd\nM/d/yyyy";
 
 	public Panel(SystemTrayBox systemTrayBox, TaskbarView taskbarView, StartMenuLaunchIcon startMenuLaunchIcon, IStore store, FreeDesktopService freeDesktopService) : base(WindowType.Toplevel)
@@ -121,14 +120,14 @@ public class Panel : Window
 	public void DockToBottom(Monitor monitor)
 	{
 		var monitorDimensions = monitor.Geometry;
-		SetSizeRequest(monitorDimensions.Width, PanelHeight);
-		Move(monitor.Workarea.Left, monitorDimensions.Height - PanelHeight);
+		SetSizeRequest(monitorDimensions.Width, AllocatedHeight);
+		Move(monitor.Workarea.Left, monitorDimensions.Height - AllocatedHeight);
 		ReserveSpace();
 	}
 
 	private void ReserveSpace()
 	{
-		var reservedSpaceLong = new long[] { 0, 0, 0, PanelHeight, 0, 0, 0, 0, 0, 0, 0, Window.Display.DefaultScreen.RootWindow.Width }.SelectMany(BitConverter.GetBytes).ToArray();
+		var reservedSpaceLong = new long[] { 0, 0, 0, AllocatedHeight, 0, 0, 0, 0, 0, 0, 0, Window.Display.DefaultScreen.RootWindow.Width }.SelectMany(BitConverter.GetBytes).ToArray();
 		Property.Change(Window, Atom.Intern("_NET_WM_STRUT_PARTIAL", false), Atom.Intern("CARDINAL", false), 32, PropMode.Replace, reservedSpaceLong, 12);
 	}
 }
