@@ -24,9 +24,9 @@ public class StartMenuWindow : Window
 	private readonly ForEachFlowBox<StartMenuAppViewModel, StartMenuAppIcon> _apps;
 	private readonly List<(int, int)> _keyCodeRanges = new()
 	{
-		(48, 90),
-		(96, 111),
-		(186, 222)
+		(48, 57),
+		(65, 90),
+		(97, 122)
 	};
 
 	public IObservable<string> SearchTextUpdated { get; }
@@ -126,7 +126,7 @@ public class StartMenuWindow : Window
 
 		_searchEntry.ObserveEvent<KeyReleaseEventArgs>(nameof(KeyReleaseEvent))
 			.Where(e => e.Event.Key == Key.Return || e.Event.Key == Key.KP_Enter)
-			.WithLatestFrom(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged())
+			.WithLatestFrom(viewModelObservable.Select(vm => vm.AllApps.Where(a => a.IsVisible)).DistinctUntilChanged())
 			.Where(t => t.Second.Any())
 			.Subscribe(t => _appLaunch.OnNext(t.Second.FirstOrDefault().DesktopFile));
 
