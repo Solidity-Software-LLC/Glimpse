@@ -4,31 +4,33 @@ namespace Glimpse.Interop.X11;
 
 public class XLib
 {
-	[DllImport("libX11")]
+	private const string LibraryName = "libX11.so.6";
+
+	[DllImport(LibraryName)]
 	public static extern ulong XOpenDisplay(ulong display);
 
-	[DllImport("libX11")]
+	[DllImport(LibraryName)]
 	public static extern int XCloseDisplay(ulong display);
 
-	[DllImport("libX11")]
+	[DllImport(LibraryName)]
 	public static extern int XSelectInput(ulong display, ulong window, EventMask event_mask);
 
-	[DllImport("libX11")]
+	[DllImport(LibraryName)]
 	public static extern int XNextEvent(ulong display, IntPtr e);
 
-	[DllImport("libX11")]
+	[DllImport(LibraryName)]
 	public static extern ulong XDefaultRootWindow(ulong display);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern string XGetAtomName(ulong display, ulong atom);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern void XFree(IntPtr data);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XInitThreads();
 
-	[DllImport("libX11.so.6", EntryPoint = "XQueryTree")]
+	[DllImport(LibraryName, EntryPoint = "XQueryTree")]
 	public static extern int XQueryTree(
 		ulong display,    // Display* display
 		ulong window,        // Window window
@@ -37,10 +39,10 @@ public class XLib
 		out IntPtr children_return, // Window* children_return
 		out uint nchildren_return);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern ulong XInternAtom(ulong display, string atom_name, bool only_if_exists);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XGetWindowProperty(
 		ulong display,
 		ulong window,
@@ -55,73 +57,73 @@ public class XLib
 		out ulong bytesLeft,
 		out IntPtr data);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XSetInputFocus(ulong display, ulong window, int revertTo, ulong time);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XRaiseWindow(ulong display, ulong window);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XLowerWindow(ulong display, ulong window);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XGetInputFocus(ulong display, out ulong focus_return, out int revert_to_return);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XMapWindow(ulong display, ulong window);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XUnmapWindow(ulong display, ulong window);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XFlush(ulong display);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XIconifyWindow(ulong display, ulong window, int screen_number);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XDefaultScreenOfDisplay(ulong display);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XGetClassHint(ulong display, ulong window, out XClassHint class_hints);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XGetWindowAttributes(ulong display, ulong window, out XWindowAttributes window_attributes);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern IntPtr XGetImage(ulong display, ulong window, int x, int y, uint width, uint height, ulong plane_mask, int format);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XDestroyImage(IntPtr image);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XSendEvent(ulong display, ulong window, bool propagate, long event_mask, IntPtr send_event);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XWarpPointer(ulong display, ulong src_w, ulong dest_w, int src_x, int src_y, int src_width, int src_height, int dest_x, int dest_y);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern bool XTranslateCoordinates(ulong display, ulong src_w, ulong dest_w, int src_x, int src_y, out int dest_x_return, out int dest_y_return, out ulong child_return);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XGrabKey(ulong display, byte keycode, uint modifiers, ulong grab_window, bool owner_events, int pointer_mode, int keyboard_mode);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XUngrabKeyboard(ulong display, ulong time);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern IntPtr XSetErrorHandler(XErrorHandlerDelegate del);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern IntPtr XSetIOErrorHandler(XIOErrorHandlerDelegate del);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern void XSetIOErrorExitHandler(ulong display, XIOErrorHandlerDelegate handler, IntPtr userData);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XGetErrorText(IntPtr display, int code, IntPtr description, int length);
 
-	[DllImport("libX11.so.6")]
+	[DllImport(LibraryName)]
 	public static extern int XGetErrorDatabaseText(IntPtr display, string name, string message, string default_string, IntPtr buffer_return, int length);
 }
 

@@ -159,7 +159,7 @@ public class StartMenuWindow : Window
 			.Select(vm => vm.UserIconPath)
 			.DistinctUntilChanged()
 			.TakeUntilDestroyed(this)
-			.Select(path => string.IsNullOrEmpty(path) ? Assets.Person.ScaleSimple(42, 42, InterpType.Bilinear) : new Pixbuf(path))
+			.Select(path => string.IsNullOrEmpty(path) || !File.Exists(path) ? Assets.Person.ScaleSimple(42, 42, InterpType.Bilinear) : new Pixbuf(path))
 			.Select(p => p.ScaleSimple(42, 42, InterpType.Bilinear))
 			.Subscribe(p => userImage.Pixbuf = p);
 

@@ -4,8 +4,8 @@ namespace Glimpse.Interop;
 
 public class LibGdk3Interop
 {
-	private const string GdkNativeDll = "libgdk-3";
-	private const string GioNativeDll = "libgio-2.0";
+	private const string GdkNativeDll = "libgdk-3.so.0";
+	private const string GioNativeDll = "libgio-2.0.so.0";
 
 	[DllImport (GdkNativeDll, CallingConvention = CallingConvention.Cdecl)]
 	internal static extern ulong gdk_x11_window_get_xid (IntPtr windowHandle);

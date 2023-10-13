@@ -27,8 +27,17 @@ button {
 	margin: 0;
 	padding: 0;
 	outline: 0;
+	border: 0;
 	border-radius: 4px;
 	background-color: transparent;
+}
+
+button:hover {
+	background-color: rgba(255, 255, 255, .1);
+}
+
+button:active {
+	background-color: rgba(255, 255, 255, .3);
 }
 
 button:focus {
