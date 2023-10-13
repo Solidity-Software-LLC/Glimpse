@@ -50,10 +50,20 @@ public class DesktopFile
 
 		foreach (var ph in s_execPlaceholders) exec = exec.Replace(ph, "");
 
+		exec = exec.Trim('\"');
+
 		var parts = exec.Split(" ", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+		if (parts[0] == "env")
+		{
+			parts = parts.Skip(1).SkipWhile(p => p.Contains("=")).ToArray();
+		}
+
+		var actualExecFile = parts[0].Trim('\"');
+
 		var result = new DesktopFileExec();
 		result.FullExec = exec;
-		result.Executable = parts[0];
+		result.Executable = actualExecFile;
 		if (parts.Length > 1) result.Arguments = string.Join(" ", parts[1..]);
 		return result;
 	}

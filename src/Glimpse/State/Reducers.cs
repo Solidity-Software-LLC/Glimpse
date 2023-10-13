@@ -93,9 +93,7 @@ public class Reducers
 			return state with { Groups = state.Groups.Replace(group, updatedGroup) };
 		}
 
-		var desktopFile = FindAppDesktopFileByName(state.DesktopFiles, action.WindowProperties.ClassHintName)
-			?? FindAppDesktopFileByName(state.DesktopFiles, action.WindowProperties.ClassHintClass)
-			?? FindAppDesktopFileByName(state.DesktopFiles, action.WindowProperties.Title)
+		var desktopFile = FindAppDesktopFileByName(state.DesktopFiles, action.WindowProperties)
 			?? new() { Name = action.WindowProperties.Title, IniFile = new () { FilePath = action.WindowProperties.ClassHintName } };
 
 		group = state.Groups.FirstOrDefault(g => g.Id == desktopFile.IniFile.FilePath);
@@ -142,14 +140,12 @@ public class Reducers
 		return newState;
 	}
 
-	private static DesktopFile FindAppDesktopFileByName(ImmutableList<DesktopFile> desktopFiles, string applicationName)
+	private static DesktopFile FindAppDesktopFileByName(ImmutableList<DesktopFile> desktopFiles, WindowProperties windowProperties)
 	{
-		var lowerCaseAppName = applicationName.ToLower();
-
-		return desktopFiles.FirstOrDefault(f => f.Name.ToLower().Contains(lowerCaseAppName))
-			?? desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower() == lowerCaseAppName)
-			?? desktopFiles.FirstOrDefault(f => f.StartupWmClass.ToLower().Contains(lowerCaseAppName))
-			?? desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower().Contains(lowerCaseAppName))
-			?? desktopFiles.FirstOrDefault(f => f.Exec.Executable.ToLower() == lowerCaseAppName);
+		return desktopFiles.FirstOrDefault(f => f.Name.Contains(windowProperties.ClassHintName, StringComparison.OrdinalIgnoreCase))
+			?? desktopFiles.FirstOrDefault(f => Path.GetFileNameWithoutExtension(f.IniFile.FilePath).Equals(windowProperties.ClassHintName, StringComparison.OrdinalIgnoreCase))
+			?? desktopFiles.FirstOrDefault(f => f.StartupWmClass.Contains(windowProperties.ClassHintName, StringComparison.OrdinalIgnoreCase))
+			?? desktopFiles.FirstOrDefault(f => f.Exec.Executable.Contains(windowProperties.ClassHintName, StringComparison.OrdinalIgnoreCase) && f.Exec.Arguments.Length == 0)
+			?? desktopFiles.FirstOrDefault(f => f.Exec.Executable.Contains(windowProperties.ClassHintName, StringComparison.OrdinalIgnoreCase));
 	}
 }
