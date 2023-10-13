@@ -9,10 +9,11 @@ As of right now, Glimpse is tested on xUbuntu 22.04 but should work in other env
 1. Remove any org.kde.StatusNotifierWatcher hosts
    1. e.g., ayatana-indicator-application
 2. Disable/remove existing panels
-3. Bind a key (usually SUPER_L) to send the OpenStartMenu action to Glimpse
-   1. In XFCE, this is under the keyboard settings
-   2. Here's the command that I use
-      3. ```gdbus call --session --dest org.solidity-software-llc.glimpse --object-path /org/solidity_software_llc/glimpse --method org.gtk.Actions.Activate  "OpenStartMenu" [] {}```
-      4. Note that dbus-send doesn't support nested types so it can't call the Activate method.
-4. Optional
-   1. Add blur effects in your compositor
+   1. sudo chmod a-rwx /usr/bin/xfce4-panel
+3. Setup keybinding
+   1. Go to your keyboard settings
+   2. Remove the whisker menu keybinding
+   3. Setup a new keybinding
+      1. ```gdbus call --session --dest org.solidity-software-llc.glimpse --object-path /org/solidity_software_llc/glimpse --method org.gtk.Actions.Activate  "OpenStartMenu" [] {}```
+      2. Bind the command to ctrl + escape
+         1. XFCE's default xcape config will allow you to use the SUPER_L key to open the start menu
