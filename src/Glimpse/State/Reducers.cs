@@ -53,6 +53,13 @@ public class Reducers
 
 		if (desktopFile == null)
 		{
+			var newGroup = newState.Groups.FirstOrDefault(g => g.DesktopFile.IniFile.FilePath == action.DesktopFile.IniFile.FilePath);
+
+			if (newGroup == null)
+			{
+				newState = newState with { Groups = newState.Groups.Add(new TaskGroup() { DesktopFile = action.DesktopFile, Id = action.DesktopFile.IniFile.FilePath }) };
+			}
+
 			return newState with { TaskbarState = newState.TaskbarState with { PinnedDesktopFiles = pinnedApps.Add(action.DesktopFile) } };
 		}
 

@@ -2,7 +2,6 @@ Start Menu
 ------------
 * Add context menu with useful actions to taskbar icon
 * Hover descriptions for apps
-* Pinning to taskbar doesn't update the taskbar
 
 Taskbar
 ------------
