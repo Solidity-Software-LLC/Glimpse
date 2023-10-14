@@ -24,3 +24,7 @@ Technical
 ------------
 * Make all widgets use CSS where possible
 * Error handling / logging
+* Desktop file matching improvements
+  * Look at this algorithm: https://invent.kde.org/plasma/plasma-workspace/-/blob/master/libtaskmanager/tasktools.cpp#L159
+  * Rewrite rules (thunar <=> xfce4-file-manager)
+  * Compare against pinned/opened taskbar apps

@@ -40,7 +40,11 @@ public class TaskbarView : Box
 				.Subscribe(_ => windowPicker.CenterAbove(groupIcon));
 
 			windowPicker.PreviewWindowClicked
-				.Subscribe(displayServer.MakeWindowVisible);
+				.Subscribe(windowId =>
+				{
+					windowPicker.ClosePopup();
+					displayServer.MakeWindowVisible(windowId);
+				});
 
 			windowPicker.CloseWindow
 				.WithLatestFrom(viewModelObservable.Select(vm => vm.Tasks.Count).DistinctUntilChanged())
