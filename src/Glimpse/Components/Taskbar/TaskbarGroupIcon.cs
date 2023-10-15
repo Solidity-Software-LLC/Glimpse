@@ -51,7 +51,11 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 
 		this.AppIcon(image, iconObservable);
 		this.CreateContextMenuObservable().Subscribe(_ => _contextMenuObservable.OnNext(true));
-		this.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent)).Subscribe(e => _buttonRelease.OnNext(e.Event));
+		this.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent)).Subscribe(e =>
+		{
+			_buttonRelease.OnNext(e.Event);
+			e.RetVal = true;
+		});
 		IconWhileDragging = iconObservable.Select(t => t.Item1);
 		iconObservable.Connect();
 	}

@@ -157,21 +157,21 @@ public class XLibAdaptorService : IDisposable
 		return results;
 	}
 
-	// Can I use XSendEvent with propagate set to true instead of searching parents?
 	public void ToggleWindowVisibility(XWindowRef windowRef)
 	{
 		XLib.XGetInputFocus(windowRef.Display, out var focusedWindow, out _);
-		var focusedWindowRef = new XWindowRef() { Display = windowRef.Display, Window = focusedWindow };
+		var focusedWindowRef = windowRef with { Window = focusedWindow };
 		var windowHasFocus = GetParents(focusedWindowRef).Any(w => w == windowRef.Window);
+		var iconified = windowRef.GetULongArray(XAtoms.NetWmState).Any(a => a == XAtoms.NetWmStateHidden);
 
-		if (windowHasFocus)
+		if (iconified || !windowHasFocus)
 		{
-			XLib.XIconifyWindow(windowRef.Display, windowRef.Window, 0);
+			XLib.XMapRaised(windowRef.Display, windowRef.Window);
+			XLib.XSetInputFocus(windowRef.Display, windowRef.Window, 1, 0);
 		}
 		else
 		{
-			XLib.XMapWindow(windowRef.Display, windowRef.Window);
-			XLib.XRaiseWindow(windowRef.Display, windowRef.Window);
+			XLib.XIconifyWindow(windowRef.Display, windowRef.Window, 0);
 		}
 
 		XLib.XFlush(windowRef.Display);

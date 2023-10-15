@@ -73,6 +73,9 @@ public class XLib
 	public static extern int XMapWindow(ulong display, ulong window);
 
 	[DllImport(LibraryName)]
+	public static extern int XMapRaised(ulong display, ulong window);
+
+	[DllImport(LibraryName)]
 	public static extern int XUnmapWindow(ulong display, ulong window);
 
 	[DllImport(LibraryName)]
