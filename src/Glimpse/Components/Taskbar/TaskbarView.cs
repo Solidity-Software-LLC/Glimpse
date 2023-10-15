@@ -60,7 +60,7 @@ public class TaskbarView : Box
 			groupIcon.ObserveEvent<EnterNotifyEventArgs>(nameof(EnterNotifyEvent))
 				.WithLatestFrom(replayLatestViewModelObservable)
 				.Where(t => t.Second.Tasks.Count > 0)
-				.Select(t => Observable.Timer(TimeSpan.FromMilliseconds(250), new SynchronizationContextScheduler(new GLibSynchronizationContext())).TakeUntil(cancelOpen).Select(_ => t.Second))
+				.Select(t => Observable.Timer(TimeSpan.FromMilliseconds(400), new SynchronizationContextScheduler(new GLibSynchronizationContext())).TakeUntil(cancelOpen).Select(_ => t.Second))
 				.Switch()
 				.Where(_ => !windowPicker.Visible)
 				.Subscribe(t =>
@@ -73,7 +73,7 @@ public class TaskbarView : Box
 				.Merge(windowPicker.ObserveEvent(nameof(EnterNotifyEvent)));
 
 			groupIcon.ObserveEvent(nameof(LeaveNotifyEvent)).Merge(windowPicker.ObserveEvent(nameof(LeaveNotifyEvent)))
-				.Select(_ => Observable.Timer(TimeSpan.FromMilliseconds(250), new SynchronizationContextScheduler(new GLibSynchronizationContext())).TakeUntil(cancelClose))
+				.Select(_ => Observable.Timer(TimeSpan.FromMilliseconds(400), new SynchronizationContextScheduler(new GLibSynchronizationContext())).TakeUntil(cancelClose))
 				.Switch()
 				.Where(_ => !windowPicker.IsPointerInside())
 				.Subscribe(_ => windowPicker.ClosePopup());
