@@ -5,11 +5,10 @@
 
 .header-menu-item {
 	background-color: transparent;
-	margin-left: 14px;
+	margin-left: 6px;
 }
 
 .header-menu-item-label {
-	font-size: 9px;
 	font-weight: bold;
 	color: #AAAAAA;
 }
@@ -17,6 +16,14 @@
 scrollbar {
 	border: 0;
 	background-color: rgba(0, 0, 0, 0);
+}
+
+menuitem + menuitem, separator + menuitem, separator {
+	margin-top: 6px;
+}
+
+menuitem label {
+	font-size: 13px;
 }
 
 label {

@@ -15,7 +15,6 @@ public class StartMenuAppIcon : EventBox, IForEachDraggable
 	{
 		CanFocus = false;
 
-		this.AddButtonStates();
 		this.AddClass("start-menu__app-icon-container");
 
 		var name = new Label();
@@ -27,6 +26,7 @@ public class StartMenuAppIcon : EventBox, IForEachDraggable
 		name.Justify = Justification.Center;
 
 		var image = new Image();
+		image.SetSizeRequest(36, 36);
 
 		var appIconContainer = new Box(Orientation.Vertical, 0);
 		appIconContainer.AddMany(image, name);
@@ -47,12 +47,12 @@ public class StartMenuAppIcon : EventBox, IForEachDraggable
 		var iconNameObs = viewModelObservable.Select(vm => vm.DesktopFile.IconName).DistinctUntilChanged();
 		var iconTheme = IconTheme.GetForScreen(Screen);
 		var iconThemeChanged = iconTheme.ObserveChange().WithLatestFrom(viewModelObservable).Select(t => t.Second.DesktopFile.IconName);
-		var iconObservable = iconNameObs.Merge(iconThemeChanged).Select(f => iconTheme.LoadIcon(f, 36)).Replay(1);
+		var iconObservable = iconNameObs.Merge(iconThemeChanged).Select(f => (iconTheme.LoadIcon(f, 36), iconTheme.LoadIcon(f, 30))).Replay(1);
 
-		iconObservable.Subscribe(pixbuf => image.Pixbuf = pixbuf);
+		this.AppIcon(image, iconObservable);
 		iconObservable.Connect();
 
-		IconWhileDragging = iconObservable;
+		IconWhileDragging = iconObservable.Select(t => t.Item1);
 	}
 
 	public IObservable<DesktopFile> ContextMenuRequested { get; }

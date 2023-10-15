@@ -4,6 +4,7 @@ using Fluxor;
 using Fluxor.Selectors;
 using Gdk;
 using GLib;
+using Glimpse.Components.Shared;
 using Glimpse.Components.StartMenu;
 using Glimpse.Components.SystemTray;
 using Glimpse.Components.Taskbar;
@@ -75,7 +76,7 @@ public class Panel : Window
 			.ToObservable()
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));
 
-		var taskManagerMenuItem = ContextMenuHelper.CreateMenuItem("Task Manager", Observable.Return(Assets.TaskManager.ScaleSimple(16, 16, InterpType.Bilinear)));
+		var taskManagerMenuItem = ContextMenuHelper.CreateMenuItem("Task Manager", Observable.Return(Assets.TaskManager.Scale(ThemeConstants.MenuItemIconSize)));
 		taskManagerMenuItem.ObserveButtonRelease().WithLatestFrom(taskManagerObs).Subscribe(t => freeDesktopService.Run(t.Second));
 
 		var menu = new Gtk.Menu();

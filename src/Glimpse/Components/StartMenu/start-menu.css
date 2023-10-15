@@ -5,6 +5,14 @@
 	margin-right: 2px;
 }
 
+.start-menu__launch-icon:hover {
+	background-color: rgba(255, 255, 255, 0.3);
+}
+
+.start-menu__launch-icon:active {
+	background-color: rgba(255, 255, 255, 0.1);
+}
+
 .start-menu__launch-icon--open {
 	background-color: rgba(255, 255, 255, 0.1);
 }
@@ -55,16 +63,17 @@
 }
 
 .start-menu__app-icon-container:hover {
-	background-color: rgba(255, 255, 255, 0.1);
+	background-color: rgba(255, 255, 255, 0.2);
 }
 
 .start-menu__app-icon-container:active {
-	background-color: rgba(255, 255, 255, 0.3);
+	background-color: rgba(255, 255, 255, 0.1);
 }
 
 .start-menu__app-icon-container label {
 	min-width: 82px;
 	min-height: 16px;
+	margin-top: 4px;
 }
 
 .start-menu__account-icon {

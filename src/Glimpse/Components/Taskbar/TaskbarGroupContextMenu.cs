@@ -1,6 +1,7 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
+using Glimpse.Components.Shared;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
@@ -34,7 +35,7 @@ public class TaskbarGroupContextMenu : Menu
 	private void CreateContextMenu(TaskbarGroupViewModel barGroup)
 	{
 		var iconTheme = IconTheme.GetForScreen(Screen);
-		var iconObservable = Observable.Return(iconTheme.LoadIcon(barGroup, 16)).Concat(iconTheme.ObserveChange().Select(_ => iconTheme.LoadIcon(barGroup, 16)));
+		var iconObservable = Observable.Return(iconTheme.LoadIcon(barGroup, ThemeConstants.MenuItemIconSize)).Concat(iconTheme.ObserveChange().Select(_ => iconTheme.LoadIcon(barGroup, ThemeConstants.MenuItemIconSize)));
 
 		if (barGroup.Tasks.Count == 0)
 		{
@@ -57,7 +58,7 @@ public class TaskbarGroupContextMenu : Menu
 	{
 		var pinLabel = group.IsPinned ? "Unpin from taskbar" : "Pin to taskbar";
 		var icon = group.IsPinned ? Assets.UnpinIcon : Assets.PinIcon;
-		var pinMenuItem = ContextMenuHelper.CreateMenuItem(pinLabel, Observable.Return(icon.ScaleSimple(16, 16, InterpType.Bilinear)));
+		var pinMenuItem = ContextMenuHelper.CreateMenuItem(pinLabel, Observable.Return(icon.Scale(ThemeConstants.MenuItemIconSize)));
 		pinMenuItem.ObserveButtonRelease().Subscribe(_ => _pinSubject.OnNext(true));
 		return pinMenuItem;
 	}
@@ -75,7 +76,7 @@ public class TaskbarGroupContextMenu : Menu
 
 		if (allowedActions.Contains(AllowedWindowActions.Close))
 		{
-			var menuItem = ContextMenuHelper.CreateMenuItem("Close Window", Observable.Return(Assets.Close.ScaleSimple(16, 16, InterpType.Bilinear)));
+			var menuItem = ContextMenuHelper.CreateMenuItem("Close Window", Observable.Return(Assets.Close.Scale(ThemeConstants.MenuItemIconSize)));
 			menuItem.ObserveButtonRelease().Subscribe(_ => _windowAction.OnNext(AllowedWindowActions.Close));
 			return menuItem;
 		}

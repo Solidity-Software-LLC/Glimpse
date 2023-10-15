@@ -31,21 +31,6 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 		Visual = Screen.RgbaVisual;
 		this.AddClass("taskbar__group-icon");
 
-		this.CreateContextMenuObservable().Subscribe(_ => _contextMenuObservable.OnNext(true));
-		AddEvents((int)(EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
-
-		this.ObserveEvent(nameof(EnterNotifyEvent)).Subscribe(_ =>
-		{
-			SetStateFlags(StateFlags.Prelight, true);
-			QueueDraw();
-		});
-
-		this.ObserveEvent(nameof(LeaveNotifyEvent)).Subscribe(_ =>
-		{
-			SetStateFlags(StateFlags.Normal, true);
-			QueueDraw();
-		});
-
 		var image = new Image();
 		Add(image);
 		ShowAll();
@@ -59,25 +44,21 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 			.DistinctUntilChanged(x => x.Tasks.Count)
 			.Merge(iconTheme.ObserveChange().WithLatestFrom(viewModel).Select(t => t.Second))
 			.TakeUntilDestroyed(this)
-			.CombineLatest(this.ObserveEvent(nameof(SizeAllocated)))
-			.Select(t => iconTheme.LoadIcon(t.First, 26))
-			.Where(i => i != null)
+			.CombineLatest(this.ObserveEvent<SizeAllocatedArgs>(nameof(SizeAllocated)).DistinctUntilChanged(a => a.Allocation.Width))
+			.Select(t => (iconTheme.LoadIcon(t.First, 26), iconTheme.LoadIcon(t.First, 20)))
+			.Where(i => i.Item1 != null)
 			.Publish();
 
-		IconWhileDragging = iconObservable;
-		iconObservable.Subscribe(pixbuf => image.Pixbuf = pixbuf);
+		this.AppIcon(image, iconObservable);
+		this.CreateContextMenuObservable().Subscribe(_ => _contextMenuObservable.OnNext(true));
+		this.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent)).Subscribe(e => _buttonRelease.OnNext(e.Event));
+		IconWhileDragging = iconObservable.Select(t => t.Item1);
 		iconObservable.Connect();
 	}
 
 	public void CloseWindowPicker()
 	{
 		_taskbarWindowPicker.ClosePopup();
-	}
-
-	protected override bool OnButtonReleaseEvent(EventButton evnt)
-	{
-		_buttonRelease.OnNext(evnt);
-		return true;
 	}
 
 	protected override bool OnDrawn(Context cr)

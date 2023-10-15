@@ -1,5 +1,6 @@
 using System.Reactive.Linq;
 using Gdk;
+using Glimpse.Components.Shared;
 using Glimpse.Services.FreeDesktop;
 using Gtk;
 
@@ -25,7 +26,7 @@ public static class ContextMenuHelper
 
 			foreach (var action in desktopFile.Actions)
 			{
-				var iconObservable = Observable.Return(iconTheme.LoadIcon(action.IconName, 16)).Concat(iconTheme.ObserveChange().Select(t => t.LoadIcon(action.IconName, 16)));
+				var iconObservable = Observable.Return(iconTheme.LoadIcon(action.IconName, ThemeConstants.MenuItemIconSize)).Concat(iconTheme.ObserveChange().Select(t => t.LoadIcon(action.IconName, ThemeConstants.MenuItemIconSize)));
 				var menuItem = CreateMenuItem(action.ActionName, iconObservable);
 				menuItem.Data.Add("DesktopFileAction", action);
 				results.Add(menuItem);

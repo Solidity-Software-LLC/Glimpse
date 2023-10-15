@@ -5,6 +5,7 @@ using Fluxor;
 using Fluxor.Selectors;
 using Gdk;
 using GLib;
+using Glimpse.Components.Shared;
 using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Interop;
@@ -16,7 +17,7 @@ using Menu = Gtk.Menu;
 
 namespace Glimpse.Components.StartMenu;
 
-public class StartMenuLaunchIcon : Button
+public class StartMenuLaunchIcon : EventBox
 {
 	private readonly FreeDesktopService _freeDesktopService;
 	private readonly IDispatcher _dispatcher;
@@ -94,19 +95,7 @@ public class StartMenuLaunchIcon : Button
 
 		_buttonRelease
 			.TakeUntilDestroyed(this)
-			.Subscribe(_ =>
-			{
-				if (!_startMenuWindow.Visible)
-				{
-					_startMenuWindow.Popup();
-					this.AddClass("start-menu__launch-icon--open");
-				}
-				else
-				{
-					_startMenuWindow.ClosePopup();
-					this.RemoveClass("start-menu__launch-icon--open");
-				}
-			});
+			.Subscribe(_ => ToggleStartMenuWindow());
 
 		displayServer
 			.StartMenuOpened
@@ -119,16 +108,7 @@ public class StartMenuLaunchIcon : Button
 
 				if (eventMonitor == windowMonitor)
 				{
-					if (_startMenuWindow.IsVisible)
-					{
-						_startMenuWindow.ClosePopup();
-						this.RemoveClass("start-menu__launch-icon--open");
-					}
-					else
-					{
-						_startMenuWindow.Popup();
-						StyleContext.AddClass("start-menu__launch-icon--open");
-					}
+					ToggleStartMenuWindow();
 				}
 			});
 
@@ -140,10 +120,36 @@ public class StartMenuLaunchIcon : Button
 		Valign = Align.Center;
 		Halign = Align.Center;
 		CanFocus = false;
-		StyleContext.AddClass("start-menu__launch-icon");
-		Add(new Image(Assets.MenuIcon.ScaleSimple(38, 38, InterpType.Bilinear)));
+		this.AddClass("start-menu__launch-icon");
+
+		var image = new Image();
+		image.SetSizeRequest(42, 42);
+		Add(image);
+
+		var iconObservable = Observable.Return((Assets.MenuIcon.Scale(38), Assets.MenuIcon.Scale(32))).Replay(1);
+		this.AppIcon(image, iconObservable);
+		this.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent)).Subscribe(e =>
+		{
+			_buttonRelease.OnNext(e.Event);
+			e.RetVal = true;
+		});
 
 		viewModelObservable.Connect();
+		iconObservable.Connect();
+	}
+
+	private void ToggleStartMenuWindow()
+	{
+		if (_startMenuWindow.IsVisible)
+		{
+			_startMenuWindow.ClosePopup();
+			this.RemoveClass("start-menu__launch-icon--open");
+		}
+		else
+		{
+			_startMenuWindow.Popup();
+			StyleContext.AddClass("start-menu__launch-icon--open");
+		}
 	}
 
 	private void LaunchApp(DesktopFile desktopFile)
@@ -166,9 +172,9 @@ public class StartMenuLaunchIcon : Button
 		var isPinnedToTaskbar = startMenuViewModel.AllApps.Any(f => f.IsPinnedToTaskbar && f.DesktopFile == desktopFile);
 		var pinStartIcon = isPinnedToStart ? Assets.UnpinIcon : Assets.PinIcon;
 		var pinTaskbarIcon = isPinnedToTaskbar ? Assets.UnpinIcon : Assets.PinIcon;
-		var pinStart = ContextMenuHelper.CreateMenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start", Observable.Return(pinStartIcon.ScaleSimple(16, 16, InterpType.Bilinear)));
+		var pinStart = ContextMenuHelper.CreateMenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start", Observable.Return(pinStartIcon.Scale(ThemeConstants.MenuItemIconSize)));
 		pinStart.ObserveButtonRelease().Subscribe(_ => _dispatcher.Dispatch(new ToggleStartMenuPinningAction() { DesktopFile = desktopFile }));
-		var pinTaskbar = ContextMenuHelper.CreateMenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar", Observable.Return(pinTaskbarIcon.ScaleSimple(16, 16, InterpType.Bilinear)));
+		var pinTaskbar = ContextMenuHelper.CreateMenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar", Observable.Return(pinTaskbarIcon.Scale(ThemeConstants.MenuItemIconSize)));
 		pinTaskbar.ObserveButtonRelease().Subscribe(_ => _dispatcher.Dispatch(new ToggleTaskbarPinningAction() { DesktopFile = desktopFile }));
 
 		_contextMenu.RemoveAllChildren();
@@ -183,11 +189,5 @@ public class StartMenuLaunchIcon : Button
 		_contextMenu.Add(pinTaskbar);
 		_contextMenu.ShowAll();
 		_contextMenu.Popup();
-	}
-
-	protected override bool OnButtonReleaseEvent(EventButton evnt)
-	{
-		_buttonRelease.OnNext(evnt);
-		return true;
 	}
 }

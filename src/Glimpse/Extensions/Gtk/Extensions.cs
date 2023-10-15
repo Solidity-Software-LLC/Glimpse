@@ -18,10 +18,11 @@ public static class Extensions
 
 	public static T AddButtonStates<T>(this T widget) where T : Widget
 	{
-		widget.AddEvents((int)(EventMask.ButtonPressMask | EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
-		widget.EnterNotifyEvent += (_, _) => widget.SetStateFlags(StateFlags.Prelight, true);
-		widget.LeaveNotifyEvent += (_, _) => widget.SetStateFlags(StateFlags.Normal, true);
+		widget.AddEvents((int)(EventMask.ButtonPressMask | EventMask.ButtonReleaseMask | EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
+		widget.ObserveEvent(nameof(widget.EnterNotifyEvent)).Subscribe(_ => widget.SetStateFlags(StateFlags.Prelight, true));
+		widget.ObserveEvent(nameof(widget.LeaveNotifyEvent)).Subscribe(_ => widget.SetStateFlags(StateFlags.Normal, true));
 		widget.ObserveEvent(nameof(widget.ButtonPressEvent)).Subscribe(_ => widget.SetStateFlags(StateFlags.Active, true));
+		widget.ObserveEvent(nameof(widget.ButtonReleaseEvent)).Subscribe(_ => widget.SetStateFlags(StateFlags.Prelight, true));
 		return widget;
 	}
 
@@ -41,12 +42,12 @@ public static class Extensions
 	{
 		if (!window.Visible) return;
 
-		var monitor = window.Display.GetMonitorAtWindow(window.Window);
+		var monitor = window.Display.GetMonitorAtWindow(widget.Window);
 		var monitorDimensions = monitor.Geometry;
 
-		widget.Window.GetRootCoords(0, 0, out var x, out var y);
+		widget.Window.GetRootCoords(0, 0, out _, out var y);
 
-		var windowX = x + monitorDimensions.Width / 2 - window.Window.Width / 2;
+		var windowX = monitorDimensions.X + monitorDimensions.Width / 2 - window.Window.Width / 2;
 		var windowY = y - window.Window.Height - 16;
 
 		window.Move(windowX, windowY);
@@ -69,8 +70,8 @@ public static class Extensions
 
 	public static IObservable<bool> CreateContextMenuObservable(this Widget widget)
 	{
-		var buttonPressObs = widget.ObserveEvent<ButtonPressEventArgs>(nameof(widget.ButtonPressEvent))
-			.Where(e => e.Event.Button == 3 && e.Event.Type == EventType.ButtonPress)
+		var buttonPressObs = widget.ObserveEvent<ButtonReleaseEventArgs>(nameof(widget.ButtonReleaseEvent))
+			.Where(e => e.Event.Button == 3 && e.Event.Type == EventType.ButtonRelease)
 			.Do(e => e.RetVal = true)
 			.Select(_ => true);
 
@@ -124,5 +125,21 @@ public static class Extensions
 		}
 
 		return imageBuffer.ScaleSimple((int) scaledWidth, (int) scaledHeight, InterpType.Bilinear);
+	}
+
+	public static Pixbuf Scale(this Pixbuf image, int size)
+	{
+		return image.ScaleSimple(size, size, InterpType.Bilinear);
+	}
+
+	public static void AppIcon(this Widget widget, Image image, IObservable<(Pixbuf BigIcon, Pixbuf SmallIcon)> iconObservable)
+	{
+		iconObservable.Subscribe(t => image.Pixbuf = t.Item1);
+		widget.AddButtonStates();
+		widget.ObserveEvent(nameof(widget.EnterNotifyEvent)).Subscribe(_ => widget.QueueDraw());
+		widget.ObserveEvent(nameof(widget.LeaveNotifyEvent)).Subscribe(_ => widget.QueueDraw());
+		widget.ObserveEvent(nameof(widget.ButtonPressEvent)).Subscribe(_ => widget.QueueDraw());
+		widget.ObserveEvent(nameof(widget.ButtonPressEvent)).WithLatestFrom(iconObservable).Subscribe(t => image.Pixbuf = t.Second.SmallIcon);
+		widget.ObserveEvent(nameof(widget.ButtonReleaseEvent)).WithLatestFrom(iconObservable).Subscribe(t => image.Pixbuf = t.Second.BigIcon);
 	}
 }
