@@ -21,7 +21,6 @@ public class StartMenuLaunchIcon : EventBox
 {
 	private readonly FreeDesktopService _freeDesktopService;
 	private readonly IDispatcher _dispatcher;
-	private readonly Subject<EventButton> _buttonRelease = new();
 	private readonly StartMenuWindow _startMenuWindow;
 	private readonly Menu _contextMenu;
 
@@ -91,11 +90,7 @@ public class StartMenuLaunchIcon : EventBox
 			.ContextMenuRequested
 			.TakeUntilDestroyed(this)
 			.WithLatestFrom(viewModelObservable)
-			.Subscribe(t => OpenContextMenu(t.First, t.Second));
-
-		_buttonRelease
-			.TakeUntilDestroyed(this)
-			.Subscribe(_ => ToggleStartMenuWindow());
+			.Subscribe(t => OpenDesktopFileContextMenu(t.First, t.Second));
 
 		displayServer
 			.StartMenuOpened
@@ -128,11 +123,29 @@ public class StartMenuLaunchIcon : EventBox
 
 		var iconObservable = Observable.Return((Assets.MenuIcon.Scale(38), Assets.MenuIcon.Scale(32))).Replay(1);
 		this.AppIcon(image, iconObservable);
-		this.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent)).Subscribe(e =>
+		this.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent)).Where(e => e.Event.Button == 1).Subscribe(e =>
 		{
-			_buttonRelease.OnNext(e.Event);
+			ToggleStartMenuWindow();
 			e.RetVal = true;
 		});
+
+		var launchIconMenu = new Menu();
+
+		viewModelObservable.Select(vm => vm.LaunchIconContextMenu).DistinctUntilChanged().Subscribe(menuItems =>
+		{
+			launchIconMenu.RemoveAllChildren();
+
+			foreach (var i in menuItems)
+			{
+				var menuItem = new Gtk.MenuItem(i.DisplayText);
+				menuItem.ObserveEvent(nameof(menuItem.Activated)).Subscribe(_ => freeDesktopService.Run(i.Executable + " " + i.Arguments));
+				launchIconMenu.Add(menuItem);
+			}
+
+			launchIconMenu.ShowAll();
+		});
+
+		this.CreateContextMenuObservable().Subscribe(_ => launchIconMenu.Popup());
 
 		viewModelObservable.Connect();
 		iconObservable.Connect();
@@ -158,7 +171,7 @@ public class StartMenuLaunchIcon : EventBox
 		_freeDesktopService.Run(desktopFile);
 	}
 
-	private void OpenContextMenu(DesktopFile desktopFile, StartMenuViewModel startMenuViewModel)
+	private void OpenDesktopFileContextMenu(DesktopFile desktopFile, StartMenuViewModel startMenuViewModel)
 	{
 		var menuItems = ContextMenuHelper.CreateDesktopFileActions(desktopFile, IconTheme.GetForScreen(Screen));
 

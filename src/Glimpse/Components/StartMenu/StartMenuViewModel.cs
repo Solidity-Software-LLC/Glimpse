@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Glimpse.Services.Configuration;
 using Glimpse.Services.FreeDesktop;
 
 namespace Glimpse.Components.StartMenu;
@@ -27,4 +28,5 @@ public class StartMenuViewModel
 	public bool DisableDragAndDrop { get; set; }
 	public ActionBarViewModel ActionBarViewModel { get; set; }
 	public ImmutableDictionary<StartMenuChips, StartMenuAppFilteringChip> Chips { get; set; }
+	public List<StartMenuLaunchIconContextMenuItem> LaunchIconContextMenu { get; set; }
 }

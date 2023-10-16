@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Fluxor;
+using Glimpse.Components.StartMenu;
 using Glimpse.Services.FreeDesktop;
 
 namespace Glimpse.State;
@@ -145,6 +146,12 @@ public class Reducers
 		}
 
 		return newState;
+	}
+
+	[ReducerMethod]
+	public static RootState ReduceStartMenuLaunchIconContextMenuAction(RootState state, UpdateStartMenuLaunchIconContextMenuAction action)
+	{
+		return state with { StartMenuLaunchIconContextMenu = action.MenuItems };
 	}
 
 	private static DesktopFile FindAppDesktopFileByName(ImmutableList<DesktopFile> desktopFiles, WindowProperties windowProperties)

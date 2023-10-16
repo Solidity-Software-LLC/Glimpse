@@ -9,6 +9,22 @@ public record ConfigurationFile
 	public string UserSettingsCommand { get; set; } = "mugshot";
 	public string VolumeCommand { get; set; } = "pavucontrol";
 	public string TaskManagerCommand { get; set; } = "xfce4-taskmanager";
+
+	public List<StartMenuLaunchIconContextMenuItem> StartMenuLaunchIconContextMenu { get; set;  } = new()
+	{
+		new () { DisplayText = "Terminal", Executable = "xfce4-terminal" },
+		new () { DisplayText = "Display", Executable = "xfce4-display-settings" },
+		new () { DisplayText = "Hardware Information", Executable = "hardinfo" },
+		new () { DisplayText = "Network Connections", Executable = "nm-connection-editor" },
+		new () { DisplayText = "Session & Startup", Executable = "xfce4-settings-manager", Arguments = "-d xfce-session-settings" },
+	};
+}
+
+public class StartMenuLaunchIconContextMenuItem
+{
+	public string DisplayText { get; set; }
+	public string Executable { get; set; }
+	public string Arguments { get; set; } = "";
 }
 
 public class StartMenuConfiguration

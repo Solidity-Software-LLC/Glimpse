@@ -39,7 +39,7 @@ public class ConfigurationService
 
 	public void Initialize()
 	{
-		var dataDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SharpPanel");
+		var dataDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "glimpse");
 		var configFile = Path.Join(dataDirectory, "config.json");
 
 		if (!Directory.Exists(dataDirectory))
@@ -62,6 +62,7 @@ public class ConfigurationService
 		_dispatcher.Dispatch(new UpdateUserSettingsCommandAction() { Command = config.UserSettingsCommand });
 		_dispatcher.Dispatch(new UpdateVolumeCommandAction() { Command = config.VolumeCommand });
 		_dispatcher.Dispatch(new UpdateTaskManagerCommandAction() { Command = config.TaskManagerCommand });
+		_dispatcher.Dispatch(new UpdateStartMenuLaunchIconContextMenuAction() { MenuItems = config.StartMenuLaunchIconContextMenu });
 
 		foreach (var filePath in config.Taskbar.PinnedLaunchers)
 		{

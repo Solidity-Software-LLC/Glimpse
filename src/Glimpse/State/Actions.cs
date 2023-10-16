@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Glimpse.Services.Configuration;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 
@@ -59,4 +60,9 @@ public class TakeScreenshotAction
 public class UpdateScreenshotsAction
 {
 	public IEnumerable<(IWindowRef Window, BitmapImage Screenshot)> Screenshots { get; set; }
+}
+
+public class UpdateStartMenuLaunchIconContextMenuAction
+{
+	public List<StartMenuLaunchIconContextMenuItem> MenuItems { get; set; }
 }

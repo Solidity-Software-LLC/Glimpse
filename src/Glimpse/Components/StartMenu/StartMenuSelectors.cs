@@ -69,7 +69,8 @@ public static class StartMenuSelectors
 		SearchText,
 		ActionBarViewModelSelector,
 		Chips,
-		(allApps, searchText, actionBarViewModel, chips) =>
+		RootStateSelectors.StartMenuLaunchIconContextMenuItems,
+		(allApps, searchText, actionBarViewModel, chips, menuItems) =>
 		{
 			return new StartMenuViewModel()
 			{
@@ -77,7 +78,8 @@ public static class StartMenuSelectors
 				SearchText = searchText,
 				DisableDragAndDrop = searchText.Length > 0,
 				ActionBarViewModel = actionBarViewModel,
-				Chips = chips
+				Chips = chips,
+				LaunchIconContextMenu = menuItems
 			};
 		});
 }

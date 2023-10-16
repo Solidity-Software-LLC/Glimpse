@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Fluxor.Selectors;
+using Glimpse.Services.Configuration;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 
@@ -24,4 +25,5 @@ public static class RootStateSelectors
 	public static ISelector<ImmutableList<TaskGroup>> Groups => SelectorFactory.CreateSelector(RootState, s => s.Groups);
 	public static ISelector<ImmutableDictionary<IWindowRef, BitmapImage>> Screenshots => SelectorFactory.CreateSelector(RootState, s => s.Screenshots);
 	public static ISelector<string> TaskManagerCommand => SelectorFactory.CreateSelector(TaskbarState, s => s.TaskManagerCommand);
+	public static ISelector<List<StartMenuLaunchIconContextMenuItem>> StartMenuLaunchIconContextMenuItems => SelectorFactory.CreateSelector(RootState, s => s.StartMenuLaunchIconContextMenu);
 }

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Fluxor;
+using Glimpse.Services.Configuration;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 
@@ -14,6 +15,7 @@ public record RootState
 	public string VolumeCommand { get; init; }
 	public ImmutableDictionary<IWindowRef, BitmapImage> Screenshots { get; set; } = ImmutableDictionary<IWindowRef, BitmapImage>.Empty;
 	public ImmutableList<TaskGroup> Groups { get; set; } = ImmutableList<TaskGroup>.Empty;
+	public List<StartMenuLaunchIconContextMenuItem> StartMenuLaunchIconContextMenu { get; set; } = new();
 
 	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
 }
