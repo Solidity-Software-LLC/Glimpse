@@ -14,6 +14,8 @@ public record ConfigurationFile
 	{
 		new () { DisplayText = "Terminal", Executable = "xfce4-terminal" },
 		new () { DisplayText = "Display", Executable = "xfce4-display-settings" },
+		new () { DisplayText = "Gaming Mouse Settings", Executable = "piper" },
+		new () { DisplayText = "CPU Power Mode", Executable = "cpupower-gui" },
 		new () { DisplayText = "Hardware Information", Executable = "hardinfo" },
 		new () { DisplayText = "Network Connections", Executable = "nm-connection-editor" },
 		new () { DisplayText = "Session & Startup", Executable = "xfce4-settings-manager", Arguments = "-d xfce-session-settings" },
