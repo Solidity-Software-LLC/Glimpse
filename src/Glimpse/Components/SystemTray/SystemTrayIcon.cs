@@ -48,6 +48,7 @@ public class SystemTrayIcon : Button
 		var iconTheme = IconTheme.GetForScreen(Screen);
 
 		var iconThemeChanged = iconTheme.ObserveChange()
+			.TakeUntilDestroyed(this)
 			.WithLatestFrom(propertiesObservable)
 			.Select(t => t.Second);
 

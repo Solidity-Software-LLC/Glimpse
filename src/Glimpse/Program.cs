@@ -52,6 +52,7 @@ public static class Program
 				{
 					var app = new Application("org.solidity-software-llc.glimpse", ApplicationFlags.None);
 					app.AddAction(new SimpleAction("OpenStartMenu", null));
+					app.AddAction(new SimpleAction("LoadPanels", null));
 					return app;
 				}).SingleInstance();
 			}))

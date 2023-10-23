@@ -13,12 +13,8 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 {
 	private readonly TaskbarWindowPicker _taskbarWindowPicker;
 	private TaskbarGroupViewModel _currentViewModel;
-	private readonly Subject<bool> _contextMenuObservable = new();
-	private readonly Subject<EventButton> _buttonRelease = new();
 
 	public IObservable<Pixbuf> IconWhileDragging { get; }
-	public IObservable<bool> ContextMenuOpened => _contextMenuObservable;
-	public IObservable<EventButton> ButtonRelease => _buttonRelease;
 
 	public TaskbarGroupIcon(IObservable<TaskbarGroupViewModel> viewModel, TaskbarWindowPicker taskbarWindowPicker)
 	{
@@ -42,7 +38,7 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 
 		var iconObservable = viewModel
 			.DistinctUntilChanged(x => x.Tasks.Count)
-			.Merge(iconTheme.ObserveChange().WithLatestFrom(viewModel).Select(t => t.Second))
+			.Merge(iconTheme.ObserveChange().TakeUntilDestroyed(this).WithLatestFrom(viewModel).Select(t => t.Second))
 			.TakeUntilDestroyed(this)
 			.CombineLatest(this.ObserveEvent<SizeAllocatedArgs>(nameof(SizeAllocated)).DistinctUntilChanged(a => a.Allocation.Width))
 			.Select(t => (iconTheme.LoadIcon(t.First, 26), iconTheme.LoadIcon(t.First, 20)))
@@ -50,12 +46,7 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 			.Publish();
 
 		this.AppIcon(image, iconObservable);
-		this.CreateContextMenuObservable().Subscribe(_ => _contextMenuObservable.OnNext(true));
-		this.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent)).Subscribe(e =>
-		{
-			_buttonRelease.OnNext(e.Event);
-			e.RetVal = true;
-		});
+		this.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent)).Subscribe(e => e.RetVal = true);
 		IconWhileDragging = iconObservable.Select(t => t.Item1);
 		iconObservable.Connect();
 	}

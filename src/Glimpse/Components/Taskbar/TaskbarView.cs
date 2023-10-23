@@ -36,10 +36,11 @@ public class TaskbarView : Box
 				.DistinctUntilChanged()
 				.Subscribe(p => groupIcon.Data[ForEachDataKeys.Uri] = "file:///" + p);
 
-			Observable.FromEventPattern(windowPicker, nameof(windowPicker.VisibilityNotifyEvent))
+			windowPicker.ObserveEvent(nameof(windowPicker.VisibilityNotifyEvent))
 				.Subscribe(_ => windowPicker.CenterAbove(groupIcon));
 
 			windowPicker.PreviewWindowClicked
+				.TakeUntilDestroyed(this)
 				.Subscribe(windowId =>
 				{
 					windowPicker.ClosePopup();
@@ -47,15 +48,19 @@ public class TaskbarView : Box
 				});
 
 			windowPicker.CloseWindow
+				.TakeUntilDestroyed(this)
 				.WithLatestFrom(viewModelObservable.Select(vm => vm.Tasks.Count).DistinctUntilChanged())
 				.Where(t => t.Second == 1)
 				.Subscribe(_ => windowPicker.ClosePopup());
 
 			windowPicker.CloseWindow
+				.TakeUntilDestroyed(this)
 				.Subscribe(displayServer.CloseWindow);
 
 			var cancelOpen = groupIcon.ObserveEvent(nameof(LeaveNotifyEvent))
-				.Merge(groupIcon.ObserveEvent(nameof(Unmapped)));
+				.Merge(groupIcon.ObserveEvent(nameof(Unmapped)))
+				.Merge(Observable.FromEventPattern(this, nameof(Destroyed)))
+				.Take(1);
 
 			groupIcon.ObserveEvent<EnterNotifyEventArgs>(nameof(EnterNotifyEvent))
 				.WithLatestFrom(replayLatestViewModelObservable)
@@ -78,25 +83,25 @@ public class TaskbarView : Box
 				.Where(_ => !windowPicker.IsPointerInside())
 				.Subscribe(_ => windowPicker.ClosePopup());
 
-			groupIcon.ContextMenuOpened
+			groupIcon.CreateContextMenuObservable()
 				.Subscribe(_ => contextMenu.Popup());
 
 			groupIcon.ObserveEvent<ButtonPressEventArgs>(nameof(groupIcon.ButtonPressEvent))
 				.Subscribe(_ => windowPicker.ClosePopup());
 
-			groupIcon.ButtonRelease
+			groupIcon.ObserveButtonRelease()
 				.WithLatestFrom(viewModelObservable)
-				.Where(t => t.First.Button == 1 && t.Second.Tasks.Count == 0)
+				.Where(t => t.First.Event.Button == 1 && t.Second.Tasks.Count == 0)
 				.Subscribe(t => freeDesktopService.Run(t.Second.DesktopFile));
 
-			groupIcon.ButtonRelease
+			groupIcon.ObserveButtonRelease()
 				.WithLatestFrom(viewModelObservable)
-				.Where(t => t.First.Button == 1 && t.Second.Tasks.Count == 1)
+				.Where(t => t.First.Event.Button == 1 && t.Second.Tasks.Count == 1)
 				.Subscribe(t => displayServer.ToggleWindowVisibility(t.Second.Tasks.First().WindowRef));
 
-			groupIcon.ButtonRelease
+			groupIcon.ObserveButtonRelease()
 				.WithLatestFrom(viewModelObservable)
-				.Where(t => t.First.Button == 1 && t.Second.Tasks.Count > 1 && !windowPicker.Visible)
+				.Where(t => t.First.Event.Button == 1 && t.Second.Tasks.Count > 1 && !windowPicker.Visible)
 				.Subscribe(t =>
 				{
 					dispatcher.Dispatch(new TakeScreenshotAction() { Windows = t.Second.Tasks.Select(x => x.WindowRef).ToList() });
@@ -104,18 +109,22 @@ public class TaskbarView : Box
 				});
 
 			contextMenu.WindowAction
+				.TakeUntilDestroyed(this)
 				.WithLatestFrom(viewModelObservable)
 				.Subscribe(t => t.Second.Tasks.ForEach(task => displayServer.CloseWindow(task.WindowRef)));
 
 			contextMenu.DesktopFileAction
+				.TakeUntilDestroyed(this)
 				.WithLatestFrom(viewModelObservable)
 				.Subscribe(t => freeDesktopService.Run(t.First));
 
 			contextMenu.Pin
+				.TakeUntilDestroyed(this)
 				.WithLatestFrom(viewModelObservable)
 				.Subscribe(t => dispatcher.Dispatch(new ToggleTaskbarPinningAction() { DesktopFile = t.Second.DesktopFile }));
 
 			contextMenu.Launch
+				.TakeUntilDestroyed(this)
 				.WithLatestFrom(viewModelObservable)
 				.Subscribe(t => freeDesktopService.Run(t.Second.DesktopFile));
 
@@ -134,8 +143,8 @@ public class TaskbarView : Box
 		forEachGroup.SelectionMode = SelectionMode.None;
 		forEachGroup.Expand = false;
 		forEachGroup.AddClass("taskbar__container");
-		forEachGroup.OrderingChanged.Subscribe(t => dispatcher.Dispatch(new UpdateGroupOrderingAction() { GroupId = t.Item1, NewIndex = t.Item2 }));
-		forEachGroup.DragBeginObservable.Subscribe(icon => icon.CloseWindowPicker());
+		forEachGroup.OrderingChanged.TakeUntilDestroyed(this).Subscribe(t => dispatcher.Dispatch(new UpdateGroupOrderingAction() { GroupId = t.Item1, NewIndex = t.Item2 }));
+		forEachGroup.DragBeginObservable.TakeUntilDestroyed(this).Subscribe(icon => icon.CloseWindowPicker());
 
 		Add(forEachGroup);
 

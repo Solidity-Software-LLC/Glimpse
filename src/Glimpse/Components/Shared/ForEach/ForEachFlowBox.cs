@@ -65,11 +65,13 @@ public class ForEachFlowBox<TViewModel, TWidget> : FlowBox where TWidget : Widge
 			DisableDragAndDrop.Subscribe(b => ToggleDragSource(flowBoxChild, b));
 
 			itemObservable
+				.TakeUntilDestroyed(this)
 				.Select(i => i.Item1)
 				.DistinctUntilChanged()
 				.Subscribe(i => flowBoxChild.Data[ForEachDataKeys.Model] = i);
 
 			itemObservable
+				.TakeUntilDestroyed(this)
 				.Select(i => i.Item2)
 				.DistinctUntilChanged()
 				.Subscribe(i => flowBoxChild.Data[ForEachDataKeys.Index] = i, _ => { }, () => Remove(flowBoxChild));
@@ -92,9 +94,9 @@ public class ForEachFlowBox<TViewModel, TWidget> : FlowBox where TWidget : Widge
 		base.Dispose(disposing);
 	}
 
-	protected override void OnShown()
+	protected override void OnShowAll()
 	{
-		base.OnShown();
+		base.OnShowAll();
 		_draggingPlaceholderWidget.Visible = false;
 	}
 

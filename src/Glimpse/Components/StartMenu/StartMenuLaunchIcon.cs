@@ -1,9 +1,7 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using Fluxor;
 using Fluxor.Selectors;
-using Gdk;
 using GLib;
 using Glimpse.Components.Shared;
 using Glimpse.Extensions.Fluxor;
@@ -82,6 +80,7 @@ public class StartMenuLaunchIcon : EventBox
 
 		displayServer
 			.FocusChanged
+			.TakeUntilDestroyed(this)
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
 			.Where(windowRef => _startMenuWindow.Visible && !_contextMenu.Visible && windowRef.Id != startMenuWindowId)
 			.Subscribe(_ => _startMenuWindow.ClosePopup());
@@ -94,6 +93,7 @@ public class StartMenuLaunchIcon : EventBox
 
 		displayServer
 			.StartMenuOpened
+			.TakeUntilDestroyed(this)
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
 			.Subscribe(_ =>
 			{
@@ -202,5 +202,12 @@ public class StartMenuLaunchIcon : EventBox
 		_contextMenu.Add(pinTaskbar);
 		_contextMenu.ShowAll();
 		_contextMenu.Popup();
+	}
+
+	public override void Destroy()
+	{
+		_startMenuWindow.Close();
+		_startMenuWindow.Dispose();
+		base.Destroy();
 	}
 }

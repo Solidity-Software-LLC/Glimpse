@@ -8,6 +8,7 @@ using Glimpse.Extensions.Gtk;
 using Gtk;
 using Microsoft.Extensions.Hosting;
 using Application = Gtk.Application;
+using Monitor = Gdk.Monitor;
 using Task = System.Threading.Tasks.Task;
 
 namespace Glimpse;
@@ -49,12 +50,19 @@ public class GtkApplicationHostedService : IHostedService
 				}
 
 				var display = Display.Default;
+				var screen = display.DefaultScreen;
 				var screenCss = new CssProvider();
 				screenCss.LoadFromData(allCss.ToString());
-				StyleContext.AddProviderForScreen(display.DefaultScreen, screenCss, uint.MaxValue);
+				StyleContext.AddProviderForScreen(screen, screenCss, uint.MaxValue);
 
-				Observable.FromEventPattern<MonitorAddedArgs>(display, nameof(display.MonitorAdded)).Subscribe(_ => LoadPanels(display));
-				Observable.FromEventPattern<MonitorRemovedArgs>(display, nameof(display.MonitorRemoved)).Subscribe(_ => LoadPanels(display));
+				var action = (SimpleAction) _application.LookupAction("LoadPanels");
+				Observable.FromEventPattern(action, nameof(action.Activated)).ObserveOn(new GLibSynchronizationContext()).Select(_ => true).Subscribe(_ =>
+				{
+					LoadPanels(display);
+				});
+
+				Observable.FromEventPattern<EventArgs>(screen, nameof(screen.SizeChanged)).Subscribe(_ => LoadPanels(display));
+				Observable.FromEventPattern<EventArgs>(screen, nameof(screen.MonitorsChanged)).Subscribe(_ => LoadPanels(display));
 				LoadPanels(display);
 				Application.Run();
 			}
@@ -67,22 +75,22 @@ public class GtkApplicationHostedService : IHostedService
 		return Task.CompletedTask;
 	}
 
+	private List<Panel> _windows = new();
+
 	private void LoadPanels(Display display)
 	{
-		var windows = _application.Windows.ToList();
-		windows.ForEach(_application.RemoveWindow);
+		_windows.ForEach(w =>
+		{
+			w.Close();
+			w.Dispose();
+		});
 
-		var panels = display
+		_windows = display
 			.GetMonitors()
-			.Select(m =>
-			{
-				var panel = _serviceProvider.Resolve<Panel>();
-				panel.DockToBottom(m);
-				return panel;
-			})
+			.Select(m => _serviceProvider.Resolve<Panel>(new TypedParameter(typeof(Monitor), m)))
 			.ToList();
 
-		panels.ForEach(_application.AddWindow);
+		_windows.ForEach(w => w.ShowAll());
 	}
 
 	public Task StopAsync(CancellationToken cancellationToken)

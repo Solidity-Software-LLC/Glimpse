@@ -14,6 +14,7 @@ using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
 using Gtk;
 using DateTime = System.DateTime;
+using Menu = Gtk.Menu;
 using Monitor = Gdk.Monitor;
 using Task = System.Threading.Tasks.Task;
 using Window = Gtk.Window;
@@ -23,9 +24,10 @@ namespace Glimpse.Components;
 
 public class Panel : Window
 {
+	private readonly Menu _menu;
 	private const string ClockFormat = "h:mm tt\ndddd\nM/d/yyyy";
 
-	public Panel(SystemTrayBox systemTrayBox, TaskbarView taskbarView, StartMenuLaunchIcon startMenuLaunchIcon, IStore store, FreeDesktopService freeDesktopService) : base(WindowType.Toplevel)
+	public Panel(SystemTrayBox systemTrayBox, TaskbarView taskbarView, StartMenuLaunchIcon startMenuLaunchIcon, IStore store, FreeDesktopService freeDesktopService, Monitor monitor) : base(WindowType.Toplevel)
 	{
 		Decorated = false;
 		Resizable = false;
@@ -33,7 +35,7 @@ public class Panel : Window
 		AppPaintable = true;
 		Visual = Screen.RgbaVisual;
 
-		ButtonReleaseEvent += (_, _) => Window.Focus(0);
+		this.ObserveButtonRelease().Subscribe(_ => Window.Focus(0));
 
 		var centerBox = new Box(Orientation.Horizontal, 0);
 		centerBox.PackStart(startMenuLaunchIcon, false, false, 0);
@@ -60,31 +62,42 @@ public class Panel : Window
 		ShowAll();
 
 		store.SubscribeSelector(RootStateSelectors.Groups).ToObservable()
+			.TakeUntilDestroyed(this)
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
 			.Select(g => g.Count)
 			.DistinctUntilChanged()
-			.TakeUntilDestroyed(this)
-			.Subscribe(numGroups =>
-			{
-				centerBox.MarginStart = ComputeCenterBoxMarginLeft(numGroups);
-			});
+			.Subscribe(numGroups => { centerBox.MarginStart = ComputeCenterBoxMarginLeft(numGroups); });
 
-		StartClockAsync(clock);
+		var clockCancellation = new CancellationTokenSource();
+
+		Observable.FromEventPattern(this, nameof(Destroyed))
+			.Take(1)
+			.Subscribe(_ => clockCancellation.Cancel());
+
+		StartClockAsync(clock, clockCancellation.Token);
 
 		var taskManagerObs = store
 			.SubscribeSelector(RootStateSelectors.TaskManagerCommand)
 			.ToObservable()
+			.TakeUntilDestroyed(this)
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));
 
 		var taskManagerMenuItem = ContextMenuHelper.CreateMenuItem("Task Manager", Observable.Return(Assets.TaskManager.Scale(ThemeConstants.MenuItemIconSize)));
 		taskManagerMenuItem.ObserveButtonRelease().WithLatestFrom(taskManagerObs).Subscribe(t => freeDesktopService.Run(t.Second));
 
-		var menu = new Gtk.Menu();
-		menu.ReserveToggleSize = false;
-		menu.Add(taskManagerMenuItem);
-		menu.ShowAll();
+		_menu = new Menu();
+		_menu.ReserveToggleSize = false;
+		_menu.Add(taskManagerMenuItem);
+		_menu.ShowAll();
 
-		this.CreateContextMenuObservable().Subscribe(t => menu.Popup());
+		this.CreateContextMenuObservable().Subscribe(t => _menu.Popup());
+		DockToBottom(monitor);
+	}
+
+	protected override void OnDestroyed()
+	{
+		_menu.Destroy();
+		base.OnDestroyed();
 	}
 
 	private int ComputeCenterBoxMarginLeft(int numGroups)
@@ -100,35 +113,38 @@ public class Panel : Window
 		return clock;
 	}
 
-	private async Task StartClockAsync(Label clock)
+	private async Task StartClockAsync(Label clock, CancellationToken cancellationToken)
 	{
 		await Task.Yield();
 
-		var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+		using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
 
-		while (await timer.WaitForNextTickAsync())
+		while (await timer.WaitForNextTickAsync(cancellationToken))
 		{
-			var newText = DateTime.Now.ToString(ClockFormat);
-
-			if (clock.Text != newText)
+			if (!cancellationToken.IsCancellationRequested)
 			{
-				clock.Text = newText;
-				clock.QueueDraw();
+				var newText = DateTime.Now.ToString(ClockFormat);
+
+				if (clock.Text != newText)
+				{
+					clock.Text = newText;
+					clock.QueueDraw();
+				}
 			}
 		}
 	}
 
-	public void DockToBottom(Monitor monitor)
+	private void DockToBottom(Monitor monitor)
 	{
 		var monitorDimensions = monitor.Geometry;
 		SetSizeRequest(monitorDimensions.Width, AllocatedHeight);
 		Move(monitor.Workarea.Left, monitorDimensions.Height - AllocatedHeight);
-		ReserveSpace();
+		ReserveSpace(monitor);
 	}
 
-	private void ReserveSpace()
+	private void ReserveSpace(Monitor monitor)
 	{
-		var reservedSpaceLong = new long[] { 0, 0, 0, AllocatedHeight, 0, 0, 0, 0, 0, 0, 0, Window.Display.DefaultScreen.RootWindow.Width }.SelectMany(BitConverter.GetBytes).ToArray();
+		var reservedSpaceLong = new long[] { 0, 0, 0, AllocatedHeight, 0, 0, 0, 0, 0, 0, monitor.Workarea.Left, monitor.Workarea.Left + monitor.Geometry.Width }.SelectMany(BitConverter.GetBytes).ToArray();
 		Property.Change(Window, Atom.Intern("_NET_WM_STRUT_PARTIAL", false), Atom.Intern("CARDINAL", false), 32, PropMode.Replace, reservedSpaceLong, 12);
 	}
 }

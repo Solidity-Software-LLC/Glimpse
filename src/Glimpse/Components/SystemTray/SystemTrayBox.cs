@@ -29,24 +29,24 @@ public class SystemTrayBox : Box
 
 		PackEnd(volumeButton, false, false, 0);
 
-		trayState.ToObservable().ObserveOn(new GLibSynchronizationContext()).Select(x => x.Items).DistinctUntilChanged().UnbundleMany(i => i.Key).RemoveIndex().Subscribe(obs =>
+		trayState.ToObservable().TakeUntilDestroyed(this).ObserveOn(new GLibSynchronizationContext()).Select(x => x.Items).DistinctUntilChanged().UnbundleMany(i => i.Key).RemoveIndex().Subscribe(obs =>
 		{
-			var itemObservable = obs.Select(s => s.Value).DistinctUntilChanged();
+			var itemObservable = obs.TakeUntilDestroyed(this).Select(s => s.Value).DistinctUntilChanged();
 			var systemTrayIcon = new SystemTrayIcon(itemObservable);
 			PackStart(systemTrayIcon, false, false, 0);
 			ShowAll();
 
-			systemTrayIcon.MenuItemActivated.WithLatestFrom(itemObservable).Subscribe(t =>
+			systemTrayIcon.MenuItemActivated.TakeUntilDestroyed(this).WithLatestFrom(itemObservable).Subscribe(t =>
 			{
 				dispatcher.Dispatch(new ActivateMenuItemAction() { DbusObjectDescription = t.Second.DbusMenuDescription, MenuItemId = t.First });
 			});
 
-			systemTrayIcon.ApplicationActivated.WithLatestFrom(itemObservable).Subscribe(t =>
+			systemTrayIcon.ApplicationActivated.TakeUntilDestroyed(this).WithLatestFrom(itemObservable).Subscribe(t =>
 			{
 				dispatcher.Dispatch(new ActivateApplicationAction() { DbusObjectDescription = t.Second.StatusNotifierItemDescription, X = t.First.Item1, Y = t.First.Item2 });
 			});
 
-			itemObservable.Subscribe(_ => { }, _ => { }, () => Remove(systemTrayIcon));
+			itemObservable.Subscribe(_ => { }, _ => { }, () => systemTrayIcon.Destroy());
 		});
 	}
 }
