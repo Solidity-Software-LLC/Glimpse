@@ -112,16 +112,20 @@ public static class Extensions
 		return (double)image.Width / image.Height;
 	}
 
-	public static Pixbuf ScaleToFit(this BitmapImage image, int maxHeight, int maxWidth)
+	public static double AspectRatio(this Pixbuf image)
 	{
-		var imageBuffer = image.ToPixbuf();
-		var scaledWidth = maxHeight * image.AspectRatio();
+		return (double)image.Width / image.Height;
+	}
+
+	public static Pixbuf ScaleToFit(this Pixbuf imageBuffer, int maxHeight, int maxWidth)
+	{
+		var scaledWidth = maxHeight * imageBuffer.AspectRatio();
 		var scaledHeight = (double) maxHeight;
 
 		if (scaledWidth > maxWidth)
 		{
 			scaledWidth = maxWidth;
-			scaledHeight /= image.AspectRatio();
+			scaledHeight /= imageBuffer.AspectRatio();
 		}
 
 		return imageBuffer.ScaleSimple((int) scaledWidth, (int) scaledHeight, InterpType.Bilinear);

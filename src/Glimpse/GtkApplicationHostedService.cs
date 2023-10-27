@@ -1,10 +1,14 @@
 using System.Reactive.Linq;
 using System.Text;
 using Autofac;
+using Fluxor;
 using Gdk;
 using GLib;
 using Glimpse.Components;
+using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
+using Glimpse.Extensions.Reactive;
+using Glimpse.State;
 using Gtk;
 using Microsoft.Extensions.Hosting;
 using Application = Gtk.Application;
@@ -17,11 +21,15 @@ public class GtkApplicationHostedService : IHostedService
 {
 	private readonly ILifetimeScope _serviceProvider;
 	private readonly Application _application;
+	private readonly IState<RootState> _rootState;
+	private readonly IDispatcher _dispatcher;
 
-	public GtkApplicationHostedService(ILifetimeScope serviceProvider, Application application)
+	public GtkApplicationHostedService(ILifetimeScope serviceProvider, Application application, IState<RootState> rootState, IDispatcher dispatcher)
 	{
 		_serviceProvider = serviceProvider;
 		_application = application;
+		_rootState = rootState;
+		_dispatcher = dispatcher;
 	}
 
 	public Task StartAsync(CancellationToken cancellationToken)
@@ -55,14 +63,35 @@ public class GtkApplicationHostedService : IHostedService
 				screenCss.LoadFromData(allCss.ToString());
 				StyleContext.AddProviderForScreen(screen, screenCss, uint.MaxValue);
 
-				var action = (SimpleAction) _application.LookupAction("LoadPanels");
-				Observable.FromEventPattern(action, nameof(action.Activated)).ObserveOn(new GLibSynchronizationContext()).Select(_ => true).Subscribe(_ =>
+				var iconTheme = IconTheme.GetForScreen(screen);
+				var iconThemeChangedObs = Observable.FromEventPattern(iconTheme, nameof(iconTheme.Changed));
+				var desktopFilesObs = _rootState.ToObservable().Select(r => r.DesktopFiles).DistinctUntilChanged();
+
+				desktopFilesObs.Merge(iconThemeChangedObs.WithLatestFrom(desktopFilesObs).Select(t => t.Second)).Subscribe(desktopFiles =>
 				{
-					LoadPanels(display);
+					var icons = desktopFiles
+						.SelectMany(f => f.Actions.Select(a => a.IconName).Concat(new[] { f.IconName }))
+						.Where(i => !string.IsNullOrEmpty(i))
+						.Distinct()
+						.ToDictionary(n => n, n => iconTheme.LoadIcon(n, 512));
+
+					_dispatcher.Dispatch(new AddOrUpdateNamedIcons() { Icons = icons });
 				});
 
-				Observable.FromEventPattern<EventArgs>(screen, nameof(screen.SizeChanged)).Subscribe(_ => LoadPanels(display));
-				Observable.FromEventPattern<EventArgs>(screen, nameof(screen.MonitorsChanged)).Subscribe(_ => LoadPanels(display));
+				// Handle complete
+				_rootState.ToObservable().Select(r => r.Windows.Values).DistinctUntilChanged().UnbundleMany(g => g.WindowRef.Id).Subscribe(windowObs =>
+				{
+					windowObs.Select(g => g.Item1.IconName).DistinctUntilChanged().Subscribe(iconName =>
+					{
+						if (iconName == null) return;
+						_dispatcher.Dispatch(new AddOrUpdateNamedIcons() { Icons = new Dictionary<string, Pixbuf>() { {iconName, iconTheme.LoadIcon(iconName, 512) } } });
+					});
+				});
+
+				var action = (SimpleAction) _application.LookupAction("LoadPanels");
+				Observable.FromEventPattern(action, nameof(action.Activated)).Subscribe(_ => LoadPanels(display));
+				Observable.FromEventPattern(screen, nameof(screen.SizeChanged)).Subscribe(_ => LoadPanels(display));
+				Observable.FromEventPattern(screen, nameof(screen.MonitorsChanged)).Subscribe(_ => LoadPanels(display));
 				LoadPanels(display);
 				Application.Run();
 			}

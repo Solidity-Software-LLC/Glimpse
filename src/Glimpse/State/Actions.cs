@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Gdk;
 using Glimpse.Services.Configuration;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
@@ -65,4 +66,9 @@ public class UpdateScreenshotsAction
 public class UpdateStartMenuLaunchIconContextMenuAction
 {
 	public List<StartMenuLaunchIconContextMenuItem> MenuItems { get; set; }
+}
+
+public class AddOrUpdateNamedIcons
+{
+	public Dictionary<string, Pixbuf> Icons { get; set; }
 }

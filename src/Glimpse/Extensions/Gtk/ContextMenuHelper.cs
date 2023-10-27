@@ -1,4 +1,3 @@
-using System.Reactive.Linq;
 using Gdk;
 using Glimpse.Components.Shared;
 using Glimpse.Services.FreeDesktop;
@@ -8,7 +7,7 @@ namespace Glimpse.Extensions.Gtk;
 
 public static class ContextMenuHelper
 {
-	public static List<MenuItem> CreateDesktopFileActions(DesktopFile desktopFile, IconTheme iconTheme)
+	public static List<MenuItem> CreateDesktopFileActions(DesktopFile desktopFile, Dictionary<string, Pixbuf> icons)
 	{
 		var results = new List<MenuItem>();
 
@@ -26,8 +25,7 @@ public static class ContextMenuHelper
 
 			foreach (var action in desktopFile.Actions)
 			{
-				var iconObservable = Observable.Return(iconTheme.LoadIcon(action.IconName, ThemeConstants.MenuItemIconSize)).Concat(iconTheme.ObserveChange().Select(t => t.LoadIcon(action.IconName, ThemeConstants.MenuItemIconSize)));
-				var menuItem = CreateMenuItem(action.ActionName, iconObservable);
+				var menuItem = CreateMenuItem(action.ActionName, icons[action.ActionName].Scale(ThemeConstants.MenuItemIconSize));
 				menuItem.Data.Add("DesktopFileAction", action);
 				results.Add(menuItem);
 			}
@@ -36,9 +34,10 @@ public static class ContextMenuHelper
 		return results;
 	}
 
-	public static MenuItem CreateMenuItem(string label, IObservable<Pixbuf> iconObservable)
+	public static MenuItem CreateMenuItem(string label, Pixbuf icon)
 	{
 		var image = new Image();
+		image.Pixbuf = icon;
 
 		var box = new Box(Orientation.Horizontal, 6);
 		box.Add(image);
@@ -46,8 +45,6 @@ public static class ContextMenuHelper
 
 		var menuItem = new MenuItem();
 		menuItem.Add(box);
-
-		iconObservable.TakeUntilDestroyed(menuItem).Subscribe(icon => image.Pixbuf = icon);
 
 		return menuItem;
 	}

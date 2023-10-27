@@ -38,16 +38,17 @@ public class StartMenuAppIcon : EventBox, IForEachDraggable
 		ContextMenuRequested = this.CreateContextMenuObservable()
 			.TakeUntilDestroyed(this)
 			.WithLatestFrom(viewModelObservable)
-			.Select(t => t.Second.DesktopFile);
+			.Select(t => t.Second);
 
 		viewModelObservable
 			.TakeUntilDestroyed(this)
 			.Subscribe(f => name.Text = f.DesktopFile.Name);
 
-		var iconNameObs = viewModelObservable.Select(vm => vm.DesktopFile.IconName).DistinctUntilChanged();
-		var iconTheme = IconTheme.GetForScreen(Screen);
-		var iconThemeChanged = iconTheme.ObserveChange().WithLatestFrom(viewModelObservable).Select(t => t.Second.DesktopFile.IconName);
-		var iconObservable = iconNameObs.Merge(iconThemeChanged).Select(f => (iconTheme.LoadIcon(f, 36), iconTheme.LoadIcon(f, 30))).Replay(1);
+		var iconObservable = viewModelObservable
+			.Select(vm => vm.Icon)
+			.DistinctUntilChanged()
+			.Select(i => (i.Scale(36), i.Scale(30)))
+			.Replay(1);
 
 		this.AppIcon(image, iconObservable);
 		iconObservable.Connect();
@@ -55,6 +56,6 @@ public class StartMenuAppIcon : EventBox, IForEachDraggable
 		IconWhileDragging = iconObservable.Select(t => t.Item1);
 	}
 
-	public IObservable<DesktopFile> ContextMenuRequested { get; }
+	public IObservable<StartMenuAppViewModel> ContextMenuRequested { get; }
 	public IObservable<Pixbuf> IconWhileDragging { get; }
 }

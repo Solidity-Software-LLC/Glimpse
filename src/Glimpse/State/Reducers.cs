@@ -92,27 +92,30 @@ public class Reducers
 	[ReducerMethod]
 	public static RootState ReduceUpdateWindowAction(RootState state, UpdateWindowAction action)
 	{
-		var group = state.Groups.FirstOrDefault(g => g.Windows.Any(w => w.WindowRef.Id == action.WindowProperties.WindowRef.Id));
+		var newState = state;
+		newState = newState with { Windows = newState.Windows.SetItem(action.WindowProperties.WindowRef, action.WindowProperties) };
+
+		var group = newState.Groups.FirstOrDefault(g => g.Windows.Any(w => w.WindowRef.Id == action.WindowProperties.WindowRef.Id));
 
 		if (group != null)
 		{
 			var window = group.Windows.First(w => w.WindowRef.Id == action.WindowProperties.WindowRef.Id);
 			var updatedGroup  = group with { Windows = group.Windows.Replace(window, action.WindowProperties) };
-			return state with { Groups = state.Groups.Replace(group, updatedGroup) };
+			return newState with { Groups = newState.Groups.Replace(group, updatedGroup) };
 		}
 
-		var desktopFile = FindAppDesktopFileByName(state.DesktopFiles, action.WindowProperties)
+		var desktopFile = FindAppDesktopFileByName(newState.DesktopFiles, action.WindowProperties)
 			?? new() { Name = action.WindowProperties.Title, IniFile = new () { FilePath = action.WindowProperties.ClassHintName } };
 
-		group = state.Groups.FirstOrDefault(g => g.Id == desktopFile.IniFile.FilePath);
+		group = newState.Groups.FirstOrDefault(g => g.Id == desktopFile.IniFile.FilePath);
 
 		if (group == null)
 		{
 			var newGroup = new TaskGroup() { Id = desktopFile.IniFile.FilePath, Windows = ImmutableList<WindowProperties>.Empty.Add(action.WindowProperties), DesktopFile = desktopFile};
-			return state with { Groups = state.Groups.Add(newGroup) };
+			return newState with { Groups = newState.Groups.Add(newGroup) };
 		}
 
-		return state with { Groups = state.Groups.Replace(group, group with { Windows = group.Windows.Add(action.WindowProperties) }) };
+		return newState with { Groups = newState.Groups.Replace(group, group with { Windows = group.Windows.Add(action.WindowProperties) }) };
 	}
 
 	[ReducerMethod]
@@ -121,6 +124,14 @@ public class Reducers
 		var updated = state.Screenshots;
 		foreach (var w in action.Screenshots) updated = updated.SetItem(w.Window, w.Screenshot);
 		return state with { Screenshots = updated };
+	}
+
+	[ReducerMethod]
+	public static RootState ReduceUpdateIconAction(RootState state, AddOrUpdateNamedIcons action)
+	{
+		var newState = state;
+		foreach (var kv in action.Icons) newState = newState with { NamedIcons = newState.NamedIcons.SetItem(kv.Key, kv.Value) };
+		return newState;
 	}
 
 	[ReducerMethod]

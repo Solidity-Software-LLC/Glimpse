@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Fluxor.Selectors;
+using Gdk;
 using Glimpse.Services.Configuration;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
@@ -12,6 +13,9 @@ public static class RootStateSelectors
 	public static ISelector<TaskbarState> TaskbarState => SelectorFactory.CreateSelector(RootState, s => s.TaskbarState);
 	public static ISelector<ImmutableList<DesktopFile>> PinnedTaskbarApps => SelectorFactory.CreateSelector(TaskbarState, s => s.PinnedDesktopFiles);
 	public static ISelector<ImmutableList<DesktopFile>> DesktopFiles => SelectorFactory.CreateSelector(RootState, s => s.DesktopFiles);
+	public static MemoizedSelector<RootState, ImmutableDictionary<string, Pixbuf>> NamedIcons => SelectorFactory.CreateSelector(RootState, s => s.NamedIcons);
+	public static MemoizedSelector<RootState, ImmutableDictionary<IWindowRef, WindowProperties>> Windows => SelectorFactory.CreateSelector(RootState, s => s.Windows);
+
 
 	public static ISelector<ImmutableList<DesktopFile>> AllDesktopFiles =>
 		SelectorFactory.CreateSelector(DesktopFiles, s => s

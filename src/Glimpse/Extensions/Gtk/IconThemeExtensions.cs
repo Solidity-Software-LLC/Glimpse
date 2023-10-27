@@ -1,8 +1,7 @@
 using System.Reactive.Linq;
 using Gdk;
-using Glimpse.Components.Taskbar;
+using Glimpse.Components;
 using Glimpse.Services.DBus;
-using Glimpse.State;
 using Gtk;
 
 namespace Glimpse.Extensions.Gtk;
@@ -14,16 +13,9 @@ public static class IconThemeExtensions
 		return Observable.FromEventPattern(iconTheme, nameof(iconTheme.Changed)).Select(_ => iconTheme);
 	}
 
-	public static Pixbuf LoadIcon(this IconTheme iconTheme, TaskState task, int size)
-	{
-		return iconTheme.LoadIconByName(task.DesktopFile.IconName, size)
-			?? LoadIconFromTaskState(task, size)
-			?? iconTheme.DefaultAppIcon(size);
-	}
-
 	public static Pixbuf LoadIcon(this IconTheme iconTheme, string iconName, int size)
 	{
-		return iconTheme.LoadIconByName(iconName, size) ?? iconTheme.DefaultAppIcon(size);
+		return iconTheme.LoadIconByName(iconName, size) ?? Assets.MissingImage.Scale(size);
 	}
 
 	public static Pixbuf LoadIcon(this IconTheme iconTheme, StatusNotifierItemProperties properties)
@@ -53,28 +45,13 @@ public static class IconThemeExtensions
 		return null;
 	}
 
-	public static Pixbuf LoadIcon(this IconTheme iconTheme, TaskbarGroupViewModel group, int size)
-	{
-		return iconTheme.LoadIconByName(group.DesktopFile.IconName, size) ?? LoadIconFromTaskState(group.Tasks.FirstOrDefault(), size) ?? iconTheme.DefaultAppIcon(size);
-	}
-
-	private static Pixbuf LoadIconFromTaskState(TaskState task, int size)
-	{
-		if (task == null || task.Icons == null || !task.Icons.Any()) return null;
-
-		var biggestIcon = task.Icons.MaxBy(i => i.Width);
-
-		return new Pixbuf(biggestIcon.Data, Colorspace.Rgb, true, 8, biggestIcon.Width, biggestIcon.Height, sizeof(int) * biggestIcon.Width)
-			.ScaleSimple(size, size, InterpType.Bilinear);
-	}
-
 	private static Pixbuf LoadIconByName(this IconTheme iconTheme, string iconName, int size)
 	{
 		Pixbuf imageBuffer = null;
 
 		if (!string.IsNullOrEmpty(iconName))
 		{
-			if (iconName.StartsWith("/"))
+			if (iconName.StartsWith("/") && File.Exists(iconName))
 			{
 				imageBuffer = new Pixbuf(File.ReadAllBytes(iconName));
 			}
@@ -89,12 +66,5 @@ public static class IconThemeExtensions
 		}
 
 		return imageBuffer?.ScaleSimple(size, size, InterpType.Bilinear);
-	}
-
-	private static Pixbuf DefaultAppIcon(this IconTheme iconTheme, int size)
-	{
-		return iconTheme
-			.LoadIcon(Stock.MissingImage, size, IconLookupFlags.DirLtr)
-			.ScaleSimple(size, size, InterpType.Bilinear);
 	}
 }

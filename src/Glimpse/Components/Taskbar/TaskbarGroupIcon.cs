@@ -34,14 +34,11 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 		viewModel.Subscribe(vm => _currentViewModel = vm);
 		viewModel.Select(vm => vm.DemandsAttention).DistinctUntilChanged().Subscribe(_ => QueueDraw());
 
-		var iconTheme = IconTheme.GetForScreen(Screen);
-
 		var iconObservable = viewModel
-			.DistinctUntilChanged(x => x.Tasks.Count)
-			.Merge(iconTheme.ObserveChange().TakeUntilDestroyed(this).WithLatestFrom(viewModel).Select(t => t.Second))
-			.TakeUntilDestroyed(this)
+			.Select(vm => vm.Icon)
+			.DistinctUntilChanged()
 			.CombineLatest(this.ObserveEvent<SizeAllocatedArgs>(nameof(SizeAllocated)).DistinctUntilChanged(a => a.Allocation.Width))
-			.Select(t => (iconTheme.LoadIcon(t.First, 26), iconTheme.LoadIcon(t.First, 20)))
+			.Select(t => (t.First.Scale(26), t.First.Scale(20)))
 			.Where(i => i.Item1 != null)
 			.Publish();
 
@@ -65,7 +62,7 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 		var w = Window.Width;
 		var h = Window.Height;
 
-		var demandsAttention = _currentViewModel.Tasks.Any(t => t.DemandsAttention);
+		var demandsAttention = _currentViewModel.DemandsAttention;
 		var backgroundAlpha = StateFlags.HasFlag(StateFlags.Prelight) ? 0.3
 			: _currentViewModel.Tasks.Count > 0 ? 0.1
 			: 0;

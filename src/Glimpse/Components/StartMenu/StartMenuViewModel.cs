@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Gdk;
 using Glimpse.Services.Configuration;
 using Glimpse.Services.FreeDesktop;
 
@@ -16,9 +17,11 @@ public class StartMenuAppViewModel
 {
 	public int Index { get; set; }
 	public DesktopFile DesktopFile { get; set; }
+	public Pixbuf Icon { get; set; }
 	public bool IsVisible { get; set; }
 	public bool IsPinnedToStartMenu { get; set; }
 	public bool IsPinnedToTaskbar { get; set; }
+	public Dictionary<string, Pixbuf> ActionIcons { get; set; }
 }
 
 public class StartMenuViewModel

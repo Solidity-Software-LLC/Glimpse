@@ -19,7 +19,7 @@ public class StartMenuWindow : Window
 {
 	private readonly Entry _hiddenEntry;
 	private readonly Subject<DesktopFile> _appLaunch = new();
-	private readonly Subject<DesktopFile> _contextMenuRequested = new();
+	private readonly Subject<StartMenuAppViewModel> _contextMenuRequested = new();
 	private readonly Entry _searchEntry;
 	private readonly ForEachFlowBox<StartMenuAppViewModel, StartMenuAppIcon> _apps;
 	private readonly List<(int, int)> _keyCodeRanges = new()
@@ -31,7 +31,7 @@ public class StartMenuWindow : Window
 
 	public IObservable<string> SearchTextUpdated { get; }
 	public IObservable<DesktopFile> AppLaunch => _appLaunch;
-	public IObservable<DesktopFile> ContextMenuRequested => _contextMenuRequested;
+	public IObservable<StartMenuAppViewModel> ContextMenuRequested => _contextMenuRequested;
 	public IObservable<ButtonReleaseEventArgs> PowerButtonClicked { get; private set; }
 	public IObservable<ButtonReleaseEventArgs> SettingsButtonClicked { get; private set; }
 	public IObservable<ButtonReleaseEventArgs> UserSettingsClicked { get; private set; }

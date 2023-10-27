@@ -1,4 +1,6 @@
 using Gdk;
+using Glimpse.Extensions.Gtk;
+using Glimpse.State;
 
 namespace Glimpse.Components;
 
@@ -13,6 +15,8 @@ public class Assets
 	public static readonly Pixbuf Person;
 	public static readonly Pixbuf Volume;
 	public static readonly Pixbuf TaskManager;
+	public static readonly Pixbuf MissingImage;
+	public static readonly Pixbuf Empty;
 
 	static Assets()
 	{
@@ -25,6 +29,8 @@ public class Assets
 		Settings = LoadSvg("settings-outline.svg");
 		Volume = LoadSvg("volume-high.svg");
 		TaskManager = LoadSvg("pulse-outline.svg");
+		MissingImage = LoadSvg("missing-image.svg");
+		Empty = BitmapImage.Empty.ToPixbuf();
 	}
 
 	private static Pixbuf LoadSvg(string name)
