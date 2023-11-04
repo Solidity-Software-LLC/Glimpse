@@ -61,10 +61,11 @@ public class Panel : Window
 		Add(grid);
 		ShowAll();
 
-		store.SubscribeSelector(RootStateSelectors.Groups).ToObservable()
+		store.SubscribeSelector(TaskbarSelectors.Slots).ToObservable()
+			.DistinctUntilChanged()
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
-			.Select(g => g.Count)
+			.Select(g => g.Refs.Count)
 			.DistinctUntilChanged()
 			.Subscribe(numGroups => { centerBox.MarginStart = ComputeCenterBoxMarginLeft(numGroups); });
 

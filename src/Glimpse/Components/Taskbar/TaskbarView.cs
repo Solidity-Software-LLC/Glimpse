@@ -24,17 +24,12 @@ public class TaskbarView : Box
 			.ObserveOn(new GLibSynchronizationContext())
 			.Replay(1);
 
-		var forEachGroup = ForEachExtensions.Create(viewModelSelector.Select(g => g.Groups).DistinctUntilChanged(), i => i.Id, viewModelObservable =>
+		var forEachGroup = ForEachExtensions.Create(viewModelSelector.Select(g => g.Groups).DistinctUntilChanged(), i => i.SlotRef, viewModelObservable =>
 		{
 			var replayLatestViewModelObservable = viewModelObservable.Replay(1);
 			var contextMenu = new TaskbarGroupContextMenu(viewModelObservable.Select(vm => vm.ContextMenu).DistinctUntilChanged());
 			var windowPicker = new TaskbarWindowPicker(viewModelObservable);
 			var groupIcon = new TaskbarGroupIcon(viewModelObservable, windowPicker);
-
-			viewModelObservable
-				.Select(v => v.DesktopFile.IniFile.FilePath)
-				.DistinctUntilChanged()
-				.Subscribe(p => groupIcon.Data[ForEachDataKeys.Uri] = "file:///" + p);
 
 			windowPicker.ObserveEvent(nameof(windowPicker.VisibilityNotifyEvent))
 				.Subscribe(_ => windowPicker.CenterAbove(groupIcon));
@@ -121,7 +116,7 @@ public class TaskbarView : Box
 			contextMenu.Pin
 				.TakeUntilDestroyed(this)
 				.WithLatestFrom(viewModelObservable)
-				.Subscribe(t => dispatcher.Dispatch(new ToggleTaskbarPinningAction() { DesktopFile = t.Second.DesktopFile }));
+				.Subscribe(t => dispatcher.Dispatch(new ToggleTaskbarPinningAction() { DesktopFileId = t.Second.DesktopFile.Id }));
 
 			contextMenu.Launch
 				.TakeUntilDestroyed(this)
@@ -143,7 +138,9 @@ public class TaskbarView : Box
 		forEachGroup.SelectionMode = SelectionMode.None;
 		forEachGroup.Expand = false;
 		forEachGroup.AddClass("taskbar__container");
-		forEachGroup.OrderingChanged.TakeUntilDestroyed(this).Subscribe(t => dispatcher.Dispatch(new UpdateGroupOrderingAction() { GroupId = t.Item1, NewIndex = t.Item2 }));
+		forEachGroup.OrderingChanged
+			.TakeUntilDestroyed(this)
+			.Subscribe(t => dispatcher.Dispatch(new UpdateTaskbarSlotOrderingSingleAction() { SlotRef = t.Item1.SlotRef, NewIndex = t.Item2 }));
 		forEachGroup.DragBeginObservable.TakeUntilDestroyed(this).Subscribe(icon => icon.CloseWindowPicker());
 
 		Add(forEachGroup);

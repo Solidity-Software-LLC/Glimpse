@@ -8,6 +8,7 @@ using Glimpse.Components.Shared;
 using Glimpse.Components.Shared.ForEach;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Services.FreeDesktop;
+using Glimpse.State;
 using Gtk;
 using Key = Gdk.Key;
 using Window = Gtk.Window;
@@ -21,7 +22,7 @@ public class StartMenuWindow : Window
 	private readonly Subject<DesktopFile> _appLaunch = new();
 	private readonly Subject<StartMenuAppViewModel> _contextMenuRequested = new();
 	private readonly Entry _searchEntry;
-	private readonly ForEachFlowBox<StartMenuAppViewModel, StartMenuAppIcon> _apps;
+	private readonly ForEachFlowBox<StartMenuAppViewModel, StartMenuAppIcon, string> _apps;
 	private readonly List<(int, int)> _keyCodeRanges = new()
 	{
 		(48, 57),
@@ -73,13 +74,13 @@ public class StartMenuWindow : Window
 		var searchResultsChip = new Chip("Search results", chipsObs.Select(c => c[StartMenuChips.SearchResults]));
 
 		pinnedChip.ObserveEvent(nameof(ButtonReleaseEvent))
-			.Subscribe(_ => dispatcher.Dispatch(new UpdateAppFilteringChip() { Chip = StartMenuChips.Pinned }));
+			.Subscribe(_ => dispatcher.Dispatch(new UpdateAppFilteringChip(StartMenuChips.Pinned)));
 
 		allAppsChip.ObserveEvent(nameof(ButtonReleaseEvent))
-			.Subscribe(_ => dispatcher.Dispatch(new UpdateAppFilteringChip() { Chip = StartMenuChips.AllApps }));
+			.Subscribe(_ => dispatcher.Dispatch(new UpdateAppFilteringChip(StartMenuChips.AllApps)));
 
 		searchResultsChip.ObserveEvent(nameof(ButtonReleaseEvent))
-			.Subscribe(_ => dispatcher.Dispatch(new UpdateAppFilteringChip() { Chip = StartMenuChips.SearchResults }));
+			.Subscribe(_ => dispatcher.Dispatch(new UpdateAppFilteringChip(StartMenuChips.SearchResults)));
 
 		var chipBox = new Box(Orientation.Horizontal, 4);
 		chipBox.Halign = Align.Start;
@@ -94,11 +95,6 @@ public class StartMenuWindow : Window
 
 			appIcon.ContextMenuRequested
 				.Subscribe(f => _contextMenuRequested.OnNext(f));
-
-			appObs
-				.Select(v => v.DesktopFile.IniFile.FilePath)
-				.DistinctUntilChanged()
-				.Subscribe(p => appIcon.Data[ForEachDataKeys.Uri] = "file:///" + p);
 
 			return appIcon;
 		});
@@ -118,7 +114,7 @@ public class StartMenuWindow : Window
 		_apps.DisableDragAndDrop = viewModelObservable.Select(vm => vm.DisableDragAndDrop).DistinctUntilChanged();
 
 		_apps.OrderingChanged
-			.Subscribe(t => dispatcher.Dispatch(new UpdatePinnedAppOrderingAction() { DesktopFileKey = t.Item1, NewIndex = t.Item2 }));
+			.Subscribe(t => dispatcher.Dispatch(new UpdateStartMenuPinnedAppOrderingAction(t.Item1.DesktopFile.IniFile.FilePath, t.Item2)));
 
 		_apps.ObserveEvent<ChildActivatedArgs>(nameof(_apps.ChildActivated))
 			.Select(e => _apps.GetViewModel(e.Child))

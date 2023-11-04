@@ -1,9 +1,11 @@
 using Glimpse.Extensions.IO;
+using Glimpse.State;
 
 namespace Glimpse.Services.FreeDesktop;
 
-public class DesktopFile
+public class DesktopFile : IKeyed<string>
 {
+	public string Id => IniFile.FilePath;
 	public string Name { get; set; } = "";
 	public string IconName { get; set; } = "";
 	public string StartupWmClass { get; set; } = "";

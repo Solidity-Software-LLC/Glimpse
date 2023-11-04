@@ -1,11 +1,14 @@
-﻿using Autofac;
+﻿using System.Reactive.Linq;
+using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Fluxor;
+using Fluxor.Selectors;
 using GLib;
 using Glimpse.Components;
 using Glimpse.Components.StartMenu;
 using Glimpse.Components.SystemTray;
 using Glimpse.Components.Taskbar;
+using Glimpse.Extensions.Fluxor;
 using Glimpse.Services.Configuration;
 using Glimpse.Services.DBus;
 using Glimpse.Services.DBus.Interfaces;
@@ -14,6 +17,7 @@ using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.Services.SystemTray;
 using Glimpse.Services.X11;
+using Glimpse.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tmds.DBus.Protocol;
@@ -73,11 +77,23 @@ public static class Program
 		var store = host.Services.GetRequiredService<IStore>();
 		await store.InitializeAsync();
 
+		var dispatcher = host.Services.GetRequiredService<IDispatcher>();
+
 		var fdService = host.Services.GetRequiredService<FreeDesktopService>();
 		fdService.Init(dbusConnection);
 
 		var configService = host.Services.GetRequiredService<ConfigurationService>();
 		configService.Initialize();
+
+		store.SubscribeSelector(TaskbarSelectors.Slots)
+			.ToObservable()
+			.Take(1)
+			.Subscribe(slots => dispatcher.Dispatch(new UpdateTaskbarSlotOrderingBulkAction() { Slots = slots.Refs }));
+
+		store.SubscribeSelector(TaskbarSelectors.SortedSlots)
+			.ToObservable()
+			.DistinctUntilChanged()
+			.Subscribe(slots => dispatcher.Dispatch(new UpdateTaskbarSlotOrderingBulkAction() { Slots = slots.Refs }));
 
 		var xService = host.Services.GetRequiredService<XLibAdaptorService>();
 		xService.Initialize();

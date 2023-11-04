@@ -15,15 +15,13 @@ public class Effects
 	[EffectMethod]
 	public Task HandleTakeScreenshotAction(TakeScreenshotAction action, IDispatcher dispatcher)
 	{
-		var screenshots = new LinkedList<(IWindowRef Window, BitmapImage Screenshot)>();
-
-		foreach (var w in action.Windows)
+		dispatcher.Dispatch(new UpdateScreenshotsAction()
 		{
-			var screenshot = _displayServer.TakeScreenshot(w);
-			if (screenshot != null) screenshots.AddLast((w, screenshot));
-		}
+			Screenshots = action.Windows
+				.Select(w => (w.Id, _displayServer.TakeScreenshot(w))).Where(t => t.Item2 != null)
+				.ToDictionary(t => t.Id, t => t.Item2)
+		});
 
-		dispatcher.Dispatch(new UpdateScreenshotsAction() { Screenshots = screenshots });
 		return Task.CompletedTask;
 	}
 }

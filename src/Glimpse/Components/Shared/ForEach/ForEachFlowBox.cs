@@ -8,16 +8,16 @@ using Drag = Gtk.Drag;
 
 namespace Glimpse.Components.Shared.ForEach;
 
-public class ForEachFlowBox<TViewModel, TWidget> : FlowBox where TWidget : Widget, IForEachDraggable
+public class ForEachFlowBox<TViewModel, TWidget, TKey> : FlowBox where TWidget : Widget, IForEachDraggable where TKey : IEquatable<TKey>
 {
-	private readonly Subject<(string, int)> _orderingChangedSubject = new();
+	private readonly Subject<(TViewModel, int)> _orderingChangedSubject = new();
 	private readonly Subject<TWidget> _dragBeginSubject = new();
 	private readonly FlowBoxChild _draggingPlaceholderWidget = new FlowBoxChild() { Visible = true }.AddClass("foreach__dragging-placeholder");
 	private readonly string _dragIconTargetName;
 	private readonly TargetList _dragTargets;
 	private readonly ObservableProperty<bool> _disableDragAndDrop = new(false);
 
-	public IObservable<(string, int)> OrderingChanged => _orderingChangedSubject;
+	public IObservable<(TViewModel, int)> OrderingChanged => _orderingChangedSubject;
 	public IObservable<TWidget> DragBeginObservable => _dragBeginSubject;
 
 	public IObservable<bool> DisableDragAndDrop
@@ -26,7 +26,7 @@ public class ForEachFlowBox<TViewModel, TWidget> : FlowBox where TWidget : Widge
 		set => _disableDragAndDrop.UpdateSource(value);
 	}
 
-	public ForEachFlowBox(IObservable<IList<TViewModel>> itemsObservable, Func<TViewModel, string> trackBy, Func<IObservable<TViewModel>, TWidget> widgetFactory)
+	public ForEachFlowBox(IObservable<IList<TViewModel>> itemsObservable, Func<TViewModel, TKey> trackBy, Func<IObservable<TViewModel>, TWidget> widgetFactory)
 	{
 		_dragIconTargetName = Guid.NewGuid().ToString();
 		_dragTargets = new(new[] { new TargetEntry(_dragIconTargetName, TargetFlags.Widget, 0) });
@@ -132,7 +132,7 @@ public class ForEachFlowBox<TViewModel, TWidget> : FlowBox where TWidget : Widge
 		flowBoxChild.Visible = true;
 
 		_draggingPlaceholderWidget.Visible = false;
-		_orderingChangedSubject.OnNext((flowBoxChild.Child.Data[ForEachDataKeys.Uri].ToString().TryGetValidFilePath(), relativeIndex));
+		_orderingChangedSubject.OnNext(((TViewModel)flowBoxChild.Data[ForEachDataKeys.Model], relativeIndex));
 		InvalidateSort();
 	}
 

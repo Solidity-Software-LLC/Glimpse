@@ -6,11 +6,18 @@ using Glimpse.Services.FreeDesktop;
 
 namespace Glimpse.State;
 
-public class UpdateGroupOrderingAction
+public class UpdateTaskbarSlotOrderingSingleAction
 {
-	public string GroupId { get; set; }
+	public SlotRef SlotRef { get; set; }
 	public int NewIndex { get; set; }
 }
+
+public class UpdateTaskbarSlotOrderingBulkAction
+{
+	public ImmutableList<SlotRef> Slots { get; set; }
+}
+
+public record AddWindowAction(WindowProperties WindowProperties);
 
 public class UpdateWindowAction
 {
@@ -22,29 +29,14 @@ public class RemoveWindowAction
 	public WindowProperties WindowProperties { get; set; }
 }
 
-public class AddTaskbarPinnedDesktopFileAction
-{
-	public DesktopFile DesktopFile { get; init; }
-}
-
 public class ToggleTaskbarPinningAction
 {
-	public DesktopFile DesktopFile { get; init; }
+	public string DesktopFileId { get; init; }
 }
 
 public class UpdateDesktopFilesAction
 {
 	public ImmutableList<DesktopFile> DesktopFiles { get; init; }
-}
-
-public class UpdateVolumeCommandAction
-{
-	public string Command { get; init; }
-}
-
-public class UpdateTaskManagerCommandAction
-{
-	public string Command { get; set; }
 }
 
 public class UpdateUserAction
@@ -60,15 +52,20 @@ public class TakeScreenshotAction
 
 public class UpdateScreenshotsAction
 {
-	public IEnumerable<(IWindowRef Window, BitmapImage Screenshot)> Screenshots { get; set; }
+	public Dictionary<ulong, BitmapImage> Screenshots { get; set; }
 }
 
-public class UpdateStartMenuLaunchIconContextMenuAction
-{
-	public List<StartMenuLaunchIconContextMenuItem> MenuItems { get; set; }
-}
-
-public class AddOrUpdateNamedIcons
+public class AddOrUpdateNamedIconsAction
 {
 	public Dictionary<string, Pixbuf> Icons { get; set; }
 }
+
+public class UpdateConfigurationAction
+{
+	public ConfigurationFile ConfigurationFile { get; set; }
+}
+
+public record ToggleStartMenuPinningAction(DesktopFile DesktopFile);
+public record UpdateStartMenuSearchTextAction(string SearchText);
+public record UpdateStartMenuPinnedAppOrderingAction(string DesktopFileKey, int NewIndex);
+public record UpdateAppFilteringChip(StartMenuChips Chip);

@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace Glimpse.Services.Configuration;
 
 public record ConfigurationFile
@@ -22,19 +24,19 @@ public record ConfigurationFile
 	};
 }
 
-public class StartMenuLaunchIconContextMenuItem
+public record StartMenuLaunchIconContextMenuItem
 {
 	public string DisplayText { get; set; }
 	public string Executable { get; set; }
 	public string Arguments { get; set; } = "";
 }
 
-public class StartMenuConfiguration
+public record StartMenuConfiguration
 {
-	public List<string> PinnedLaunchers { get; set; } = new();
+	public ImmutableList<string> PinnedLaunchers { get; set; } = ImmutableList<string>.Empty;
 }
 
-public class TaskbarConfiguration
+public record TaskbarConfiguration
 {
-	public List<string> PinnedLaunchers { get; set; } = new();
+	public ImmutableList<string> PinnedLaunchers { get; set; } = ImmutableList<string>.Empty;
 }

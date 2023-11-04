@@ -21,7 +21,8 @@ public class X11DisplayServer : IDisplayServer
 
 		_xService.Windows.Subscribe(windowObs =>
 		{
-			windowObs.Subscribe(w => dispatcher.Dispatch(new UpdateWindowAction() { WindowProperties = w }));
+			windowObs.Take(1).Subscribe(w => dispatcher.Dispatch(new AddWindowAction(w)));
+			windowObs.Skip(1).Subscribe(w => dispatcher.Dispatch(new UpdateWindowAction() { WindowProperties = w }));
 			windowObs.TakeLast(1).Subscribe(w => dispatcher.Dispatch(new RemoveWindowAction() { WindowProperties = w }));
 		});
 	}

@@ -33,7 +33,6 @@ public class TaskbarGroupContextMenu : Menu
 
 	private void CreateContextMenu(TaskbarGroupContextMenuViewModel viewModel)
 	{
-		Console.WriteLine(DateTime.Now.TimeOfDay);
 		var launchIcon = viewModel.LaunchIcon.Scale(ThemeConstants.MenuItemIconSize);
 		CreateDesktopFileActions(viewModel.DesktopFile, viewModel.ActionIcons).ForEach(Add);
 		Add(CreateLaunchMenuItem(viewModel, launchIcon));

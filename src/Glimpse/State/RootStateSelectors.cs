@@ -2,32 +2,36 @@ using System.Collections.Immutable;
 using Fluxor.Selectors;
 using Gdk;
 using Glimpse.Services.Configuration;
-using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 
 namespace Glimpse.State;
 
 public static class RootStateSelectors
 {
-	public static ISelector<RootState> RootState => SelectorFactory.CreateFeatureSelector<RootState>();
-	public static ISelector<TaskbarState> TaskbarState => SelectorFactory.CreateSelector(RootState, s => s.TaskbarState);
-	public static ISelector<ImmutableList<DesktopFile>> PinnedTaskbarApps => SelectorFactory.CreateSelector(TaskbarState, s => s.PinnedDesktopFiles);
-	public static ISelector<ImmutableList<DesktopFile>> DesktopFiles => SelectorFactory.CreateSelector(RootState, s => s.DesktopFiles);
-	public static MemoizedSelector<RootState, ImmutableDictionary<string, Pixbuf>> NamedIcons => SelectorFactory.CreateSelector(RootState, s => s.NamedIcons);
-	public static MemoizedSelector<RootState, ImmutableDictionary<IWindowRef, WindowProperties>> Windows => SelectorFactory.CreateSelector(RootState, s => s.Windows);
+	private static readonly ISelector<RootState> s_rootState = SelectorFactory.CreateFeatureSelector<RootState>();
+	public static readonly ISelector<SlotReferences> TaskbarSlotCollection = SelectorFactory.CreateSelector(s_rootState, s => s.TaskbarSlots);
 
+	public static readonly ISelector<StartMenuState> StartMenuState = SelectorFactory.CreateSelector(s_rootState, s => s.StartMenuState);
 
-	public static ISelector<ImmutableList<DesktopFile>> AllDesktopFiles =>
-		SelectorFactory.CreateSelector(DesktopFiles, s => s
+	public static readonly ISelector<ConfigurationFile> Configuration = SelectorFactory.CreateSelector(s_rootState, s => s.Configuration);
+	public static readonly ISelector<string> VolumeCommand = SelectorFactory.CreateSelector(Configuration, s => s.VolumeCommand);
+	public static readonly ISelector<string> TaskManagerCommand = SelectorFactory.CreateSelector(Configuration, s => s.TaskManagerCommand);
+	public static readonly ISelector<ImmutableList<string>> TaskbarPinnedLaunchers = SelectorFactory.CreateSelector(Configuration, s => s.Taskbar.PinnedLaunchers);
+
+	public static readonly ISelector<List<StartMenuLaunchIconContextMenuItem>> StartMenuLaunchIconContextMenuItems = SelectorFactory.CreateSelector(Configuration, s => s.StartMenuLaunchIconContextMenu);
+
+	private static readonly ISelector<AccountState> s_accountState = SelectorFactory.CreateSelector(s_rootState, s => s.AccountState);
+	public static readonly ISelector<string> UserIconPath = SelectorFactory.CreateSelector(s_accountState, s => s.IconPath);
+
+	private static readonly ISelector<Entities> s_entities = SelectorFactory.CreateSelector(s_rootState, s => s.Entities);
+	public static readonly ISelector<DataTable<string, DesktopFile>> DesktopFiles = SelectorFactory.CreateSelector(s_entities, s => s.DesktopFiles);
+	public static readonly ISelector<DataTable<string, Pixbuf>> NamedIcons = SelectorFactory.CreateSelector(s_entities, s => s.NamedIcons);
+	public static readonly ISelector<DataTable<ulong, WindowProperties>> Windows = SelectorFactory.CreateSelector(s_entities, s => s.Windows);
+	public static readonly ISelector<DataTable<ulong, BitmapImage>> Screenshots = SelectorFactory.CreateSelector(s_entities, s => s.Screenshots);
+
+	public static readonly ISelector<ImmutableList<DesktopFile>> AllDesktopFiles =
+		SelectorFactory.CreateSelector(DesktopFiles, s => s.ById.Values
 			.OrderBy(f => f.Name)
 			.Where(f => !string.IsNullOrEmpty(f.Name) && !string.IsNullOrEmpty(f.Exec.FullExec))
 			.ToImmutableList());
-
-	public static ISelector<string> VolumeCommand => SelectorFactory.CreateSelector(RootState, s => s.VolumeCommand);
-	public static ISelector<UserState> UserState => SelectorFactory.CreateSelector(RootState, s => s.UserState);
-	public static ISelector<string> UserIconPath => SelectorFactory.CreateSelector(UserState, s => s.IconPath);
-	public static ISelector<ImmutableList<TaskGroup>> Groups => SelectorFactory.CreateSelector(RootState, s => s.Groups);
-	public static ISelector<ImmutableDictionary<IWindowRef, BitmapImage>> Screenshots => SelectorFactory.CreateSelector(RootState, s => s.Screenshots);
-	public static ISelector<string> TaskManagerCommand => SelectorFactory.CreateSelector(TaskbarState, s => s.TaskManagerCommand);
-	public static ISelector<List<StartMenuLaunchIconContextMenuItem>> StartMenuLaunchIconContextMenuItems => SelectorFactory.CreateSelector(RootState, s => s.StartMenuLaunchIconContextMenu);
 }

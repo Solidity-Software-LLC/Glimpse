@@ -32,8 +32,8 @@ public class XLib
 
 	[DllImport(LibraryName, EntryPoint = "XQueryTree")]
 	public static extern int XQueryTree(
-		ulong display,    // Display* display
-		ulong window,        // Window window
+		ulong display, // Display* display
+		ulong window, // Window window
 		out ulong root_return,
 		out ulong parent_return,
 		out IntPtr children_return, // Window* children_return
@@ -128,6 +128,12 @@ public class XLib
 
 	[DllImport(LibraryName)]
 	public static extern int XGetErrorDatabaseText(IntPtr display, string name, string message, string default_string, IntPtr buffer_return, int length);
+
+	[DllImport("libXRes.so.1")]
+	public static extern int XResQueryClientIds(ulong display, long num_specse, XResClientIdSpec[] client_specs, out long num_ids, out XResClientIdValue[] client_ids);
+
+	[DllImport("libXRes.so.1")]
+	public static extern uint XResGetClientPid(ref XResClientIdValue value);
 }
 
 public static class XConstants
@@ -158,6 +164,7 @@ public struct XImage
 	public ulong green_mask;
 	public ulong blue_mask;
 	public IntPtr obdata;
+
 	private struct funcs
 	{
 		IntPtr create_image;
@@ -167,7 +174,6 @@ public struct XImage
 		IntPtr sub_image;
 		IntPtr add_pixel;
 	}
-
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -325,7 +331,6 @@ public struct XExposeEvent
 	public int count;
 }
 
-
 [StructLayout(LayoutKind.Sequential, Size = (24 * sizeof(long)))]
 public struct XVisibilityEvent
 {
@@ -352,14 +357,13 @@ public struct XCreateWindowEvent
 	public bool override_redirect;
 }
 
-
 [StructLayout(LayoutKind.Sequential, Size = (24 * sizeof(long)))]
 public struct XPropertyEvent
 {
 	public int type;
-	public ulong serial;   /* # of last request processed by server */
-	public bool send_event;        /* true if this came from a SendEvent request */
-	public ulong display;       /* Display the event was read from */
+	public ulong serial; /* # of last request processed by server */
+	public bool send_event; /* true if this came from a SendEvent request */
+	public ulong display; /* Display the event was read from */
 	public ulong window;
 	public ulong atom;
 	public long time;
@@ -429,3 +433,45 @@ public struct XErrorEvent
 public delegate int XErrorHandlerDelegate(IntPtr display, ref XErrorEvent ev);
 
 public delegate int XIOErrorHandlerDelegate(IntPtr display);
+
+[StructLayout(LayoutKind.Sequential)]
+public struct XResClientIdSpec
+{
+	public ulong client;
+	public uint mask;
+}
+
+[StructLayout(LayoutKind.Sequential, Size = 1024)]
+public struct XResClientIdValue
+{
+	public XResClientIdSpec spec;
+	public long length;
+	public IntPtr Values;
+	// followed by length CARD32s
+}
+
+[StructLayout(LayoutKind.Sequential, Size = 12 + (8 * 24))]
+public struct XResQueryClientIds
+{
+	public byte reqType;
+	public byte XResReqType;
+	public ushort length;
+	public int numSpecs;
+	// followed by numSpecs times XResClientIdSpec
+}
+
+[StructLayout(LayoutKind.Sequential, Size = 32 + (8 * 24))]
+public struct XResQueryClientIdsReply
+{
+	public byte type;
+	public byte pad1;
+	public ushort sequenceNumber;
+	public int length;
+	public int numIds;
+	public int pad2;
+	public int pad3;
+	public int pad4;
+	public int pad5;
+	public int pad6;
+// followed by numIds times XResClientIdValue
+}

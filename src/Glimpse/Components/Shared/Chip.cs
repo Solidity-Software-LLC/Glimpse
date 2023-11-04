@@ -1,6 +1,6 @@
 using System.Reactive.Linq;
-using Glimpse.Components.StartMenu;
 using Glimpse.Extensions.Gtk;
+using Glimpse.State;
 using Gtk;
 
 namespace Glimpse.Components.Shared;

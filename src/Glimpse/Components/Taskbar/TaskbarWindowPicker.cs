@@ -54,7 +54,7 @@ public class TaskbarWindowPicker : Window
 		ShowAll();
 	}
 
-	private Widget CreateAppPreview(IObservable<TaskState> taskObservable)
+	private Widget CreateAppPreview(IObservable<SlotWindowViewModel> taskObservable)
 	{
 		var appName = new Label()
 			{

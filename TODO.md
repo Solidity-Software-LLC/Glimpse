@@ -2,6 +2,7 @@ Start Menu
 ------------
 * Add context menu with useful actions to taskbar icon
 * Hover descriptions for apps
+* Use only 1 instance of the start menu window
 
 Taskbar
 ------------

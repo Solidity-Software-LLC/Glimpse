@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Gdk;
 using Glimpse.Services.Configuration;
 using Glimpse.Services.FreeDesktop;
+using Glimpse.State;
 
 namespace Glimpse.Components.StartMenu;
 

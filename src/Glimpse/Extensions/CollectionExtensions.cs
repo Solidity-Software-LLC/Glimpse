@@ -11,6 +11,11 @@ public struct Pairing<TKey, TLeft, TRight>
 
 public static class CollectionExtensions
 {
+	public static ImmutableList<T> Toggle<T>(this ImmutableList<T> set, T val)
+	{
+		return set.Contains(val) ? set.Remove(val) : set.Add(val);
+	}
+
 	public static LinkedList<Pairing<TKey, TValueLeft, TValueRight>> Diff<TKey, TValueLeft, TValueRight>(this ImmutableDictionary<TKey, TValueLeft> left, ImmutableDictionary<TKey, TValueRight> right)
 	{
 		var pairings = new LinkedList<Pairing<TKey, TValueLeft, TValueRight>>();

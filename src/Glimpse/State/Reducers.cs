@@ -1,176 +1,94 @@
 using System.Collections.Immutable;
 using Fluxor;
-using Glimpse.Components.StartMenu;
+using Gdk;
+using Glimpse.Extensions;
+using Glimpse.Services.Configuration;
 using Glimpse.Services.FreeDesktop;
+using Glimpse.State.StateLens;
+using static Glimpse.State.StateLens.Reducers;
 
 namespace Glimpse.State;
 
-public class Reducers
+public class AllReducers : IReducer<RootState>
 {
-	[ReducerMethod]
-	public static RootState ReduceUpdateVolumeCommandAction(RootState state, UpdateVolumeCommandAction action)
+	private static readonly List<On<RootState>> s_reducers =
+		CombineReducers(
+			CreateSubReducers<RootState, RootState>(s => s, (s, t) => t)
+				.On<UpdateConfigurationAction>((s, a) => s with { Configuration = a.ConfigurationFile })
+				.On<UpdateTaskbarSlotOrderingBulkAction>((s, a) => s with { TaskbarSlots = new SlotReferences() { Refs = a.Slots } })
+				.On<UpdateTaskbarSlotOrderingSingleAction>((s, a) =>
+				{
+					var desktopFileIdMatch = !string.IsNullOrEmpty(a.SlotRef.DesktopFileId) ? s.TaskbarSlots.Refs.FirstOrDefault(g => g.DesktopFileId == a.SlotRef.DesktopFileId) : null;
+					var classHintMatch = !string.IsNullOrEmpty(a.SlotRef.ClassHintName) ? s.TaskbarSlots.Refs.FirstOrDefault(g => g.ClassHintName == a.SlotRef.ClassHintName) : null;
+					var slotToMove = desktopFileIdMatch ?? classHintMatch;
+					var newOrdering = s.TaskbarSlots.Refs.Remove(slotToMove).Insert(a.NewIndex, slotToMove);
+					var pinnedDesktopFiles = newOrdering.Select(g => g.DesktopFileId).Where(f => !string.IsNullOrEmpty(f)).ToImmutableList();
+					var newState = s with { TaskbarSlots = new SlotReferences() { Refs = newOrdering } };
+
+					if (!pinnedDesktopFiles.SequenceEqual(s.Configuration.Taskbar.PinnedLaunchers))
+					{
+						newState = newState with { Configuration = newState.Configuration with { Taskbar = s.Configuration.Taskbar with { PinnedLaunchers = pinnedDesktopFiles } } };
+					}
+
+					return newState;
+				}),
+			CreateSubReducers<RootState, TaskbarConfiguration>(s => s.Configuration.Taskbar, (s, t) => s with { Configuration = s.Configuration with { Taskbar = t } })
+				.On<ToggleTaskbarPinningAction>((s, a) => s with { PinnedLaunchers = s.PinnedLaunchers.Toggle(a.DesktopFileId) }),
+			CreateSubReducers<RootState, StartMenuConfiguration>(s => s.Configuration.StartMenu, (s, t) => s with { Configuration = s.Configuration with { StartMenu = t } })
+				.On<ToggleStartMenuPinningAction>((s, a) => s with { PinnedLaunchers = s.PinnedLaunchers.Toggle(a.DesktopFile.IniFile.FilePath) })
+				.On<UpdateStartMenuPinnedAppOrderingAction>((s, a) =>
+				{
+					var pinnedAppToMove = s.PinnedLaunchers.First(f => f == a.DesktopFileKey);
+					var newPinnedFiles = s.PinnedLaunchers.Remove(pinnedAppToMove).Insert(a.NewIndex, pinnedAppToMove);
+					return s with { PinnedLaunchers = newPinnedFiles };
+				}),
+			CreateSubReducers<RootState, DataTable<ulong, WindowProperties>>(s => s.Entities.Windows, (s, windows) => s with { Entities = s.Entities with { Windows = windows } })
+				.On<RemoveWindowAction>((s, a) => s.Remove(a.WindowProperties))
+				.On<UpdateWindowAction>((s, a) => s.UpsertOne(a.WindowProperties))
+				.On<AddWindowAction>((s, a) => s.UpsertOne(a.WindowProperties)),
+			CreateSubReducers<RootState, DataTable<ulong, BitmapImage>>(s => s.Entities.Screenshots, (s, t) => s with { Entities = s.Entities with { Screenshots = t } })
+				.On<UpdateScreenshotsAction>((s, a) => s.UpsertMany(a.Screenshots)),
+			CreateSubReducers<RootState, DataTable<string, Pixbuf>>(s => s.Entities.NamedIcons, (s, t) => s with { Entities = s.Entities with { NamedIcons = t } })
+				.On<AddOrUpdateNamedIconsAction>((s, a) => s.UpsertMany(a.Icons)),
+			CreateSubReducers<RootState, DataTable<string, DesktopFile>>(s => s.Entities.DesktopFiles, (s, t) => s with { Entities = s.Entities with { DesktopFiles = t } })
+				.On<UpdateDesktopFilesAction>((s, a) => s.UpsertMany(a.DesktopFiles)),
+			CreateSubReducers<RootState, AccountState>(s => s.AccountState, (s, t) => s with { AccountState = t })
+				.On<UpdateUserAction>((s, a) => new AccountState { UserName = a.UserName, IconPath = a.IconPath }),
+			CreateSubReducers<RootState, StartMenuState>(s => s.StartMenuState, (s, t) => s with { StartMenuState = t })
+				.On<UpdateAppFilteringChip>((s, a) =>
+				{
+					var chips = s.Chips;
+					chips = chips.SetItem(StartMenuChips.Pinned, chips[StartMenuChips.Pinned] with { IsSelected = a.Chip == StartMenuChips.Pinned });
+					chips = chips.SetItem(StartMenuChips.AllApps, chips[StartMenuChips.AllApps] with { IsSelected = a.Chip == StartMenuChips.AllApps });
+					chips = chips.SetItem(StartMenuChips.SearchResults, chips[StartMenuChips.SearchResults] with { IsSelected = a.Chip == StartMenuChips.SearchResults });
+					return s with { Chips = chips };
+				})
+				.On<UpdateStartMenuSearchTextAction>((s, a) =>
+				{
+					var chips = s.Chips;
+
+					if (string.IsNullOrEmpty(a.SearchText))
+					{
+						chips = chips.SetItem(StartMenuChips.Pinned, new StartMenuAppFilteringChip { IsSelected = true, IsVisible = true });
+						chips = chips.SetItem(StartMenuChips.AllApps, new StartMenuAppFilteringChip { IsSelected = false, IsVisible = true });
+						chips = chips.SetItem(StartMenuChips.SearchResults, new StartMenuAppFilteringChip { IsSelected = false, IsVisible = false });
+					}
+					else
+					{
+						chips = chips.SetItem(StartMenuChips.Pinned, new StartMenuAppFilteringChip { IsSelected = false, IsVisible = true });
+						chips = chips.SetItem(StartMenuChips.AllApps, new StartMenuAppFilteringChip { IsSelected = false, IsVisible = true });
+						chips = chips.SetItem(StartMenuChips.SearchResults, new StartMenuAppFilteringChip { IsSelected = true, IsVisible = true });
+					}
+
+					return s with { SearchText = a.SearchText, Chips = chips };
+				})
+
+				.ToList());
+
+	public RootState Reduce(RootState state, object action)
 	{
-		return state with { VolumeCommand = action.Command };
+		return s_reducers.Aggregate(state, (s, on) => on.Reduce(s, action));
 	}
 
-	[ReducerMethod]
-	public static RootState ReduceUpdateTaskManagerCommandAction(RootState state, UpdateTaskManagerCommandAction action)
-	{
-		return state with { TaskbarState = state.TaskbarState with { TaskManagerCommand = action.Command } };
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceUpdateUserAction(RootState state, UpdateUserAction action)
-	{
-		return state with { UserState = state.UserState with { UserName = action.UserName, IconPath = action.IconPath } };
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceUpdateDesktopFilesAction(RootState state, UpdateDesktopFilesAction action)
-	{
-		return state with { DesktopFiles = action.DesktopFiles };
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceAddTaskbarPinnedDesktopFileAction(RootState state, AddTaskbarPinnedDesktopFileAction action)
-	{
-		var newState = state;
-		var group = state.Groups.FirstOrDefault(g => g.Id == action.DesktopFile.IniFile.FilePath);
-
-		if (group == null)
-		{
-			newState = newState with { Groups = newState.Groups.Add(new TaskGroup() { Id = action.DesktopFile.IniFile.FilePath, DesktopFile = action.DesktopFile }) };
-		}
-
-		return newState with { TaskbarState = newState.TaskbarState with { PinnedDesktopFiles = newState.TaskbarState.PinnedDesktopFiles.Add(action.DesktopFile) } };
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceToggleTaskbarPinningAction(RootState state, ToggleTaskbarPinningAction action)
-	{
-		var newState = state;
-		var pinnedApps = state.TaskbarState.PinnedDesktopFiles;
-		var desktopFile = pinnedApps.FirstOrDefault(a => a.IniFile.FilePath == action.DesktopFile.IniFile.FilePath);
-
-		if (desktopFile == null)
-		{
-			var newGroup = newState.Groups.FirstOrDefault(g => g.DesktopFile.IniFile.FilePath == action.DesktopFile.IniFile.FilePath);
-
-			if (newGroup == null)
-			{
-				newState = newState with { Groups = newState.Groups.Add(new TaskGroup() { DesktopFile = action.DesktopFile, Id = action.DesktopFile.IniFile.FilePath }) };
-			}
-
-			return newState with { TaskbarState = newState.TaskbarState with { PinnedDesktopFiles = pinnedApps.Add(action.DesktopFile) } };
-		}
-
-		var group = newState.Groups.First(g => g.DesktopFile.IniFile.FilePath == action.DesktopFile.IniFile.FilePath);
-
-		if (!group.Windows.Any())
-		{
-			newState = newState with { Groups = newState.Groups.Remove(group) };
-		}
-
-		return newState with { TaskbarState = newState.TaskbarState with { PinnedDesktopFiles = pinnedApps.Remove(desktopFile) } };
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceRemoveWindowAction(RootState state, RemoveWindowAction action)
-	{
-		var group = state.Groups.First(g => g.Windows.Any(w => w.WindowRef.Id == action.WindowProperties.WindowRef.Id));
-
-		if (group.Windows.Count == 1 && state.TaskbarState.PinnedDesktopFiles.All(d => d.IniFile.FilePath != group.Id))
-		{
-			return state with { Groups = state.Groups.Remove(group) };
-		}
-
-		var window = group.Windows.First(w => w.WindowRef.Id == action.WindowProperties.WindowRef.Id);
-		var newGroup  = group with { Windows = group.Windows.Remove(window) };
-		return state with { Groups = state.Groups.Replace(group, newGroup) };
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceUpdateWindowAction(RootState state, UpdateWindowAction action)
-	{
-		var newState = state;
-		newState = newState with { Windows = newState.Windows.SetItem(action.WindowProperties.WindowRef, action.WindowProperties) };
-
-		var group = newState.Groups.FirstOrDefault(g => g.Windows.Any(w => w.WindowRef.Id == action.WindowProperties.WindowRef.Id));
-
-		if (group != null)
-		{
-			var window = group.Windows.First(w => w.WindowRef.Id == action.WindowProperties.WindowRef.Id);
-			var updatedGroup  = group with { Windows = group.Windows.Replace(window, action.WindowProperties) };
-			return newState with { Groups = newState.Groups.Replace(group, updatedGroup) };
-		}
-
-		var desktopFile = FindAppDesktopFileByName(newState.DesktopFiles, action.WindowProperties)
-			?? new() { Name = action.WindowProperties.Title, IniFile = new () { FilePath = action.WindowProperties.ClassHintName } };
-
-		group = newState.Groups.FirstOrDefault(g => g.Id == desktopFile.IniFile.FilePath);
-
-		if (group == null)
-		{
-			var newGroup = new TaskGroup() { Id = desktopFile.IniFile.FilePath, Windows = ImmutableList<WindowProperties>.Empty.Add(action.WindowProperties), DesktopFile = desktopFile};
-			return newState with { Groups = newState.Groups.Add(newGroup) };
-		}
-
-		return newState with { Groups = newState.Groups.Replace(group, group with { Windows = group.Windows.Add(action.WindowProperties) }) };
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceUpdateScreenshotsAction(RootState state, UpdateScreenshotsAction action)
-	{
-		var updated = state.Screenshots;
-		foreach (var w in action.Screenshots) updated = updated.SetItem(w.Window, w.Screenshot);
-		return state with { Screenshots = updated };
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceUpdateIconAction(RootState state, AddOrUpdateNamedIcons action)
-	{
-		var newState = state;
-		foreach (var kv in action.Icons) newState = newState with { NamedIcons = newState.NamedIcons.SetItem(kv.Key, kv.Value) };
-		return newState;
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceUpdateGroupOrderingAction(RootState state, UpdateGroupOrderingAction action)
-	{
-		if (action.GroupId == null) return state;
-
-		var groupToMove = state.Groups.First(g => g.Id == action.GroupId);
-		var newGroups = state.Groups.Remove(groupToMove).Insert(action.NewIndex, groupToMove);
-		var newState = state with { Groups = newGroups };
-
-		var pinnedDesktopFiles = newGroups
-			.Where(g => state.TaskbarState.PinnedDesktopFiles.Any(f => f.IniFile.FilePath == g.DesktopFile.IniFile.FilePath))
-			.Select(g => g.DesktopFile)
-			.ToImmutableList();
-
-		var updatedPinnedFiles = pinnedDesktopFiles.Select(f => f.IniFile.FilePath).ToList();
-		var existingPinnedFiles = state.TaskbarState.PinnedDesktopFiles.Select(f => f.IniFile.FilePath).ToList();
-
-		if (!updatedPinnedFiles.SequenceEqual(existingPinnedFiles))
-		{
-			newState = newState with { TaskbarState = newState.TaskbarState with { PinnedDesktopFiles = pinnedDesktopFiles } };
-		}
-
-		return newState;
-	}
-
-	[ReducerMethod]
-	public static RootState ReduceStartMenuLaunchIconContextMenuAction(RootState state, UpdateStartMenuLaunchIconContextMenuAction action)
-	{
-		return state with { StartMenuLaunchIconContextMenu = action.MenuItems };
-	}
-
-	private static DesktopFile FindAppDesktopFileByName(ImmutableList<DesktopFile> desktopFiles, WindowProperties windowProperties)
-	{
-		return desktopFiles.FirstOrDefault(f => f.Name.Contains(windowProperties.ClassHintName, StringComparison.OrdinalIgnoreCase))
-			?? desktopFiles.FirstOrDefault(f => Path.GetFileNameWithoutExtension(f.IniFile.FilePath).Equals(windowProperties.ClassHintName, StringComparison.OrdinalIgnoreCase))
-			?? desktopFiles.FirstOrDefault(f => f.StartupWmClass.Contains(windowProperties.ClassHintName, StringComparison.OrdinalIgnoreCase))
-			?? desktopFiles.FirstOrDefault(f => f.Exec.Executable.Contains(windowProperties.ClassHintName, StringComparison.OrdinalIgnoreCase) && f.Exec.Arguments.Length == 0)
-			?? desktopFiles.FirstOrDefault(f => f.Exec.Executable.Contains(windowProperties.ClassHintName, StringComparison.OrdinalIgnoreCase));
-	}
+	public bool ShouldReduceStateForAction(object action) => true;
 }

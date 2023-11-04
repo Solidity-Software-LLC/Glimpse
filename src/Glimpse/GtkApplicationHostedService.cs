@@ -65,26 +65,26 @@ public class GtkApplicationHostedService : IHostedService
 
 				var iconTheme = IconTheme.GetForScreen(screen);
 				var iconThemeChangedObs = Observable.FromEventPattern(iconTheme, nameof(iconTheme.Changed));
-				var desktopFilesObs = _rootState.ToObservable().Select(r => r.DesktopFiles).DistinctUntilChanged();
+				var desktopFilesObs = _rootState.ToObservable().Select(r => r.Entities.DesktopFiles).DistinctUntilChanged();
 
 				desktopFilesObs.Merge(iconThemeChangedObs.WithLatestFrom(desktopFilesObs).Select(t => t.Second)).Subscribe(desktopFiles =>
 				{
-					var icons = desktopFiles
+					var icons = desktopFiles.ById.Values
 						.SelectMany(f => f.Actions.Select(a => a.IconName).Concat(new[] { f.IconName }))
 						.Where(i => !string.IsNullOrEmpty(i))
 						.Distinct()
 						.ToDictionary(n => n, n => iconTheme.LoadIcon(n, 512));
 
-					_dispatcher.Dispatch(new AddOrUpdateNamedIcons() { Icons = icons });
+					_dispatcher.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = icons });
 				});
 
 				// Handle complete
-				_rootState.ToObservable().Select(r => r.Windows.Values).DistinctUntilChanged().UnbundleMany(g => g.WindowRef.Id).Subscribe(windowObs =>
+				_rootState.ToObservable().Select(r => r.Entities.Windows.ById.Values).DistinctUntilChanged().UnbundleMany(g => g.WindowRef.Id).Subscribe(windowObs =>
 				{
 					windowObs.Select(g => g.Item1.IconName).DistinctUntilChanged().Subscribe(iconName =>
 					{
 						if (iconName == null) return;
-						_dispatcher.Dispatch(new AddOrUpdateNamedIcons() { Icons = new Dictionary<string, Pixbuf>() { {iconName, iconTheme.LoadIcon(iconName, 512) } } });
+						_dispatcher.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = new Dictionary<string, Pixbuf>() { { iconName, iconTheme.LoadIcon(iconName, 512) } } });
 					});
 				});
 

@@ -35,6 +35,7 @@ public static class XAtoms
 	public static readonly ulong NetWmStateDemandsAttention;
 	public static readonly ulong WmProtocols;
 	public static readonly ulong WmDeleteWindow;
+	public static readonly ulong NetWmStateSkipTaskbar;
 
 	static XAtoms()
 	{
@@ -65,6 +66,7 @@ public static class XAtoms
 		NetWmStateDemandsAttention = XLib.XInternAtom(display, "_NET_WM_STATE_DEMANDS_ATTENTION", true);
 		WmProtocols = XLib.XInternAtom(display, "WM_PROTOCOLS", true);
 		WmDeleteWindow = XLib.XInternAtom(display, "WM_DELETE_WINDOW", true);
+		NetWmStateSkipTaskbar = XLib.XInternAtom(display, "_NET_WM_STATE_SKIP_TASKBAR", true);
 
 		XLib.XCloseDisplay(display);
 	}

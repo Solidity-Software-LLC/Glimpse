@@ -54,6 +54,7 @@ public class XLibAdaptorService : IDisposable
 			.Subscribe(windowObservable =>
 			{
 				var windowRef = windowObservable.Key;
+				var pid = windowRef.GetPid();
 				XLib.XSelectInput(windowRef.Display, windowRef.Window, windowEventMask);
 
 				windowObservable
@@ -92,6 +93,7 @@ public class XLibAdaptorService : IDisposable
 						Icons = t.Second ?? new List<BitmapImage>(),
 						Title = t.First,
 						AllowActions = t.Fifth,
+						Pid = pid,
 						DemandsAttention = t.Fourth.Contains(XAtoms.NetWmStateDemandsAttention)
 					})
 					.Throttle(TimeSpan.FromMilliseconds(250))

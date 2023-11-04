@@ -39,7 +39,7 @@ public class StartMenuLaunchIcon : EventBox
 		_startMenuWindow
 			.SearchTextUpdated
 			.TakeUntilDestroyed(this)
-			.Subscribe(text => dispatcher.Dispatch(new UpdateStartMenuSearchTextAction() { SearchText = text }));
+			.Subscribe(text => dispatcher.Dispatch(new UpdateStartMenuSearchTextAction(text)));
 
 		_startMenuWindow
 			.AppLaunch
@@ -186,9 +186,9 @@ public class StartMenuLaunchIcon : EventBox
 		var pinStartIcon = isPinnedToStart ? Assets.UnpinIcon : Assets.PinIcon;
 		var pinTaskbarIcon = isPinnedToTaskbar ? Assets.UnpinIcon : Assets.PinIcon;
 		var pinStart = ContextMenuHelper.CreateMenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start", pinStartIcon.Scale(ThemeConstants.MenuItemIconSize));
-		pinStart.ObserveButtonRelease().Subscribe(_ => _dispatcher.Dispatch(new ToggleStartMenuPinningAction() { DesktopFile = appViewModel.DesktopFile }));
+		pinStart.ObserveButtonRelease().Subscribe(_ => _dispatcher.Dispatch(new ToggleStartMenuPinningAction(appViewModel.DesktopFile)));
 		var pinTaskbar = ContextMenuHelper.CreateMenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar", pinTaskbarIcon.Scale(ThemeConstants.MenuItemIconSize));
-		pinTaskbar.ObserveButtonRelease().Subscribe(_ => _dispatcher.Dispatch(new ToggleTaskbarPinningAction() { DesktopFile = appViewModel.DesktopFile }));
+		pinTaskbar.ObserveButtonRelease().Subscribe(_ => _dispatcher.Dispatch(new ToggleTaskbarPinningAction() { DesktopFileId = appViewModel.DesktopFile.Id }));
 
 		_contextMenu.RemoveAllChildren();
 

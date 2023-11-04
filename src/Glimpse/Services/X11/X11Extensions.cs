@@ -80,6 +80,14 @@ public static class X11Extensions
 		return null;
 	}
 
+	public static uint GetPid(this XWindowRef windowRef)
+	{
+		var specs = new[] { new XResClientIdSpec() { mask = 2, client = windowRef.Window } };
+		var result = XLib.XResQueryClientIds(windowRef.Display, specs.Length, specs, out _, out var clientIds);
+		if (result != 0) return 0;
+		return XLib.XResGetClientPid(ref clientIds[0]);
+	}
+
 	public static ulong[] GetULongArray(this XWindowRef windowRef, ulong property)
 	{
 		var result = XLib.XGetWindowProperty(windowRef.Display, windowRef.Window, property, 0, 1024, false, 0, out var actualTypeReturn, out var actualFormatReturn, out var actualLength, out _, out var dataPointer);
@@ -137,7 +145,16 @@ public static class X11Extensions
 
 	public static bool IsNormalWindow(this XWindowRef windowRef)
 	{
-		return windowRef.GetAtomNameArray(XAtoms.NetWmWindowType).Contains("_NET_WM_WINDOW_TYPE_NORMAL");
+		var windowType = windowRef.GetAtomNameArray(XAtoms.NetWmWindowType);
+
+
+		if (windowType.Contains("_NET_WM_WINDOW_TYPE_NORMAL") || windowType.Contains("_NET_WM_WINDOW_TYPE_DIALOG"))
+		{
+			var state = windowRef.GetAtomArray(XAtoms.NetWmState);
+			return !state.Contains(XAtoms.NetWmStateSkipTaskbar);
+		}
+
+		return false;
 	}
 
 	public static List<BitmapImage> GetIcons(this XWindowRef windowRef)
