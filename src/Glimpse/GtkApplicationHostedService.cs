@@ -5,6 +5,7 @@ using Fluxor;
 using Gdk;
 using GLib;
 using Glimpse.Components;
+using Glimpse.Components.StartMenu;
 using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Reactive;
@@ -23,6 +24,7 @@ public class GtkApplicationHostedService : IHostedService
 	private readonly Application _application;
 	private readonly IState<RootState> _rootState;
 	private readonly IDispatcher _dispatcher;
+	private List<Panel> _panels = new();
 
 	public GtkApplicationHostedService(ILifetimeScope serviceProvider, Application application, IState<RootState> rootState, IDispatcher dispatcher)
 	{
@@ -92,6 +94,10 @@ public class GtkApplicationHostedService : IHostedService
 				Observable.FromEventPattern(action, nameof(action.Activated)).Subscribe(_ => LoadPanels(display));
 				Observable.FromEventPattern(screen, nameof(screen.SizeChanged)).Subscribe(_ => LoadPanels(display));
 				Observable.FromEventPattern(screen, nameof(screen.MonitorsChanged)).Subscribe(_ => LoadPanels(display));
+
+				var startMenuWindow = _serviceProvider.Resolve<StartMenuWindow>();
+				_application.AddWindow(startMenuWindow);
+
 				LoadPanels(display);
 				Application.Run();
 			}
@@ -104,22 +110,20 @@ public class GtkApplicationHostedService : IHostedService
 		return Task.CompletedTask;
 	}
 
-	private List<Panel> _windows = new();
-
 	private void LoadPanels(Display display)
 	{
-		_windows.ForEach(w =>
+		_panels.ForEach(w =>
 		{
 			w.Close();
 			w.Dispose();
 		});
 
-		_windows = display
+		_panels = display
 			.GetMonitors()
 			.Select(m => _serviceProvider.Resolve<Panel>(new TypedParameter(typeof(Monitor), m)))
 			.ToList();
 
-		_windows.ForEach(w => w.ShowAll());
+		_panels.ForEach(_application.AddWindow);
 	}
 
 	public Task StopAsync(CancellationToken cancellationToken)

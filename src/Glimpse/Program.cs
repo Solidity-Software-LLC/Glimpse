@@ -38,6 +38,7 @@ public static class Program
 				containerBuilder.RegisterType<SystemTrayBox>();
 				containerBuilder.RegisterType<TaskbarView>();
 				containerBuilder.RegisterType<StartMenuLaunchIcon>();
+				containerBuilder.RegisterType<StartMenuWindow>().SingleInstance();
 				containerBuilder.RegisterType<FreeDesktopService>().SingleInstance();
 				containerBuilder.RegisterType<X11DisplayServer>().As<X11DisplayServer>().As<IDisplayServer>().SingleInstance();
 				containerBuilder.RegisterType<DBusSystemTrayService>();

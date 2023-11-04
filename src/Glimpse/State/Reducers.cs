@@ -35,7 +35,7 @@ public class AllReducers : IReducer<RootState>
 			CreateSubReducers<RootState, TaskbarConfiguration>(s => s.Configuration.Taskbar, (s, t) => s with { Configuration = s.Configuration with { Taskbar = t } })
 				.On<ToggleTaskbarPinningAction>((s, a) => s with { PinnedLaunchers = s.PinnedLaunchers.Toggle(a.DesktopFileId) }),
 			CreateSubReducers<RootState, StartMenuConfiguration>(s => s.Configuration.StartMenu, (s, t) => s with { Configuration = s.Configuration with { StartMenu = t } })
-				.On<ToggleStartMenuPinningAction>((s, a) => s with { PinnedLaunchers = s.PinnedLaunchers.Toggle(a.DesktopFile.IniFile.FilePath) })
+				.On<ToggleStartMenuPinningAction>((s, a) => s with { PinnedLaunchers = s.PinnedLaunchers.Toggle(a.DesktopFileId) })
 				.On<UpdateStartMenuPinnedAppOrderingAction>((s, a) =>
 				{
 					var pinnedAppToMove = s.PinnedLaunchers.First(f => f == a.DesktopFileKey);

@@ -20,16 +20,6 @@ public static class GtkExtensions
 		widgets.ForEach(widget.Remove);
 	}
 
-	public static string TryGetValidFilePath(this string uri)
-	{
-		if (string.IsNullOrEmpty(uri)) return null;
-		if (!uri.EndsWith(".desktop", StringComparison.InvariantCultureIgnoreCase)) return null;
-		if (!uri.StartsWith("file:///", StringComparison.InvariantCultureIgnoreCase)) return null;
-		var f = uri.Replace("file:///", "");
-		if (!File.Exists(f)) return null;
-		return f;
-	}
-
 	public static bool ContainsPoint(this Widget widget, int px, int py)
 	{
 		if (!widget.IsVisible) return false;

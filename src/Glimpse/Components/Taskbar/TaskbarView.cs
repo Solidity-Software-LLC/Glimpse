@@ -116,7 +116,7 @@ public class TaskbarView : Box
 			contextMenu.Pin
 				.TakeUntilDestroyed(this)
 				.WithLatestFrom(viewModelObservable)
-				.Subscribe(t => dispatcher.Dispatch(new ToggleTaskbarPinningAction() { DesktopFileId = t.Second.DesktopFile.Id }));
+				.Subscribe(t => dispatcher.Dispatch(new ToggleTaskbarPinningAction(t.Second.DesktopFile.Id)));
 
 			contextMenu.Launch
 				.TakeUntilDestroyed(this)

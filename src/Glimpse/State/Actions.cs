@@ -29,10 +29,7 @@ public class RemoveWindowAction
 	public WindowProperties WindowProperties { get; set; }
 }
 
-public class ToggleTaskbarPinningAction
-{
-	public string DesktopFileId { get; init; }
-}
+public record ToggleTaskbarPinningAction(string DesktopFileId);
 
 public class UpdateDesktopFilesAction
 {
@@ -65,7 +62,7 @@ public class UpdateConfigurationAction
 	public ConfigurationFile ConfigurationFile { get; set; }
 }
 
-public record ToggleStartMenuPinningAction(DesktopFile DesktopFile);
+public record ToggleStartMenuPinningAction(string DesktopFileId);
 public record UpdateStartMenuSearchTextAction(string SearchText);
 public record UpdateStartMenuPinnedAppOrderingAction(string DesktopFileKey, int NewIndex);
 public record UpdateAppFilteringChip(StartMenuChips Chip);

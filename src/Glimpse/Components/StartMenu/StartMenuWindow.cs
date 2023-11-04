@@ -2,15 +2,16 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Fluxor;
+using Fluxor.Selectors;
 using Gdk;
 using GLib;
-using Glimpse.Components.Shared;
-using Glimpse.Components.Shared.ForEach;
+using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
+using Glimpse.Extensions.Reactive;
+using Glimpse.Interop;
+using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
-using Gtk;
-using Key = Gdk.Key;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
 
@@ -18,26 +19,11 @@ namespace Glimpse.Components.StartMenu;
 
 public class StartMenuWindow : Window
 {
-	private readonly Entry _hiddenEntry;
-	private readonly Subject<DesktopFile> _appLaunch = new();
-	private readonly Subject<StartMenuAppViewModel> _contextMenuRequested = new();
-	private readonly Entry _searchEntry;
-	private readonly ForEachFlowBox<StartMenuAppViewModel, StartMenuAppIcon, string> _apps;
-	private readonly List<(int, int)> _keyCodeRanges = new()
-	{
-		(48, 57),
-		(65, 90),
-		(97, 122)
-	};
+	private readonly Subject<EventConfigure> _configureEventSubject = new();
 
-	public IObservable<string> SearchTextUpdated { get; }
-	public IObservable<DesktopFile> AppLaunch => _appLaunch;
-	public IObservable<StartMenuAppViewModel> ContextMenuRequested => _contextMenuRequested;
-	public IObservable<ButtonReleaseEventArgs> PowerButtonClicked { get; private set; }
-	public IObservable<ButtonReleaseEventArgs> SettingsButtonClicked { get; private set; }
-	public IObservable<ButtonReleaseEventArgs> UserSettingsClicked { get; private set; }
+	public IObservable<Point> WindowMoved { get; }
 
-	public StartMenuWindow(IObservable<StartMenuViewModel> viewModelObservable, IDispatcher dispatcher)
+	public StartMenuWindow(FreeDesktopService freeDesktopService, IDisplayServer displayServer, IStore store, IDispatcher dispatcher)
 		: base(WindowType.Toplevel)
 	{
 		SkipPagerHint = true;
@@ -49,171 +35,130 @@ public class StartMenuWindow : Window
 		Visual = Screen.RgbaVisual;
 		AppPaintable = true;
 		Visible = false;
+		KeepAbove = true;
 
-		_hiddenEntry = new Entry();
-		_hiddenEntry.IsEditable = false;
-
-		_searchEntry = new Entry("");
-		_searchEntry.IsEditable = true;
-		_searchEntry.Valign = Align.Center;
-		_searchEntry.Halign = Align.Center;
-		_searchEntry.PrimaryIconStock = Stock.Find;
-		_searchEntry.PlaceholderText = "Search all applications";
-		_searchEntry.AddClass("start-menu__search-input");
-
-		SearchTextUpdated = Observable.Return("")
-			.Merge(Observable.FromEventPattern(_searchEntry, nameof(_searchEntry.TextInserted)).Select(_ => _searchEntry.Text))
-			.Merge(Observable.FromEventPattern(_searchEntry, nameof(_searchEntry.TextDeleted)).Select(_ => _searchEntry.Text))
+		WindowMoved = _configureEventSubject
 			.TakeUntilDestroyed(this)
-			.Throttle(TimeSpan.FromMilliseconds(50), new SynchronizationContextScheduler(new GLibSynchronizationContext()))
-			.DistinctUntilChanged();
+			.Select(e => new Point(e.X, e.Y))
+			.DistinctUntilChanged((a, b) => a.X == b.X && a.Y == b.Y);
 
-		var chipsObs = viewModelObservable.Select(vm => vm.Chips).DistinctUntilChanged();
-		var pinnedChip = new Chip("Pinned", chipsObs.Select(c => c[StartMenuChips.Pinned]));
-		var allAppsChip = new Chip("All Apps", chipsObs.Select(c => c[StartMenuChips.AllApps]));
-		var searchResultsChip = new Chip("Search results", chipsObs.Select(c => c[StartMenuChips.SearchResults]));
+		var viewModelObservable = store.SubscribeSelector(StartMenuSelectors.ViewModel)
+			.ToObservable()
+			.TakeUntilDestroyed(this)
+			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
+			.Replay(1);
 
-		pinnedChip.ObserveEvent(nameof(ButtonReleaseEvent))
-			.Subscribe(_ => dispatcher.Dispatch(new UpdateAppFilteringChip(StartMenuChips.Pinned)));
+		var startMenuContent = new StartMenuContent(viewModelObservable);
 
-		allAppsChip.ObserveEvent(nameof(ButtonReleaseEvent))
-			.Subscribe(_ => dispatcher.Dispatch(new UpdateAppFilteringChip(StartMenuChips.AllApps)));
+		startMenuContent.ChipActivated
+			.TakeUntilDestroyed(this)
+			.Subscribe(c => dispatcher.Dispatch(new UpdateAppFilteringChip(c)));
 
-		searchResultsChip.ObserveEvent(nameof(ButtonReleaseEvent))
-			.Subscribe(_ => dispatcher.Dispatch(new UpdateAppFilteringChip(StartMenuChips.SearchResults)));
-
-		var chipBox = new Box(Orientation.Horizontal, 4);
-		chipBox.Halign = Align.Start;
-		chipBox.Add(pinnedChip);
-		chipBox.Add(allAppsChip);
-		chipBox.Add(searchResultsChip);
-		chipBox.AddClass("start-menu__chips");
-
-		_apps = ForEachExtensions.Create(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged(), i => i.DesktopFile.IniFile.FilePath, appObs =>
-		{
-			var appIcon = new StartMenuAppIcon(appObs);
-
-			appIcon.ContextMenuRequested
-				.Subscribe(f => _contextMenuRequested.OnNext(f));
-
-			return appIcon;
-		});
-
-		_apps.RowSpacing = 0;
-		_apps.ColumnSpacing = 0;
-		_apps.MaxChildrenPerLine = 6;
-		_apps.MinChildrenPerLine = 6;
-		_apps.SelectionMode = SelectionMode.Single;
-		_apps.Orientation = Orientation.Horizontal;
-		_apps.Homogeneous = true;
-		_apps.Valign = Align.Start;
-		_apps.Halign = Align.Start;
-		_apps.ActivateOnSingleClick = true;
-		_apps.FilterFunc = c => _apps.GetViewModel(c)?.IsVisible ?? true;
-		_apps.AddClass("start-menu__apps");
-		_apps.DisableDragAndDrop = viewModelObservable.Select(vm => vm.DisableDragAndDrop).DistinctUntilChanged();
-
-		_apps.OrderingChanged
+		startMenuContent.AppOrderingChanged
+			.TakeUntilDestroyed(this)
 			.Subscribe(t => dispatcher.Dispatch(new UpdateStartMenuPinnedAppOrderingAction(t.Item1.DesktopFile.IniFile.FilePath, t.Item2)));
 
-		_apps.ObserveEvent<ChildActivatedArgs>(nameof(_apps.ChildActivated))
-			.Select(e => _apps.GetViewModel(e.Child))
-			.Subscribe(vm => _appLaunch.OnNext(vm.DesktopFile));
-
-		_searchEntry.ObserveEvent<KeyReleaseEventArgs>(nameof(KeyReleaseEvent))
-			.Where(e => e.Event.Key == Key.Return || e.Event.Key == Key.KP_Enter)
-			.WithLatestFrom(viewModelObservable.Select(vm => vm.AllApps.Where(a => a.IsVisible)).DistinctUntilChanged())
-			.Where(t => t.Second.Any())
-			.Subscribe(t => _appLaunch.OnNext(t.Second.FirstOrDefault().DesktopFile));
-
-		var pinnedAppsScrolledWindow = new ScrolledWindow();
-		pinnedAppsScrolledWindow.Vexpand = true;
-		pinnedAppsScrolledWindow.Add(_apps);
-		pinnedAppsScrolledWindow.AddClass("start-menu__apps-scroll-window");
-
-		var layout = new Grid();
-		layout.Expand = true;
-		layout.ColumnHomogeneous = true;
-		layout.Attach(_searchEntry, 1, 0, 6, 1);
-		layout.Attach(_hiddenEntry, 1, 0, 1, 1);
-		layout.Attach(chipBox, 1, 1, 6, 1);
-		layout.Attach(pinnedAppsScrolledWindow, 1, 2, 6, 8);
-		layout.Attach(CreateActionBar(viewModelObservable.Select(vm => vm.ActionBarViewModel).DistinctUntilChanged()), 1, 10, 6, 1);
-		layout.StyleContext.AddClass("start-menu__window");
-
-		Add(layout);
-		ShowAll();
-		Hide();
-		_hiddenEntry.Hide();
-	}
-
-	private Widget CreateActionBar(IObservable<ActionBarViewModel> viewModel)
-	{
-		var userImage = new Image().AddClass("start-menu__account-icon");
-
-		viewModel
-			.Select(vm => vm.UserIconPath)
-			.DistinctUntilChanged()
+		startMenuContent.ToggleStartMenuPinning
 			.TakeUntilDestroyed(this)
-			.Select(path => string.IsNullOrEmpty(path) || !File.Exists(path) ? Assets.Person.ScaleSimple(42, 42, InterpType.Bilinear) : new Pixbuf(path))
-			.Select(p => p.ScaleSimple(42, 42, InterpType.Bilinear))
-			.Subscribe(p => userImage.Pixbuf = p);
+			.Subscribe(f => dispatcher.Dispatch(new ToggleStartMenuPinningAction(f)));
 
-		var userButton = new Button()
-			.AddClass("start-menu__user-settings-button").AddMany(
-				new Box(Orientation.Horizontal, 0).AddMany(
-					userImage,
-					new Label(Environment.UserName).AddClass("start-menu__username")));
+		startMenuContent.ToggleTaskbarPinning
+			.TakeUntilDestroyed(this)
+			.Subscribe(f => dispatcher.Dispatch(new ToggleTaskbarPinningAction(f)));
 
-		userButton.Valign = Align.Center;
-		UserSettingsClicked = userButton.ObserveButtonRelease();
+		startMenuContent.SearchTextUpdated
+			.TakeUntilDestroyed(this)
+			.Subscribe(text => dispatcher.Dispatch(new UpdateStartMenuSearchTextAction(text)));
 
-		var settingsButton = new Button(new Image(Assets.Settings.ScaleSimple(24, 24, InterpType.Bilinear)));
-		settingsButton.AddClass("start-menu__settings");
-		settingsButton.Valign = Align.Center;
-		settingsButton.Halign = Align.End;
-		SettingsButtonClicked = settingsButton.ObserveButtonRelease();
+		startMenuContent.AppLaunch
+			.TakeUntilDestroyed(this)
+			.Subscribe(desktopFile =>
+			{
+				Hide();
+				freeDesktopService.Run(desktopFile);
+			});
 
-		var powerButton = new Button(new Image(Assets.Power.ScaleSimple(24, 24, InterpType.Bilinear)));
-		powerButton.AddClass("start-menu__power");
-		powerButton.Valign = Align.Center;
-		powerButton.Halign = Align.End;
-		PowerButtonClicked = powerButton.ObserveButtonRelease();
+		startMenuContent.PowerButtonClicked
+			.TakeUntilDestroyed(this)
+			.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.PowerButtonCommand).DistinctUntilChanged())
+			.Subscribe(t =>
+			{
+				Hide();
+				freeDesktopService.Run(t.Second);
+			});
 
-		var actionBar = new Box(Orientation.Horizontal, 0);
-		actionBar.Expand = true;
-		actionBar.AddClass("start-menu__action-bar");
-		actionBar.AddMany(userButton, new Label(Environment.MachineName) { Expand = true }, settingsButton, powerButton);
-		return actionBar;
+		startMenuContent.SettingsButtonClicked
+			.TakeUntilDestroyed(this)
+			.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.SettingsButtonCommand).DistinctUntilChanged())
+			.Subscribe(t =>
+			{
+				Hide();
+				freeDesktopService.Run(t.Second);
+			});
+
+		startMenuContent.UserSettingsClicked
+			.TakeUntilDestroyed(this)
+			.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.UserSettingsCommand).DistinctUntilChanged())
+			.Subscribe(t =>
+			{
+				Hide();
+				freeDesktopService.Run(t.Second);
+			});
+
+		startMenuContent.DesktopFileAction
+			.TakeUntilDestroyed(this)
+			.Subscribe(a => freeDesktopService.Run(a));
+
+		displayServer.FocusChanged
+			.TakeUntilDestroyed(this)
+			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
+			.Where(windowRef => IsVisible && windowRef.Id != LibGdk3Interop.gdk_x11_window_get_xid(startMenuContent.Window.Handle))
+			.Subscribe(_ => Hide());
+
+		displayServer.StartMenuOpened
+			.TakeUntilDestroyed(this)
+			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
+			.Subscribe(_ => ToggleVisibility());
+
+		Add(startMenuContent);
+		viewModelObservable.Connect();
 	}
 
-	[ConnectBefore]
-	protected override bool OnKeyPressEvent(EventKey evnt)
+	public void ToggleVisibility()
 	{
-		if (evnt.Key == Key.Escape)
+		Display.GetPointer(out var x, out var y);
+
+		var eventMonitor = Display.GetMonitorAtPoint(x, y);
+		var eventMonitorDimension = eventMonitor.Geometry;
+		var eventPanel = Application.Windows.OfType<Panel>().First(p =>
 		{
-			Visible = false;
-			return true;
-		}
+			p.Window.GetRootCoords(0, 0, out var panelX, out _);
+			return panelX >= eventMonitorDimension.Left && panelX <= eventMonitorDimension.Right;
+		});
 
-		if (!_searchEntry.HasFocus && _keyCodeRanges.Any(r => evnt.KeyValue >= r.Item1 && evnt.KeyValue <= r.Item2))
+		if (IsVisible)
 		{
-			_searchEntry.GrabFocusWithoutSelecting();
+			Window.GetRootCoords(0, 0, out var currentX, out _);
+
+			if (currentX >= eventMonitorDimension.Left && currentX <= eventMonitorDimension.Right)
+			{
+				Hide();
+			}
+			else
+			{
+				this.CenterOnScreenAboveWidget(eventPanel);
+			}
 		}
-
-		return base.OnKeyPressEvent(evnt);
+		else
+		{
+			Show();
+			this.CenterOnScreenAboveWidget(eventPanel);
+		}
 	}
 
-	public void ClosePopup()
+	protected override bool OnConfigureEvent(EventConfigure evnt)
 	{
-		Hide();
-	}
-
-	public void Popup()
-	{
-		_searchEntry.Text = "";
-		_hiddenEntry.GrabFocus();
-		_apps.UnselectAll();
-		Show();
+		_configureEventSubject.OnNext(evnt);
+		return base.OnConfigureEvent(evnt);
 	}
 }
