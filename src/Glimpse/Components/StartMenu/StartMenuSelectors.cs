@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Fluxor.Selectors;
 using Glimpse.Extensions;
+using Glimpse.Services.Configuration;
 using Glimpse.State;
 
 namespace Glimpse.Components.StartMenu;
@@ -10,6 +11,7 @@ public static class StartMenuSelectors
 	private static readonly ISelector<string> s_searchText = SelectorFactory.CreateSelector(RootStateSelectors.StartMenuState, s => s.SearchText);
 	private static readonly ISelector<string> s_powerButtonCommand = SelectorFactory.CreateSelector(RootStateSelectors.Configuration, s => s.PowerButtonCommand);
 	private static readonly ISelector<string> s_settingsButtonCommand = SelectorFactory.CreateSelector(RootStateSelectors.Configuration, s => s.SettingsButtonCommand);
+	private static readonly ISelector<string> s_taskManagerCommand = SelectorFactory.CreateSelector(RootStateSelectors.Configuration, s => s.TaskManagerCommand);
 	private static readonly ISelector<string> s_userSettingsCommand = SelectorFactory.CreateSelector(RootStateSelectors.Configuration, s => s.UserSettingsCommand);
 	private static readonly ISelector<ImmutableDictionary<StartMenuChips, StartMenuAppFilteringChip>> s_chips = SelectorFactory.CreateSelector(RootStateSelectors.StartMenuState, s => s.Chips);
 
@@ -69,12 +71,25 @@ public static class StartMenuSelectors
 			return results.OrderBy(r => r.Index).ToImmutableList();
 		});
 
+	private static readonly ISelector<ImmutableList<StartMenuLaunchIconContextMenuItem>> s_menuItems = SelectorFactory.CreateSelector(
+		RootStateSelectors.StartMenuLaunchIconContextMenuItems,
+		s_powerButtonCommand,
+		s_settingsButtonCommand,
+		s_taskManagerCommand,
+		(menuItems, powerButtonCommand, allSettingsCommands, taskManagerCommand) => menuItems
+			.Add(new() { DisplayText = "separator" })
+			.Add(new() { DisplayText = "Glimpse config", Executable = "xdg-open", Arguments = ConfigurationFile.FilePath })
+			.Add(new() { DisplayText = "Settings", Executable = allSettingsCommands })
+			.Add(new() { DisplayText = "Task Manager", Executable = taskManagerCommand })
+			.Add(new() { DisplayText = "separator" })
+			.Add(new() { DisplayText = "Shutdown or sign out", Executable = powerButtonCommand }));
+
 	public static readonly ISelector<StartMenuViewModel> ViewModel = SelectorFactory.CreateSelector(
 		s_allAppsSelector,
 		s_searchText,
 		s_actionBarViewModelSelector,
 		s_chips,
-		RootStateSelectors.StartMenuLaunchIconContextMenuItems,
+		s_menuItems,
 		(allApps, searchText, actionBarViewModel, chips, menuItems) =>
 		{
 			return new StartMenuViewModel()

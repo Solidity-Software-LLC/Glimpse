@@ -95,7 +95,6 @@ public static class TaskbarSelectors
 		RootStateSelectors.Screenshots,
 		(slots, windows, icons, desktopFiles, screenshots) =>
 		{
-			Console.WriteLine(DateTime.Now.TimeOfDay);
 			return new TaskbarViewModel
 			{
 				Groups = slots.Refs.Select(slot =>

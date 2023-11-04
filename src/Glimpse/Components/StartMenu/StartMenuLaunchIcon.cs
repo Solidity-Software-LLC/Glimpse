@@ -63,9 +63,16 @@ public class StartMenuLaunchIcon : EventBox
 
 			foreach (var i in menuItems)
 			{
-				var menuItem = new MenuItem(i.DisplayText);
-				menuItem.ObserveEvent(nameof(menuItem.Activated)).Subscribe(_ => freeDesktopService.Run(i.Executable + " " + i.Arguments));
-				launchIconMenu.Add(menuItem);
+				if (i.DisplayText.Equals("separator", StringComparison.OrdinalIgnoreCase))
+				{
+					launchIconMenu.Add(new SeparatorMenuItem());
+				}
+				else
+				{
+					var menuItem = new MenuItem(i.DisplayText);
+					menuItem.ObserveEvent(nameof(menuItem.Activated)).Subscribe(_ => freeDesktopService.Run(i.Executable + " " + i.Arguments));
+					launchIconMenu.Add(menuItem);
+				}
 			}
 
 			launchIconMenu.ShowAll();

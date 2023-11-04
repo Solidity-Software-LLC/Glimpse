@@ -32,5 +32,5 @@ public class StartMenuViewModel
 	public bool DisableDragAndDrop { get; set; }
 	public ActionBarViewModel ActionBarViewModel { get; set; }
 	public ImmutableDictionary<StartMenuChips, StartMenuAppFilteringChip> Chips { get; set; }
-	public List<StartMenuLaunchIconContextMenuItem> LaunchIconContextMenu { get; set; }
+	public ImmutableList<StartMenuLaunchIconContextMenuItem> LaunchIconContextMenu { get; set; }
 }

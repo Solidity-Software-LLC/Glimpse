@@ -18,7 +18,7 @@ public static class RootStateSelectors
 	public static readonly ISelector<string> TaskManagerCommand = SelectorFactory.CreateSelector(Configuration, s => s.TaskManagerCommand);
 	public static readonly ISelector<ImmutableList<string>> TaskbarPinnedLaunchers = SelectorFactory.CreateSelector(Configuration, s => s.Taskbar.PinnedLaunchers);
 
-	public static readonly ISelector<List<StartMenuLaunchIconContextMenuItem>> StartMenuLaunchIconContextMenuItems = SelectorFactory.CreateSelector(Configuration, s => s.StartMenuLaunchIconContextMenu);
+	public static readonly ISelector<ImmutableList<StartMenuLaunchIconContextMenuItem>> StartMenuLaunchIconContextMenuItems = SelectorFactory.CreateSelector(Configuration, s => s.StartMenuLaunchIconContextMenu);
 
 	private static readonly ISelector<AccountState> s_accountState = SelectorFactory.CreateSelector(s_rootState, s => s.AccountState);
 	public static readonly ISelector<string> UserIconPath = SelectorFactory.CreateSelector(s_accountState, s => s.IconPath);
