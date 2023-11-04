@@ -35,9 +35,17 @@ public class TaskbarGroupContextMenu : Menu
 	{
 		var launchIcon = viewModel.LaunchIcon.Scale(ThemeConstants.MenuItemIconSize);
 		CreateDesktopFileActions(viewModel.DesktopFile, viewModel.ActionIcons).ForEach(Add);
-		Add(CreateLaunchMenuItem(viewModel, launchIcon));
-		Add(CreatePinMenuItem(viewModel));
-		if (viewModel.CanClose && CreateCloseAction(viewModel) is { } closeAction) Add(closeAction);
+		if (viewModel.DesktopFile.IniFile != null)
+		{
+			Add(CreateLaunchMenuItem(viewModel, launchIcon));
+			Add(CreatePinMenuItem(viewModel));
+		}
+
+		if (viewModel.CanClose && CreateCloseAction(viewModel) is { } closeAction)
+		{
+			Add(closeAction);
+		}
+
 		ShowAll();
 	}
 
