@@ -22,8 +22,8 @@ public class StartMenuLaunchIcon : EventBox
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
 			.Replay(1);
 
-		startMenuWindow.ObserveEvent(nameof(startMenuWindow.Shown))
-			.Merge(startMenuWindow.ObserveEvent(nameof(startMenuWindow.Hidden)))
+		startMenuWindow.ObserveEvent(nameof(startMenuWindow.Shown)).TakeUntilDestroyed(this)
+			.Merge(startMenuWindow.ObserveEvent(nameof(startMenuWindow.Hidden)).TakeUntilDestroyed(this))
 			.Merge(startMenuWindow.WindowMoved.TakeUntilDestroyed(this).Select(x => (object) x))
 			.Subscribe(_ =>
 			{
