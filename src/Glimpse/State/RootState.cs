@@ -50,8 +50,9 @@ public class SlotReferences : IEquatable<SlotReferences>
 
 public record SlotRef
 {
-	public string DesktopFileId { get; init; } = "";
+	public string PinnedDesktopFileId { get; init; } = "";
 	public string ClassHintName { get; init; } = "";
+	public string DiscoveredDesktopFileId { get; init; } = "";
 }
 
 [FeatureState]

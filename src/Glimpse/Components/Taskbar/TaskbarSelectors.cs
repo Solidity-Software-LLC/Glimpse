@@ -20,10 +20,10 @@ public static class TaskbarSelectors
 
 			foreach (var pinned in pinnedDesktopFileRefs)
 			{
-				result = result.Add(new SlotRef { DesktopFileId = pinned.Id });
+				result = result.Add(new SlotRef { PinnedDesktopFileId = pinned.Id });
 			}
 
-			var pinnedDesktopFiles = result.Select(r => desktopFiles.ById[r.DesktopFileId]).ToList();
+			var pinnedDesktopFiles = result.Select(r => desktopFiles.ById[r.PinnedDesktopFileId]).ToList();
 
 			foreach (var g in groups)
 			{
@@ -32,7 +32,7 @@ public static class TaskbarSelectors
 
 				if (matchingDesktopFile != null)
 				{
-					var existingSlot = result.FirstOrDefault(s => s.DesktopFileId == matchingDesktopFile.Id);
+					var existingSlot = result.FirstOrDefault(s => s.PinnedDesktopFileId == matchingDesktopFile.Id);
 
 					if (existingSlot != null && string.IsNullOrEmpty(existingSlot.ClassHintName))
 					{
@@ -40,7 +40,7 @@ public static class TaskbarSelectors
 					}
 					else if (existingSlot == null)
 					{
-						result = result.Add(new SlotRef() { ClassHintName = g.Key });
+						result = result.Add(new SlotRef() { ClassHintName = g.Key, DiscoveredDesktopFileId = matchingDesktopFile.Id });
 					}
 				}
 				else
@@ -62,7 +62,7 @@ public static class TaskbarSelectors
 
 			foreach (var o in ordering.Refs)
 			{
-				if (!string.IsNullOrEmpty(o.DesktopFileId) && updatedSlots.FirstOrDefault(s => s.DesktopFileId == o.DesktopFileId) is { } m1)
+				if (!string.IsNullOrEmpty(o.PinnedDesktopFileId) && updatedSlots.FirstOrDefault(s => s.PinnedDesktopFileId == o.PinnedDesktopFileId) is { } m1)
 				{
 					results = results.Add(m1);
 				}
@@ -74,7 +74,7 @@ public static class TaskbarSelectors
 
 			foreach (var s in updatedSlots)
 			{
-				if (!string.IsNullOrEmpty(s.DesktopFileId) && results.FirstOrDefault(o => o.DesktopFileId == s.DesktopFileId) is null)
+				if (!string.IsNullOrEmpty(s.PinnedDesktopFileId) && results.FirstOrDefault(o => o.PinnedDesktopFileId == s.PinnedDesktopFileId) is null)
 				{
 					results = results.Add(s);
 				}
@@ -101,7 +101,9 @@ public static class TaskbarSelectors
 				Groups = slots.Refs.Select(slot =>
 				{
 					var windowGroup = windows.ById.Values.Where(v => v.ClassHintName == slot.ClassHintName).ToList();
-					var desktopFile = desktopFiles.ContainsKey(slot.DesktopFileId) ? desktopFiles.ById[slot.DesktopFileId] : new DesktopFile();
+					var desktopFile = desktopFiles.ContainsKey(slot.PinnedDesktopFileId) ? desktopFiles.ById[slot.PinnedDesktopFileId]
+						: desktopFiles.ContainsKey(slot.DiscoveredDesktopFileId) ? desktopFiles.ById[slot.DiscoveredDesktopFileId]
+						: new DesktopFile();
 					var allIcons = windowGroup.SelectMany(w => w.Icons).ToList();
 					var biggestIcon = allIcons.Any() ? allIcons.MaxBy(i => i.Width) : null;
 					icons.ById.TryGetValue(desktopFile.IconName, out var desktopFileIcon);
@@ -125,7 +127,7 @@ public static class TaskbarSelectors
 						DemandsAttention = windowGroup.Any(w => w.DemandsAttention),
 						ContextMenu = new TaskbarGroupContextMenuViewModel
 						{
-							IsPinned = !string.IsNullOrEmpty(slot.DesktopFileId),
+							IsPinned = !string.IsNullOrEmpty(slot.PinnedDesktopFileId),
 							DesktopFile = desktopFile,
 							LaunchIcon = icon,
 							CanClose = windowGroup.Any(), // Check window actions.  Careful not to cause it to run a bunch here

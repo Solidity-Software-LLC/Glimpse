@@ -18,11 +18,11 @@ public class AllReducers : IReducer<RootState>
 				.On<UpdateTaskbarSlotOrderingBulkAction>((s, a) => s with { TaskbarSlots = new SlotReferences() { Refs = a.Slots } })
 				.On<UpdateTaskbarSlotOrderingSingleAction>((s, a) =>
 				{
-					var desktopFileIdMatch = !string.IsNullOrEmpty(a.SlotRef.DesktopFileId) ? s.TaskbarSlots.Refs.FirstOrDefault(g => g.DesktopFileId == a.SlotRef.DesktopFileId) : null;
+					var desktopFileIdMatch = !string.IsNullOrEmpty(a.SlotRef.PinnedDesktopFileId) ? s.TaskbarSlots.Refs.FirstOrDefault(g => g.PinnedDesktopFileId == a.SlotRef.PinnedDesktopFileId) : null;
 					var classHintMatch = !string.IsNullOrEmpty(a.SlotRef.ClassHintName) ? s.TaskbarSlots.Refs.FirstOrDefault(g => g.ClassHintName == a.SlotRef.ClassHintName) : null;
 					var slotToMove = desktopFileIdMatch ?? classHintMatch;
 					var newOrdering = s.TaskbarSlots.Refs.Remove(slotToMove).Insert(a.NewIndex, slotToMove);
-					var pinnedDesktopFiles = newOrdering.Select(g => g.DesktopFileId).Where(f => !string.IsNullOrEmpty(f)).ToImmutableList();
+					var pinnedDesktopFiles = newOrdering.Select(g => g.PinnedDesktopFileId).Where(f => !string.IsNullOrEmpty(f)).ToImmutableList();
 					var newState = s with { TaskbarSlots = new SlotReferences() { Refs = newOrdering } };
 
 					if (!pinnedDesktopFiles.SequenceEqual(s.Configuration.Taskbar.PinnedLaunchers))
