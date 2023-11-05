@@ -42,7 +42,7 @@ public class StartMenuContent : Bin
 	public IObservable<string> ToggleTaskbarPinning => _toggleTaskbarPinningSubject;
 	public IObservable<string> ToggleStartMenuPinning => _toggleStartMenuPinningSubject;
 
-	public StartMenuContent(IObservable<StartMenuViewModel> viewModelObservable)
+	public StartMenuContent(IObservable<StartMenuViewModel> viewModelObservable, StartMenuWindow startMenuWindow)
 	{
 		_contextMenu = new Menu() { ReserveToggleSize = false };
 
@@ -79,6 +79,13 @@ public class StartMenuContent : Bin
 		chipBox.Add(allAppsChip);
 		chipBox.Add(searchResultsChip);
 		chipBox.AddClass("start-menu__chips");
+
+		startMenuWindow.ObserveEvent(nameof(Unmapped)).Subscribe(e =>
+		{
+			_searchEntry.Text = "";
+			_hiddenEntry.GrabFocus();
+			_apps.UnselectAll();
+		});
 
 		_apps = ForEachExtensions.Create(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged(), i => i.DesktopFile.IniFile.FilePath, appObs =>
 		{
@@ -190,14 +197,6 @@ public class StartMenuContent : Bin
 		}
 
 		return base.OnKeyPressEvent(evnt);
-	}
-
-	protected override void OnShown()
-	{
-		_searchEntry.Text = "";
-		_hiddenEntry.GrabFocus();
-		_apps.UnselectAll();
-		base.OnShown();
 	}
 
 	private void OpenDesktopFileContextMenu(StartMenuAppViewModel appViewModel, StartMenuViewModel startMenuViewModel)

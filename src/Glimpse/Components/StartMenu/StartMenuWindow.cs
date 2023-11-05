@@ -48,7 +48,7 @@ public class StartMenuWindow : Window
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
 			.Replay(1);
 
-		var startMenuContent = new StartMenuContent(viewModelObservable);
+		var startMenuContent = new StartMenuContent(viewModelObservable, this);
 
 		startMenuContent.ChipActivated
 			.TakeUntilDestroyed(this)
