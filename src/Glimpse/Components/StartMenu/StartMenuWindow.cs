@@ -52,74 +52,35 @@ public class StartMenuWindow : Window
 
 		_startMenuContent = new StartMenuContent(viewModelObservable);
 
-		_startMenuContent.ChipActivated
-			.TakeUntilDestroyed(this)
-			.Subscribe(c => dispatcher.Dispatch(new UpdateAppFilteringChip(c)));
+		this.ObserveEvent(_startMenuContent.ChipActivated).Subscribe(c => dispatcher.Dispatch(new UpdateAppFilteringChip(c)));
+		this.ObserveEvent(_startMenuContent.AppOrderingChanged).Subscribe(t => dispatcher.Dispatch(new UpdateStartMenuPinnedAppOrderingAction(t.Item1.DesktopFile.IniFile.FilePath, t.Item2)));
+		this.ObserveEvent(_startMenuContent.ToggleStartMenuPinning).Subscribe(f => dispatcher.Dispatch(new ToggleStartMenuPinningAction(f)));
+		this.ObserveEvent(_startMenuContent.ToggleTaskbarPinning).Subscribe(f => dispatcher.Dispatch(new ToggleTaskbarPinningAction(f)));
+		this.ObserveEvent(_startMenuContent.SearchTextUpdated).Subscribe(text => dispatcher.Dispatch(new UpdateStartMenuSearchTextAction(text)));
+		this.ObserveEvent(_startMenuContent.AppLaunch).Subscribe(desktopFile =>
+		{
+			Hide();
+			freeDesktopService.Run(desktopFile);
+		});
 
-		_startMenuContent.AppOrderingChanged
+		Observable.Merge(
+				_startMenuContent.PowerButtonClicked.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.PowerButtonCommand)),
+				_startMenuContent.SettingsButtonClicked.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.SettingsButtonCommand)),
+				_startMenuContent.UserSettingsClicked.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.UserSettingsCommand)))
 			.TakeUntilDestroyed(this)
-			.Subscribe(t => dispatcher.Dispatch(new UpdateStartMenuPinnedAppOrderingAction(t.Item1.DesktopFile.IniFile.FilePath, t.Item2)));
-
-		_startMenuContent.ToggleStartMenuPinning
-			.TakeUntilDestroyed(this)
-			.Subscribe(f => dispatcher.Dispatch(new ToggleStartMenuPinningAction(f)));
-
-		_startMenuContent.ToggleTaskbarPinning
-			.TakeUntilDestroyed(this)
-			.Subscribe(f => dispatcher.Dispatch(new ToggleTaskbarPinningAction(f)));
-
-		_startMenuContent.SearchTextUpdated
-			.TakeUntilDestroyed(this)
-			.Subscribe(text => dispatcher.Dispatch(new UpdateStartMenuSearchTextAction(text)));
-
-		_startMenuContent.AppLaunch
-			.TakeUntilDestroyed(this)
-			.Subscribe(desktopFile =>
-			{
-				Hide();
-				freeDesktopService.Run(desktopFile);
-			});
-
-		_startMenuContent.PowerButtonClicked
-			.TakeUntilDestroyed(this)
-			.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.PowerButtonCommand).DistinctUntilChanged())
 			.Subscribe(t =>
 			{
 				Hide();
 				freeDesktopService.Run(t.Second);
 			});
 
-		_startMenuContent.SettingsButtonClicked
-			.TakeUntilDestroyed(this)
-			.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.SettingsButtonCommand).DistinctUntilChanged())
-			.Subscribe(t =>
-			{
-				Hide();
-				freeDesktopService.Run(t.Second);
-			});
-
-		_startMenuContent.UserSettingsClicked
-			.TakeUntilDestroyed(this)
-			.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.UserSettingsCommand).DistinctUntilChanged())
-			.Subscribe(t =>
-			{
-				Hide();
-				freeDesktopService.Run(t.Second);
-			});
-
-		_startMenuContent.DesktopFileAction
-			.TakeUntilDestroyed(this)
-			.Subscribe(a => freeDesktopService.Run(a));
-
-		displayServer.FocusChanged
-			.TakeUntilDestroyed(this)
-			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
+		this.ObserveEvent(_startMenuContent.DesktopFileAction).Subscribe(a => freeDesktopService.Run(a));
+		this.ObserveEvent(displayServer.FocusChanged)
+			.ObserveOn(new GLibSynchronizationContext())
 			.Where(windowRef => IsVisible && windowRef.Id != LibGdk3Interop.gdk_x11_window_get_xid(_startMenuContent.Window.Handle))
 			.Subscribe(_ => Hide());
-
-		displayServer.StartMenuOpened
-			.TakeUntilDestroyed(this)
-			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
+		this.ObserveEvent(displayServer.StartMenuOpened)
+			.ObserveOn(new GLibSynchronizationContext())
 			.Subscribe(_ => ToggleVisibility());
 
 		Add(_startMenuContent);
@@ -129,31 +90,16 @@ public class StartMenuWindow : Window
 	public void ToggleVisibility()
 	{
 		Display.GetPointer(out var x, out var y);
-
 		var eventMonitor = Display.GetMonitorAtPoint(x, y);
-		var eventMonitorDimension = eventMonitor.Geometry;
-		var eventPanel = Application.Windows.OfType<Panel>().First(p =>
-		{
-			p.Window.GetRootCoords(0, 0, out var panelX, out _);
-			return panelX >= eventMonitorDimension.Left && panelX <= eventMonitorDimension.Right;
-		});
 
-		if (IsVisible)
+		if (IsVisible && eventMonitor.Contains(Window))
 		{
-			Window.GetRootCoords(0, 0, out var currentX, out _);
-
-			if (currentX >= eventMonitorDimension.Left && currentX <= eventMonitorDimension.Right)
-			{
-				Hide();
-			}
-			else
-			{
-				this.CenterOnScreenAboveWidget(eventPanel);
-			}
+			Hide();
 		}
 		else
 		{
 			Show();
+			var eventPanel = Application.Windows.OfType<Panel>().First(p => eventMonitor.Contains(p.Window));
 			this.CenterOnScreenAboveWidget(eventPanel);
 		}
 	}

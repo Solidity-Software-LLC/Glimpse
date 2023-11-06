@@ -63,6 +63,11 @@ public static class Extensions
 		return Observable.FromEventPattern<object>(widget, eventName).TakeUntilDestroyed(widget).Select(e => e.EventArgs);
 	}
 
+	public static IObservable<T> ObserveEvent<T>(this Widget widget, IObservable<T> obs)
+	{
+		return obs.TakeUntilDestroyed(widget);
+	}
+
 	public static IObservable<T> ObserveEvent<T>(this Widget widget, string eventName)
 	{
 		return Observable.FromEventPattern<T>(widget, eventName).TakeUntilDestroyed(widget).Select(e => e.EventArgs);
