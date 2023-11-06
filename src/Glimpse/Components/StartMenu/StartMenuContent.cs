@@ -42,7 +42,7 @@ public class StartMenuContent : Bin
 	public IObservable<string> ToggleTaskbarPinning => _toggleTaskbarPinningSubject;
 	public IObservable<string> ToggleStartMenuPinning => _toggleStartMenuPinningSubject;
 
-	public StartMenuContent(IObservable<StartMenuViewModel> viewModelObservable, StartMenuWindow startMenuWindow)
+	public StartMenuContent(IObservable<StartMenuViewModel> viewModelObservable)
 	{
 		_contextMenu = new Menu() { ReserveToggleSize = false };
 
@@ -80,13 +80,6 @@ public class StartMenuContent : Bin
 		chipBox.Add(searchResultsChip);
 		chipBox.AddClass("start-menu__chips");
 
-		startMenuWindow.ObserveEvent(nameof(Unmapped)).Subscribe(e =>
-		{
-			_searchEntry.Text = "";
-			_hiddenEntry.GrabFocus();
-			_apps.UnselectAll();
-		});
-
 		_apps = ForEachExtensions.Create(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged(), i => i.DesktopFile.IniFile.FilePath, appObs =>
 		{
 			var appIcon = new StartMenuAppIcon(appObs);
@@ -111,6 +104,7 @@ public class StartMenuContent : Bin
 		_apps.FilterFunc = c => _apps.GetViewModel(c)?.IsVisible ?? true;
 		_apps.AddClass("start-menu__apps");
 		_apps.DisableDragAndDrop = viewModelObservable.Select(vm => vm.DisableDragAndDrop).DistinctUntilChanged();
+		this.ObserveEvent(nameof(FocusChildSet)).Subscribe(_ => _apps.UnselectAll());
 
 		_apps.ObserveEvent<ChildActivatedArgs>(nameof(_apps.ChildActivated))
 			.Select(e => _apps.GetViewModel(e.Child))
@@ -130,8 +124,8 @@ public class StartMenuContent : Bin
 		var layout = new Grid();
 		layout.Expand = true;
 		layout.ColumnHomogeneous = true;
-		layout.Attach(_searchEntry, 1, 0, 6, 1);
 		layout.Attach(_hiddenEntry, 1, 0, 1, 1);
+		layout.Attach(_searchEntry, 1, 0, 6, 1);
 		layout.Attach(chipBox, 1, 1, 6, 1);
 		layout.Attach(pinnedAppsScrolledWindow, 1, 2, 6, 8);
 		layout.Attach(CreateActionBar(viewModelObservable.Select(vm => vm.ActionBarViewModel).DistinctUntilChanged()), 1, 10, 6, 1);
@@ -182,23 +176,6 @@ public class StartMenuContent : Bin
 		return actionBar;
 	}
 
-	[ConnectBefore]
-	protected override bool OnKeyPressEvent(EventKey evnt)
-	{
-		if (evnt.Key == Key.Escape)
-		{
-			Visible = false;
-			return true;
-		}
-
-		if (!_searchEntry.HasFocus && _keyCodeRanges.Any(r => evnt.KeyValue >= r.Item1 && evnt.KeyValue <= r.Item2))
-		{
-			_searchEntry.GrabFocusWithoutSelecting();
-		}
-
-		return base.OnKeyPressEvent(evnt);
-	}
-
 	private void OpenDesktopFileContextMenu(StartMenuAppViewModel appViewModel, StartMenuViewModel startMenuViewModel)
 	{
 		var menuItems = ContextMenuHelper.CreateDesktopFileActions(appViewModel.DesktopFile, appViewModel.ActionIcons);
@@ -230,5 +207,26 @@ public class StartMenuContent : Bin
 		_contextMenu.Add(pinTaskbar);
 		_contextMenu.ShowAll();
 		_contextMenu.Popup();
+	}
+
+	public void HandleWindowShown()
+	{
+		_searchEntry.Text = "";
+		_hiddenEntry.GrabFocus();
+	}
+
+	public bool HandleKeyPress(uint keyValue)
+	{
+		if (!_searchEntry.HasFocus && _keyCodeRanges.Any(r => keyValue >= r.Item1 && keyValue <= r.Item2))
+		{
+			_searchEntry.GrabFocusWithoutSelecting();
+		}
+		else if (_hiddenEntry.HasFocus)
+		{
+			_searchEntry.GrabFocusWithoutSelecting();
+			return true;
+		}
+
+		return false;
 	}
 }

@@ -12,6 +12,7 @@ using Glimpse.Interop;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
+using Key = Gdk.Key;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
 
@@ -20,6 +21,7 @@ namespace Glimpse.Components.StartMenu;
 public class StartMenuWindow : Window
 {
 	private readonly Subject<EventConfigure> _configureEventSubject = new();
+	private readonly StartMenuContent _startMenuContent;
 
 	public IObservable<Point> WindowMoved { get; }
 
@@ -48,29 +50,29 @@ public class StartMenuWindow : Window
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
 			.Replay(1);
 
-		var startMenuContent = new StartMenuContent(viewModelObservable, this);
+		_startMenuContent = new StartMenuContent(viewModelObservable);
 
-		startMenuContent.ChipActivated
+		_startMenuContent.ChipActivated
 			.TakeUntilDestroyed(this)
 			.Subscribe(c => dispatcher.Dispatch(new UpdateAppFilteringChip(c)));
 
-		startMenuContent.AppOrderingChanged
+		_startMenuContent.AppOrderingChanged
 			.TakeUntilDestroyed(this)
 			.Subscribe(t => dispatcher.Dispatch(new UpdateStartMenuPinnedAppOrderingAction(t.Item1.DesktopFile.IniFile.FilePath, t.Item2)));
 
-		startMenuContent.ToggleStartMenuPinning
+		_startMenuContent.ToggleStartMenuPinning
 			.TakeUntilDestroyed(this)
 			.Subscribe(f => dispatcher.Dispatch(new ToggleStartMenuPinningAction(f)));
 
-		startMenuContent.ToggleTaskbarPinning
+		_startMenuContent.ToggleTaskbarPinning
 			.TakeUntilDestroyed(this)
 			.Subscribe(f => dispatcher.Dispatch(new ToggleTaskbarPinningAction(f)));
 
-		startMenuContent.SearchTextUpdated
+		_startMenuContent.SearchTextUpdated
 			.TakeUntilDestroyed(this)
 			.Subscribe(text => dispatcher.Dispatch(new UpdateStartMenuSearchTextAction(text)));
 
-		startMenuContent.AppLaunch
+		_startMenuContent.AppLaunch
 			.TakeUntilDestroyed(this)
 			.Subscribe(desktopFile =>
 			{
@@ -78,7 +80,7 @@ public class StartMenuWindow : Window
 				freeDesktopService.Run(desktopFile);
 			});
 
-		startMenuContent.PowerButtonClicked
+		_startMenuContent.PowerButtonClicked
 			.TakeUntilDestroyed(this)
 			.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.PowerButtonCommand).DistinctUntilChanged())
 			.Subscribe(t =>
@@ -87,7 +89,7 @@ public class StartMenuWindow : Window
 				freeDesktopService.Run(t.Second);
 			});
 
-		startMenuContent.SettingsButtonClicked
+		_startMenuContent.SettingsButtonClicked
 			.TakeUntilDestroyed(this)
 			.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.SettingsButtonCommand).DistinctUntilChanged())
 			.Subscribe(t =>
@@ -96,7 +98,7 @@ public class StartMenuWindow : Window
 				freeDesktopService.Run(t.Second);
 			});
 
-		startMenuContent.UserSettingsClicked
+		_startMenuContent.UserSettingsClicked
 			.TakeUntilDestroyed(this)
 			.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.UserSettingsCommand).DistinctUntilChanged())
 			.Subscribe(t =>
@@ -105,14 +107,14 @@ public class StartMenuWindow : Window
 				freeDesktopService.Run(t.Second);
 			});
 
-		startMenuContent.DesktopFileAction
+		_startMenuContent.DesktopFileAction
 			.TakeUntilDestroyed(this)
 			.Subscribe(a => freeDesktopService.Run(a));
 
 		displayServer.FocusChanged
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
-			.Where(windowRef => IsVisible && windowRef.Id != LibGdk3Interop.gdk_x11_window_get_xid(startMenuContent.Window.Handle))
+			.Where(windowRef => IsVisible && windowRef.Id != LibGdk3Interop.gdk_x11_window_get_xid(_startMenuContent.Window.Handle))
 			.Subscribe(_ => Hide());
 
 		displayServer.StartMenuOpened
@@ -120,7 +122,7 @@ public class StartMenuWindow : Window
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
 			.Subscribe(_ => ToggleVisibility());
 
-		Add(startMenuContent);
+		Add(_startMenuContent);
 		viewModelObservable.Connect();
 	}
 
@@ -160,5 +162,28 @@ public class StartMenuWindow : Window
 	{
 		_configureEventSubject.OnNext(evnt);
 		return base.OnConfigureEvent(evnt);
+	}
+
+	protected override void OnShown()
+	{
+		base.OnShown();
+		_startMenuContent.HandleWindowShown();
+	}
+
+	[ConnectBefore]
+	protected override bool OnKeyPressEvent(EventKey evnt)
+	{
+		if (evnt.Key == Key.Escape)
+		{
+			Visible = false;
+			return true;
+		}
+
+		if (_startMenuContent.HandleKeyPress(evnt.KeyValue))
+		{
+			return true;
+		}
+
+		return base.OnKeyPressEvent(evnt);
 	}
 }
