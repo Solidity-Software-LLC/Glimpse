@@ -5,7 +5,7 @@ using Fluxor;
 using Gdk;
 using GLib;
 using Glimpse.Components;
-using Glimpse.Components.StartMenu;
+using Glimpse.Components.StartMenu.Window;
 using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Reactive;

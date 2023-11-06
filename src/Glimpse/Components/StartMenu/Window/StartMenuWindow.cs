@@ -13,12 +13,11 @@ using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
 using Key = Gdk.Key;
-using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
 
-namespace Glimpse.Components.StartMenu;
+namespace Glimpse.Components.StartMenu.Window;
 
-public class StartMenuWindow : Window
+public class StartMenuWindow : Gtk.Window
 {
 	private readonly Subject<EventConfigure> _configureEventSubject = new();
 	private readonly StartMenuContent _startMenuContent;
@@ -50,8 +49,17 @@ public class StartMenuWindow : Window
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
 			.Replay(1);
 
-		_startMenuContent = new StartMenuContent(viewModelObservable);
+		var actionBar = new StartMenuActionBar(viewModelObservable.Select(v => v.ActionBarViewModel).DistinctUntilChanged());
 
+		this.ObserveEvent(actionBar.CommandInvoked).Subscribe(command =>
+		{
+			Hide();
+			freeDesktopService.Run(command);
+		});
+
+		_startMenuContent = new StartMenuContent(viewModelObservable, actionBar);
+
+		this.ObserveEvent(_startMenuContent.DesktopFileAction).Subscribe(a => freeDesktopService.Run(a));
 		this.ObserveEvent(_startMenuContent.ChipActivated).Subscribe(c => dispatcher.Dispatch(new UpdateAppFilteringChip(c)));
 		this.ObserveEvent(_startMenuContent.AppOrderingChanged).Subscribe(t => dispatcher.Dispatch(new UpdateStartMenuPinnedAppOrderingAction(t.Item1.DesktopFile.IniFile.FilePath, t.Item2)));
 		this.ObserveEvent(_startMenuContent.ToggleStartMenuPinning).Subscribe(f => dispatcher.Dispatch(new ToggleStartMenuPinningAction(f)));
@@ -63,18 +71,6 @@ public class StartMenuWindow : Window
 			freeDesktopService.Run(desktopFile);
 		});
 
-		Observable.Merge(
-				_startMenuContent.PowerButtonClicked.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.PowerButtonCommand)),
-				_startMenuContent.SettingsButtonClicked.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.SettingsButtonCommand)),
-				_startMenuContent.UserSettingsClicked.WithLatestFrom(viewModelObservable.Select(vm => vm.ActionBarViewModel.UserSettingsCommand)))
-			.TakeUntilDestroyed(this)
-			.Subscribe(t =>
-			{
-				Hide();
-				freeDesktopService.Run(t.Second);
-			});
-
-		this.ObserveEvent(_startMenuContent.DesktopFileAction).Subscribe(a => freeDesktopService.Run(a));
 		this.ObserveEvent(displayServer.FocusChanged)
 			.ObserveOn(new GLibSynchronizationContext())
 			.Where(windowRef => IsVisible && windowRef.Id != LibGdk3Interop.gdk_x11_window_get_xid(_startMenuContent.Window.Handle))

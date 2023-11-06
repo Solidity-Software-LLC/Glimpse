@@ -1,7 +1,6 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using Gdk;
 using GLib;
 using Glimpse.Components.Shared;
 using Glimpse.Components.Shared.ForEach;
@@ -12,7 +11,7 @@ using Gtk;
 using Key = Gdk.Key;
 using Menu = Gtk.Menu;
 
-namespace Glimpse.Components.StartMenu;
+namespace Glimpse.Components.StartMenu.Window;
 
 public class StartMenuContent : Bin
 {
@@ -34,15 +33,12 @@ public class StartMenuContent : Bin
 	public IObservable<string> SearchTextUpdated { get; }
 	public IObservable<DesktopFile> AppLaunch => _appLaunch;
 	public IObservable<DesktopFileAction> DesktopFileAction => _runActionSubject;
-	public IObservable<ButtonReleaseEventArgs> PowerButtonClicked { get; private set; }
-	public IObservable<ButtonReleaseEventArgs> SettingsButtonClicked { get; private set; }
-	public IObservable<ButtonReleaseEventArgs> UserSettingsClicked { get; private set; }
 	public IObservable<StartMenuChips> ChipActivated { get; private set; }
 	public IObservable<(StartMenuAppViewModel, int)> AppOrderingChanged => _apps.OrderingChanged;
 	public IObservable<string> ToggleTaskbarPinning => _toggleTaskbarPinningSubject;
 	public IObservable<string> ToggleStartMenuPinning => _toggleStartMenuPinningSubject;
 
-	public StartMenuContent(IObservable<StartMenuViewModel> viewModelObservable)
+	public StartMenuContent(IObservable<StartMenuViewModel> viewModelObservable, StartMenuActionBar actionBar)
 	{
 		_contextMenu = new Menu() { ReserveToggleSize = false };
 
@@ -128,52 +124,12 @@ public class StartMenuContent : Bin
 		layout.Attach(_searchEntry, 1, 0, 6, 1);
 		layout.Attach(chipBox, 1, 1, 6, 1);
 		layout.Attach(pinnedAppsScrolledWindow, 1, 2, 6, 8);
-		layout.Attach(CreateActionBar(viewModelObservable.Select(vm => vm.ActionBarViewModel).DistinctUntilChanged()), 1, 10, 6, 1);
+		layout.Attach(actionBar, 1, 10, 6, 1);
 		layout.StyleContext.AddClass("start-menu__window");
 
 		Add(layout);
 		ShowAll();
 		_hiddenEntry.Hide();
-	}
-
-	private Widget CreateActionBar(IObservable<ActionBarViewModel> viewModel)
-	{
-		var userImage = new Image().AddClass("start-menu__account-icon");
-
-		viewModel
-			.Select(vm => vm.UserIconPath)
-			.DistinctUntilChanged()
-			.TakeUntilDestroyed(this)
-			.Select(path => string.IsNullOrEmpty(path) || !File.Exists(path) ? Assets.Person.ScaleSimple(42, 42, InterpType.Bilinear) : new Pixbuf(path))
-			.Select(p => p.ScaleSimple(42, 42, InterpType.Bilinear))
-			.Subscribe(p => userImage.Pixbuf = p);
-
-		var userButton = new Button()
-			.AddClass("start-menu__user-settings-button").AddMany(
-				new Box(Orientation.Horizontal, 0).AddMany(
-					userImage,
-					new Label(Environment.UserName).AddClass("start-menu__username")));
-
-		userButton.Valign = Align.Center;
-		UserSettingsClicked = userButton.ObserveButtonRelease();
-
-		var settingsButton = new Button(new Image(Assets.Settings.ScaleSimple(24, 24, InterpType.Bilinear)));
-		settingsButton.AddClass("start-menu__settings");
-		settingsButton.Valign = Align.Center;
-		settingsButton.Halign = Align.End;
-		SettingsButtonClicked = settingsButton.ObserveButtonRelease();
-
-		var powerButton = new Button(new Image(Assets.Power.ScaleSimple(24, 24, InterpType.Bilinear)));
-		powerButton.AddClass("start-menu__power");
-		powerButton.Valign = Align.Center;
-		powerButton.Halign = Align.End;
-		PowerButtonClicked = powerButton.ObserveButtonRelease();
-
-		var actionBar = new Box(Orientation.Horizontal, 0);
-		actionBar.Expand = true;
-		actionBar.AddClass("start-menu__action-bar");
-		actionBar.AddMany(userButton, new Label(Environment.MachineName) { Expand = true }, settingsButton, powerButton);
-		return actionBar;
 	}
 
 	private void OpenDesktopFileContextMenu(StartMenuAppViewModel appViewModel, StartMenuViewModel startMenuViewModel)

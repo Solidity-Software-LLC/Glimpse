@@ -2,12 +2,11 @@ using System.Reactive.Linq;
 using Gdk;
 using Glimpse.Components.Shared.ForEach;
 using Glimpse.Extensions.Gtk;
-using Glimpse.Services.FreeDesktop;
 using Gtk;
 using Pango;
 using WrapMode = Pango.WrapMode;
 
-namespace Glimpse.Components.StartMenu;
+namespace Glimpse.Components.StartMenu.Window;
 
 public class StartMenuAppIcon : EventBox, IForEachDraggable
 {

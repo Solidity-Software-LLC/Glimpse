@@ -6,6 +6,7 @@ using Fluxor.Selectors;
 using GLib;
 using Glimpse.Components;
 using Glimpse.Components.StartMenu;
+using Glimpse.Components.StartMenu.Window;
 using Glimpse.Components.SystemTray;
 using Glimpse.Components.Taskbar;
 using Glimpse.Extensions.Fluxor;

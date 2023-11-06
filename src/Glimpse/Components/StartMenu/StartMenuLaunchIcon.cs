@@ -3,6 +3,7 @@ using System.Reactive.Linq;
 using Fluxor;
 using Fluxor.Selectors;
 using GLib;
+using Glimpse.Components.StartMenu.Window;
 using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Services.FreeDesktop;
