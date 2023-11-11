@@ -150,5 +150,13 @@ public static class Extensions
 		widget.ObserveEvent(nameof(widget.ButtonPressEvent)).Subscribe(_ => widget.QueueDraw());
 		widget.ObserveEvent(nameof(widget.ButtonPressEvent)).WithLatestFrom(iconObservable).Subscribe(t => image.Pixbuf = t.Second.SmallIcon);
 		widget.ObserveEvent(nameof(widget.ButtonReleaseEvent)).WithLatestFrom(iconObservable).Subscribe(t => image.Pixbuf = t.Second.BigIcon);
+
+		widget.ObserveEvent(nameof(widget.ParentSet)).Subscribe(_ =>
+		{
+			widget.Parent.ObserveEvent(nameof(widget.DragBegin)).WithLatestFrom(iconObservable).Subscribe(t =>
+			{
+				image.Pixbuf = t.Second.BigIcon;
+			});
+		});
 	}
 }
