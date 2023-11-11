@@ -151,12 +151,9 @@ public static class Extensions
 		widget.ObserveEvent(nameof(widget.ButtonPressEvent)).WithLatestFrom(iconObservable).Subscribe(t => image.Pixbuf = t.Second.SmallIcon);
 		widget.ObserveEvent(nameof(widget.ButtonReleaseEvent)).WithLatestFrom(iconObservable).Subscribe(t => image.Pixbuf = t.Second.BigIcon);
 
-		widget.ObserveEvent(nameof(widget.ParentSet)).Subscribe(_ =>
+		widget.ObserveEvent(nameof(widget.LeaveNotifyEvent)).WithLatestFrom(iconObservable).Subscribe(t =>
 		{
-			widget.Parent.ObserveEvent(nameof(widget.DragBegin)).WithLatestFrom(iconObservable).Subscribe(t =>
-			{
-				image.Pixbuf = t.Second.BigIcon;
-			});
+			image.Pixbuf = t.Second.BigIcon;
 		});
 	}
 }
