@@ -1,4 +1,3 @@
-using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
@@ -46,9 +45,10 @@ public class XLibAdaptorService : IDisposable
 			.ObserveULongArrayProperty(XAtoms.NetActiveWindow)
 			.Subscribe(array => _focusChanged.OnNext(_rootWindowRef with { Window = array[0] }));
 
-		windowEvents
-			.ObservePropertyEvent()
-			.ObserveULongArrayProperty(XAtoms.NetClientList)
+		Observable.Return(_rootWindowRef.GetULongArray(XAtoms.NetClientList))
+			.Concat(windowEvents
+				.ObservePropertyEvent()
+				.ObserveULongArrayProperty(XAtoms.NetClientList))
 			.Select(windows => windows.Select(w => _rootWindowRef with { Window = w }).Where(w => w.IsNormalWindow()).ToArray())
 			.UnbundleMany(w => w)
 			.Subscribe(windowObservable =>

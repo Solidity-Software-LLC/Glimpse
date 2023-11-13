@@ -76,7 +76,7 @@ public class GtkApplicationHostedService : IHostedService
 						.SelectMany(f => f.Actions.Select(a => a.IconName).Concat(new[] { f.IconName }))
 						.Where(i => !string.IsNullOrEmpty(i))
 						.Distinct()
-						.ToDictionary(n => n, n => iconTheme.LoadIcon(n, 512));
+						.ToDictionary(n => n, n => iconTheme.LoadIcon(n, 64));
 
 					_dispatcher.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = icons });
 				});
@@ -87,7 +87,7 @@ public class GtkApplicationHostedService : IHostedService
 					windowObs.Select(g => g.Item1.IconName).DistinctUntilChanged().Subscribe(iconName =>
 					{
 						if (iconName == null) return;
-						_dispatcher.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = new Dictionary<string, Pixbuf>() { { iconName, iconTheme.LoadIcon(iconName, 512) } } });
+						_dispatcher.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = new Dictionary<string, Pixbuf>() { { iconName, iconTheme.LoadIcon(iconName, 64) } } });
 					});
 				});
 

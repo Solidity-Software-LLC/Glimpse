@@ -83,11 +83,6 @@ public class FreeDesktopService
 		_dispatcher.Dispatch(new UpdateDesktopFilesAction() { DesktopFiles = _desktopFiles });
 	}
 
-	public DesktopFile FindAppDesktopFileByPath(string filePath)
-	{
-		return _desktopFiles.FirstOrDefault(f => f.IniFile.FilePath.Equals(filePath, StringComparison.InvariantCultureIgnoreCase));
-	}
-
 	private IniFile ReadIniFile(string filePath)
 	{
 		try
