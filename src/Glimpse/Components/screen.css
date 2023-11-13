@@ -95,3 +95,8 @@ flowboxchild {
 .chip__label-container--selected .chip__label {
 	color: black;
 }
+
+.clock label {
+	padding-left: 8px;
+	padding-right: 8px;
+}

@@ -5,6 +5,7 @@ using Fluxor;
 using Gdk;
 using GLib;
 using Glimpse.Components;
+using Glimpse.Components.Calendar;
 using Glimpse.Components.StartMenu.Window;
 using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
@@ -97,6 +98,9 @@ public class GtkApplicationHostedService : IHostedService
 
 				var startMenuWindow = _serviceProvider.Resolve<StartMenuWindow>();
 				_application.AddWindow(startMenuWindow);
+
+				var calendarWindow = _serviceProvider.Resolve<CalendarWindow>();
+				_application.AddWindow(calendarWindow);
 
 				LoadPanels(display);
 				Application.Run();

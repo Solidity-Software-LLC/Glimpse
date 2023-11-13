@@ -1,15 +1,19 @@
-﻿using System.Reactive.Linq;
+﻿using System.Reactive;
+using System.Reactive.Linq;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Autofac.Features.AttributeFilters;
 using Fluxor;
 using Fluxor.Selectors;
 using GLib;
 using Glimpse.Components;
+using Glimpse.Components.Calendar;
 using Glimpse.Components.StartMenu;
 using Glimpse.Components.StartMenu.Window;
 using Glimpse.Components.SystemTray;
 using Glimpse.Components.Taskbar;
 using Glimpse.Extensions.Fluxor;
+using Glimpse.Services;
 using Glimpse.Services.Configuration;
 using Glimpse.Services.DBus;
 using Glimpse.Services.DBus.Interfaces;
@@ -23,6 +27,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tmds.DBus.Protocol;
 using Application = Gtk.Application;
+using DateTime = System.DateTime;
 
 namespace Glimpse;
 
@@ -35,11 +40,22 @@ public static class Program
 		var builder = Host.CreateDefaultBuilder(args)
 			.UseServiceProviderFactory(new AutofacServiceProviderFactory(containerBuilder =>
 			{
-				containerBuilder.RegisterType<Panel>();
+				containerBuilder
+					.Register(c =>
+					{
+						var host = c.Resolve<IHostApplicationLifetime>();
+						var shuttingDown = Observable.Create<Unit>(obs => host.ApplicationStopping.Register(() => obs.OnNext(Unit.Default)));
+						return TimerFactory.OneSecondTimer.TakeUntil(shuttingDown).Publish().AutoConnect();
+					})
+					.Keyed<IObservable<DateTime>>(Timers.OneSecond)
+					.SingleInstance();
+
+				containerBuilder.RegisterType<Panel>().WithAttributeFiltering();
 				containerBuilder.RegisterType<SystemTrayBox>();
 				containerBuilder.RegisterType<TaskbarView>();
 				containerBuilder.RegisterType<StartMenuLaunchIcon>();
 				containerBuilder.RegisterType<StartMenuWindow>().SingleInstance();
+				containerBuilder.RegisterType<CalendarWindow>().SingleInstance().WithAttributeFiltering();
 				containerBuilder.RegisterType<FreeDesktopService>().SingleInstance();
 				containerBuilder.RegisterType<X11DisplayServer>().As<X11DisplayServer>().As<IDisplayServer>().SingleInstance();
 				containerBuilder.RegisterType<DBusSystemTrayService>();

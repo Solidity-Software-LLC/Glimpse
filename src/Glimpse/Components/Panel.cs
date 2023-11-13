@@ -1,22 +1,24 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using Autofac.Features.AttributeFilters;
 using Fluxor;
 using Fluxor.Selectors;
 using Gdk;
 using GLib;
+using Glimpse.Components.Calendar;
 using Glimpse.Components.Shared;
 using Glimpse.Components.StartMenu;
 using Glimpse.Components.SystemTray;
 using Glimpse.Components.Taskbar;
 using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
+using Glimpse.Services;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
 using Gtk;
 using DateTime = System.DateTime;
 using Menu = Gtk.Menu;
 using Monitor = Gdk.Monitor;
-using Task = System.Threading.Tasks.Task;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
 
@@ -25,9 +27,17 @@ namespace Glimpse.Components;
 public class Panel : Window
 {
 	private readonly Menu _menu;
-	private const string ClockFormat = "h:mm tt\ndddd\nM/d/yyyy";
+	private const string ClockFormat = "h:mm tt\nM/d/yyyy";
 
-	public Panel(SystemTrayBox systemTrayBox, TaskbarView taskbarView, StartMenuLaunchIcon startMenuLaunchIcon, IStore store, FreeDesktopService freeDesktopService, Monitor monitor) : base(WindowType.Toplevel)
+	public Panel(
+		SystemTrayBox systemTrayBox,
+		TaskbarView taskbarView,
+		StartMenuLaunchIcon startMenuLaunchIcon,
+		IStore store,
+		FreeDesktopService freeDesktopService,
+		Monitor monitor,
+		[KeyFilter(Timers.OneSecond)] IObservable<DateTime> oneSecondTimer,
+		CalendarWindow calendarWindow) : base(WindowType.Toplevel)
 	{
 		Decorated = false;
 		Resizable = false;
@@ -43,6 +53,12 @@ public class Panel : Window
 		centerBox.Halign = Align.Start;
 
 		var clock = CreateClock();
+		var clockLabel = clock.Image as Label;
+		clock.ObserveButtonRelease().Where(e => e.Event.Button == 1).Subscribe(e =>
+		{
+			calendarWindow.ToggleVisibility();
+			e.RetVal = true;
+		});
 
 		var rightBox = new Box(Orientation.Horizontal, 0);
 		rightBox.PackStart(systemTrayBox, false, false, 4);
@@ -69,13 +85,12 @@ public class Panel : Window
 			.DistinctUntilChanged()
 			.Subscribe(numGroups => { centerBox.MarginStart = ComputeCenterBoxMarginLeft(numGroups); });
 
-		var clockCancellation = new CancellationTokenSource();
-
-		Observable.FromEventPattern(this, nameof(Destroyed))
-			.Take(1)
-			.Subscribe(_ => clockCancellation.Cancel());
-
-		StartClockAsync(clock, clockCancellation.Token);
+		oneSecondTimer
+			.TakeUntilDestroyed(this)
+			.ObserveOn(new GLibSynchronizationContext())
+			.Select(dt => dt.ToString(ClockFormat))
+			.DistinctUntilChanged()
+			.Subscribe(t => clockLabel.Text = t);
 
 		var taskManagerObs = store
 			.SubscribeSelector(RootStateSelectors.TaskManagerCommand)
@@ -107,32 +122,16 @@ public class Panel : Window
 		return WidthRequest / 2 - taskbarWidth / 2;
 	}
 
-	private Label CreateClock()
+	private Button CreateClock()
 	{
 		var clock = new Label(DateTime.Now.ToString(ClockFormat));
-		clock.Justify = Justification.Center;
-		return clock;
-	}
+		clock.Justify = Justification.Right;
 
-	private async Task StartClockAsync(Label clock, CancellationToken cancellationToken)
-	{
-		await Task.Yield();
-
-		using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
-
-		while (await timer.WaitForNextTickAsync(cancellationToken))
-		{
-			if (!cancellationToken.IsCancellationRequested)
-			{
-				var newText = DateTime.Now.ToString(ClockFormat);
-
-				if (clock.Text != newText)
-				{
-					clock.Text = newText;
-					clock.QueueDraw();
-				}
-			}
-		}
+		var clockButton = new Button();
+		clockButton.AddClass("clock");
+		clockButton.AddButtonStates();
+		clockButton.Image = clock;
+		return clockButton;
 	}
 
 	private void DockToBottom(Monitor monitor)

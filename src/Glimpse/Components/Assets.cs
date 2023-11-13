@@ -17,6 +17,8 @@ public class Assets
 	public static readonly Pixbuf TaskManager;
 	public static readonly Pixbuf MissingImage;
 	public static readonly Pixbuf Empty;
+	public static readonly Pixbuf CaretUp;
+	public static readonly Pixbuf CaretDown;
 
 	static Assets()
 	{
@@ -30,6 +32,8 @@ public class Assets
 		Volume = LoadSvg("volume-high.svg");
 		TaskManager = LoadSvg("pulse-outline.svg");
 		MissingImage = LoadSvg("missing-image.svg");
+		CaretUp = LoadSvg("caret-up.svg");
+		CaretDown = LoadSvg("caret-down.svg");
 		Empty = BitmapImage.Empty.ToPixbuf();
 	}
 
