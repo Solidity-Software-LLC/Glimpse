@@ -34,9 +34,10 @@ public class ConfigurationService
 		}
 
 		// Add file watcher
-		var config = JsonSerializer.Deserialize<ConfigurationFile>(
+		var config = (ConfigurationFile) JsonSerializer.Deserialize(
 			File.ReadAllText(configFile),
-			new JsonSerializerOptions(JsonSerializerDefaults.General) { PropertyNameCaseInsensitive = true });
+			typeof(ConfigurationFile),
+			ConfigurationSerializationContext.Instance);
 
 		_dispatcher.Dispatch(new UpdateConfigurationAction() { ConfigurationFile = config });
 
