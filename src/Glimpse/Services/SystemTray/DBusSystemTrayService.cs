@@ -10,28 +10,29 @@ using Tmds.DBus.Protocol;
 
 namespace Glimpse.Services.SystemTray;
 
-public class DBusSystemTrayService
+public class DBusSystemTrayService(
+	Connections connections,
+	IntrospectionService introspectionService,
+	IDispatcher dispatcher,
+	OrgKdeStatusNotifierWatcher watcher,
+	OrgFreedesktopDBus orgFreedesktopDBus)
 {
-	private readonly Connection _connection;
-	private readonly IntrospectionService _introspectionService;
-	private readonly IDispatcher _dispatcher;
-	private readonly OrgKdeStatusNotifierWatcher _watcher;
+	private readonly Connection _connection = connections.Session;
 
-	public DBusSystemTrayService(Connections connections, IntrospectionService introspectionService, IDispatcher dispatcher, OrgKdeStatusNotifierWatcher watcher)
+	public async Task InitializeAsync()
 	{
-		_introspectionService = introspectionService;
-		_dispatcher = dispatcher;
-		_connection = connections.Session;
-		_watcher = watcher;
+		watcher.Initialize();
+		watcher.RegisterStatusNotifierHostAsync("org.freedesktop.StatusNotifierWatcher-panel");
+		connections.Session.AddMethodHandler(watcher);
 
-		_watcher.RegisterStatusNotifierHostAsync("org.freedesktop.StatusNotifierWatcher-panel");
-
-		_watcher.ItemRegistered
+		watcher.ItemRegistered
 			.Delay(TimeSpan.FromSeconds(1))
 			.Select(s => Observable.FromAsync(() => CreateTrayItemState(s)).Take(1))
 			.Concat()
 			.Where(s => s != null)
-			.Subscribe(s => _dispatcher.Dispatch(new AddTrayItemAction() { ItemState = s }));
+			.Subscribe(s => dispatcher.Dispatch(new AddTrayItemAction() { ItemState = s }));
+
+		await orgFreedesktopDBus.RequestNameAsync("org.kde.StatusNotifierWatcher", 0);
 	}
 
 	private async Task<SystemTrayItemState> CreateTrayItemState(string statusNotifierObjectPath)
@@ -51,19 +52,19 @@ public class DBusSystemTrayService
 	private async Task<SystemTrayItemState> CreateTrayItemStateInternal(string statusNotifierObjectPath)
 	{
 		var serviceName = statusNotifierObjectPath.RemoveObjectPath();
-		var statusNotifierItemDesc = await _introspectionService.FindDBusObjectDescription(serviceName, "/", i => i == "org.kde.StatusNotifierItem");
+		var statusNotifierItemDesc = await introspectionService.FindDBusObjectDescription(serviceName, "/", i => i == "org.kde.StatusNotifierItem");
 		var statusNotifierItemProxy = new OrgKdeStatusNotifierItem(_connection, statusNotifierItemDesc.ServiceName, statusNotifierItemDesc.ObjectPath);
 		var menuObjectPath = await statusNotifierItemProxy.GetMenuPropertyAsync();
-		var dbusMenuDescription = await _introspectionService.FindDBusObjectDescription(statusNotifierItemDesc.ServiceName, menuObjectPath, p => p == "com.canonical.dbusmenu");
+		var dbusMenuDescription = await introspectionService.FindDBusObjectDescription(statusNotifierItemDesc.ServiceName, menuObjectPath, p => p == "com.canonical.dbusmenu");
 		var dbusMenuProxy = new ComCanonicalDbusmenu(_connection, dbusMenuDescription.ServiceName, dbusMenuDescription.ObjectPath);
 		var dbusMenuLayout = await dbusMenuProxy.GetLayoutAsync(0, -1, Array.Empty<string>());
-		var itemRemovedObservable = _watcher.ItemRemoved.Where(s => s == serviceName).Take(1);
+		var itemRemovedObservable = watcher.ItemRemoved.Where(s => s == serviceName).Take(1);
 
 		statusNotifierItemProxy.PropertyChanged
 			.TakeUntil(itemRemovedObservable)
 			.Subscribe(props =>
 			{
-				_dispatcher.Dispatch(new UpdateStatusNotifierItemPropertiesAction()
+				dispatcher.Dispatch(new UpdateStatusNotifierItemPropertiesAction()
 				{
 					Properties = StatusNotifierItemProperties.From(props),
 					ServiceName = serviceName
@@ -75,13 +76,13 @@ public class DBusSystemTrayService
 			.Throttle(TimeSpan.FromMilliseconds(250))
 			.Subscribe(menu =>
 			{
-				_dispatcher.Dispatch(new UpdateMenuLayoutAction { ServiceName = serviceName, RootMenuItem = DbusMenuItem.From(menu.layout) });
+				dispatcher.Dispatch(new UpdateMenuLayoutAction { ServiceName = serviceName, RootMenuItem = DbusMenuItem.From(menu.layout) });
 			});
 
 		itemRemovedObservable
 			.Subscribe(_ =>
 			{
-				_dispatcher.Dispatch(new RemoveTrayItemAction { ServiceName = serviceName });
+				dispatcher.Dispatch(new RemoveTrayItemAction { ServiceName = serviceName });
 			});
 
 		return new SystemTrayItemState()

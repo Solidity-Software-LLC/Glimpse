@@ -5,15 +5,19 @@ using Tmds.DBus.Protocol;
 
 namespace Glimpse.Services.DBus.Interfaces;
 
-public class OrgKdeStatusNotifierWatcher : IMethodHandler
+public class OrgKdeStatusNotifierWatcher(OrgFreedesktopDBus dbusInterface, Connections connections) : IMethodHandler
 {
 	private readonly Subject<string> _itemRegistered = new();
 	private readonly Subject<string> _itemRemoved = new();
 
-	public OrgKdeStatusNotifierWatcher(OrgFreedesktopDBus dbusInterface, Connections connections)
-	{
-		Connection = connections.Session;
+	private Connection Connection { get; } = connections.Session;
+	public string Path { get; } = "/StatusNotifierWatcher";
+	public IObservable<string> ItemRegistered => _itemRegistered;
+	public IObservable<string> ItemRemoved => _itemRemoved;
+	public Properties BackingProperties { get; } = new();
 
+	public void Initialize()
+	{
 		dbusInterface.NameChanged.Subscribe(t =>
 		{
 			var matchingItem = BackingProperties.RegisteredStatusNotifierItems.FirstOrDefault(s => s == t.Item1 && string.IsNullOrEmpty(t.Item3));
@@ -26,12 +30,6 @@ public class OrgKdeStatusNotifierWatcher : IMethodHandler
 			}
 		});
 	}
-
-	private Connection Connection { get; }
-	public string Path { get; } = "/StatusNotifierWatcher";
-	public IObservable<string> ItemRegistered => _itemRegistered;
-	public IObservable<string> ItemRemoved => _itemRemoved;
-	public Properties BackingProperties { get; } = new();
 
 	public bool RunMethodHandlerSynchronously(Message message) => true;
 

@@ -17,7 +17,7 @@ public class FreeDesktopService(IDispatcher dispatcher, OrgFreedesktopAccounts f
 	private ImmutableList<DesktopFile> _desktopFiles;
 	private IObservable<object> _desktopFileChanged = Observable.Empty<object>();
 
-	public async Task Init(Connections connections)
+	public async Task InitializeAsync(Connections connections)
 	{
 		var environmentVariables = Environment.GetEnvironmentVariables();
 

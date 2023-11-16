@@ -10,24 +10,17 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Glimpse.Services.X11;
 
-public class XLibAdaptorService : IDisposable
+public class XLibAdaptorService(IHostApplicationLifetime applicationLifetime) : IDisposable
 {
 	private XWindowRef _rootWindowRef;
-	private readonly IHostApplicationLifetime _applicationLifetime;
 	private readonly Subject<IObservable<WindowProperties>> _windows = new();
 	private readonly Subject<(XAnyEvent someEvent, IntPtr eventPointer)> _events = new();
 	private readonly Subject<XWindowRef> _focusChanged = new();
 
 	public IObservable<XWindowRef> FocusChanged => _focusChanged;
-
-	public XLibAdaptorService(IHostApplicationLifetime applicationLifetime)
-	{
-		_applicationLifetime = applicationLifetime;
-	}
-
 	public IObservable<IObservable<WindowProperties>> Windows => _windows;
 
-	public void Initialize()
+	public Task InitializeAsync()
 	{
 		XLib.XInitThreads();
 
@@ -108,7 +101,9 @@ public class XLibAdaptorService : IDisposable
 
 		windowEvents.Connect();
 
-		Task.Run(() => WatchEvents(_applicationLifetime.ApplicationStopping));
+		Task.Run(() => WatchEvents(applicationLifetime.ApplicationStopping));
+
+		return Task.CompletedTask;
 	}
 
 	private AllowedWindowActions[] ParseWindowActions(List<string> x11WindowActions)

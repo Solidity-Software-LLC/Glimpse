@@ -9,7 +9,7 @@ namespace Glimpse.Services.Configuration;
 
 public class ConfigurationService(IDispatcher dispatcher, IStore store)
 {
-	public void Initialize()
+	public Task InitializeAsync()
 	{
 		var dataDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "glimpse");
 		var configFile = Path.Join(dataDirectory, "config.json");
@@ -37,5 +37,7 @@ public class ConfigurationService(IDispatcher dispatcher, IStore store)
 			Console.WriteLine("Writing");
 			File.WriteAllText(configFile, JsonSerializer.Serialize(f, new JsonSerializerOptions(JsonSerializerDefaults.General) { WriteIndented = true }));
 		});
+
+		return Task.CompletedTask;
 	}
 }
