@@ -7,17 +7,8 @@ using Glimpse.State;
 
 namespace Glimpse.Services.Configuration;
 
-public class ConfigurationService
+public class ConfigurationService(IDispatcher dispatcher, IStore store)
 {
-	private readonly IDispatcher _dispatcher;
-	private readonly IStore _store;
-
-	public ConfigurationService(IDispatcher dispatcher, IStore store)
-	{
-		_dispatcher = dispatcher;
-		_store = store;
-	}
-
 	public void Initialize()
 	{
 		var dataDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "glimpse");
@@ -39,9 +30,9 @@ public class ConfigurationService
 			typeof(ConfigurationFile),
 			ConfigurationSerializationContext.Instance);
 
-		_dispatcher.Dispatch(new UpdateConfigurationAction() { ConfigurationFile = config });
+		dispatcher.Dispatch(new UpdateConfigurationAction() { ConfigurationFile = config });
 
-		_store.SubscribeSelector(RootStateSelectors.Configuration).ToObservable().Skip(1).Subscribe(f =>
+		store.SubscribeSelector(RootStateSelectors.Configuration).ToObservable().Skip(1).Subscribe(f =>
 		{
 			Console.WriteLine("Writing");
 			File.WriteAllText(configFile, JsonSerializer.Serialize(f, new JsonSerializerOptions(JsonSerializerDefaults.General) { WriteIndented = true }));

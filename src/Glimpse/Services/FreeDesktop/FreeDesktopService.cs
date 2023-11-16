@@ -12,18 +12,10 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Glimpse.Services.FreeDesktop;
 
-public class FreeDesktopService
+public class FreeDesktopService(IDispatcher dispatcher, OrgFreedesktopAccounts freedesktopAccounts)
 {
-	private readonly IDispatcher _dispatcher;
-	private readonly OrgFreedesktopAccounts _freedesktopAccounts;
 	private ImmutableList<DesktopFile> _desktopFiles;
 	private IObservable<object> _desktopFileChanged = Observable.Empty<object>();
-
-	public FreeDesktopService(IDispatcher dispatcher, OrgFreedesktopAccounts freedesktopAccounts)
-	{
-		_dispatcher = dispatcher;
-		_freedesktopAccounts = freedesktopAccounts;
-	}
 
 	public async Task Init(Connections connections)
 	{
@@ -60,7 +52,7 @@ public class FreeDesktopService
 
 		LoadDesktopFiles(dataDirectories);
 
-		var userObjectPath = await _freedesktopAccounts.FindUserByNameAsync(Environment.UserName);
+		var userObjectPath = await freedesktopAccounts.FindUserByNameAsync(Environment.UserName);
 		var userService = new OrgFreedesktopAccountsUser(connections.System, "org.freedesktop.Accounts", userObjectPath);
 
 		Observable
@@ -68,7 +60,7 @@ public class FreeDesktopService
 			.Concat(userService.PropertiesChanged)
 			.Subscribe(p =>
 			{
-				_dispatcher.Dispatch(new UpdateUserAction() { UserName = p.UserName, IconPath = p.IconFile });
+				dispatcher.Dispatch(new UpdateUserAction() { UserName = p.UserName, IconPath = p.IconFile });
 			});
 	}
 
@@ -80,7 +72,7 @@ public class FreeDesktopService
 			.Where(t => t != null)
 			.ToImmutableList();
 
-		_dispatcher.Dispatch(new UpdateDesktopFilesAction() { DesktopFiles = _desktopFiles });
+		dispatcher.Dispatch(new UpdateDesktopFilesAction() { DesktopFiles = _desktopFiles });
 	}
 
 	private IniFile ReadIniFile(string filePath)

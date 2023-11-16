@@ -149,24 +149,17 @@ public static class SystemTrayItemStateReducers
 	}
 }
 
-public class SystemTrayItemStateEffects
+public class SystemTrayItemStateEffects(DBusSystemTrayService systemTrayService)
 {
-	private readonly DBusSystemTrayService _systemTrayService;
-
-	public SystemTrayItemStateEffects(DBusSystemTrayService systemTrayService)
-	{
-		_systemTrayService = systemTrayService;
-	}
-
 	[EffectMethod]
 	public async Task HandleActivateApplicationAction(ActivateApplicationAction action, IDispatcher dispatcher)
 	{
-		await _systemTrayService.ActivateSystemTrayItemAsync(action.DbusObjectDescription, action.X, action.Y);
+		await systemTrayService.ActivateSystemTrayItemAsync(action.DbusObjectDescription, action.X, action.Y);
 	}
 
 	[EffectMethod]
 	public async Task HandleActivateMenuItemAction(ActivateMenuItemAction action, IDispatcher dispatcher)
 	{
-		await _systemTrayService.ClickedItem(action.DbusObjectDescription, action.MenuItemId);
+		await systemTrayService.ClickedItem(action.DbusObjectDescription, action.MenuItemId);
 	}
 }
