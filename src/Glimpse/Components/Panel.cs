@@ -138,7 +138,7 @@ public class Panel : Window
 	{
 		var monitorDimensions = monitor.Geometry;
 		SetSizeRequest(monitorDimensions.Width, AllocatedHeight);
-		Move(monitor.Workarea.Left, monitorDimensions.Height - AllocatedHeight);
+		Move(monitor.Workarea.Left, monitor.Workarea.Bottom - AllocatedHeight + 1);
 		ReserveSpace(monitor);
 	}
 
