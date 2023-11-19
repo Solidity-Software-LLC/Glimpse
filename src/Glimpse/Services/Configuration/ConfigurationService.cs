@@ -21,7 +21,7 @@ public class ConfigurationService(IDispatcher dispatcher, IStore store)
 
 		if (!File.Exists(configFile))
 		{
-			File.WriteAllText(configFile, JsonSerializer.Serialize(new ConfigurationFile()));
+			File.WriteAllText(configFile, JsonSerializer.Serialize(new ConfigurationFile(), typeof(ConfigurationFile), ConfigurationSerializationContext.Instance));
 		}
 
 		// Add file watcher
@@ -35,7 +35,7 @@ public class ConfigurationService(IDispatcher dispatcher, IStore store)
 		store.SubscribeSelector(RootStateSelectors.Configuration).ToObservable().Skip(1).Subscribe(f =>
 		{
 			Console.WriteLine("Writing");
-			File.WriteAllText(configFile, JsonSerializer.Serialize(f, new JsonSerializerOptions(JsonSerializerDefaults.General) { WriteIndented = true }));
+			File.WriteAllText(configFile, JsonSerializer.Serialize(f, typeof(ConfigurationFile), ConfigurationSerializationContext.Instance));
 		});
 
 		return Task.CompletedTask;

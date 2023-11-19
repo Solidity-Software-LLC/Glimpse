@@ -6,5 +6,10 @@ namespace Glimpse.Services.Configuration;
 [JsonSerializable(typeof(ConfigurationFile))]
 internal partial class ConfigurationSerializationContext : JsonSerializerContext
 {
-	public static ConfigurationSerializationContext Instance { get; } = new (new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+	public static ConfigurationSerializationContext Instance { get; } = new (
+		new JsonSerializerOptions()
+		{
+			WriteIndented = true,
+			PropertyNameCaseInsensitive = true
+		});
 }
