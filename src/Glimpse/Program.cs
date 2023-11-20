@@ -3,7 +3,6 @@ using System.Reactive.Linq;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Autofac.Features.AttributeFilters;
-using Fluxor;
 using GLib;
 using Glimpse.Components;
 using Glimpse.Components.Calendar;
@@ -11,6 +10,8 @@ using Glimpse.Components.StartMenu;
 using Glimpse.Components.StartMenu.Window;
 using Glimpse.Components.SystemTray;
 using Glimpse.Components.Taskbar;
+using Glimpse.Extensions.Redux;
+using Glimpse.Extensions.Redux.Effects;
 using Glimpse.Services;
 using Glimpse.Services.Configuration;
 using Glimpse.Services.DBus;
@@ -20,11 +21,14 @@ using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.Services.SystemTray;
 using Glimpse.Services.X11;
+using Glimpse.State;
+using Glimpse.State.SystemTray;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tmds.DBus.Protocol;
 using Application = Gtk.Application;
 using DateTime = System.DateTime;
+using Effects = Glimpse.State.Effects;
 
 namespace Glimpse;
 
@@ -36,7 +40,6 @@ public static class Program
 
 		var builder = Host.CreateApplicationBuilder(args);
 		builder.ConfigureContainer(new AutofacServiceProviderFactory(ConfigureContainer));
-		builder.Services.AddFluxor(o => o.ScanAssemblies(typeof(Program).Assembly).WithLifetime(StoreLifetime.Singleton));
 		builder.Services.AddHostedService<GlimpseHostedService>();
 
 		var host = builder.Build();
@@ -56,6 +59,11 @@ public static class Program
 			.Keyed<IObservable<DateTime>>(Timers.OneSecond)
 			.SingleInstance();
 
+		containerBuilder.RegisterType<ReduxStore>().SingleInstance();
+		containerBuilder.RegisterInstance(AllReducers.Reducers);
+		containerBuilder.RegisterInstance(SystemTrayItemStateReducers.Reducers);
+		containerBuilder.RegisterType<Effects>().As<IEffectsFactory>();
+		containerBuilder.RegisterType<SystemTrayItemStateEffects>().As<IEffectsFactory>();
 		containerBuilder.RegisterType<Panel>().WithAttributeFiltering();
 		containerBuilder.RegisterType<GlimpseGtkApplication>().SingleInstance();
 		containerBuilder.RegisterType<SystemTrayBox>();

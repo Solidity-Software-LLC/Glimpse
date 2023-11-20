@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reactive.Linq;
-using Fluxor;
 using Glimpse.Extensions.IO;
+using Glimpse.Extensions.Redux;
 using Glimpse.Interop;
 using Glimpse.Services.DBus;
 using Glimpse.Services.DBus.Interfaces;
@@ -12,7 +12,7 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Glimpse.Services.FreeDesktop;
 
-public class FreeDesktopService(IDispatcher dispatcher, OrgFreedesktopAccounts freedesktopAccounts)
+public class FreeDesktopService(ReduxStore store, OrgFreedesktopAccounts freedesktopAccounts)
 {
 	private ImmutableList<DesktopFile> _desktopFiles;
 	private IObservable<object> _desktopFileChanged = Observable.Empty<object>();
@@ -60,7 +60,7 @@ public class FreeDesktopService(IDispatcher dispatcher, OrgFreedesktopAccounts f
 			.Concat(userService.PropertiesChanged)
 			.Subscribe(p =>
 			{
-				dispatcher.Dispatch(new UpdateUserAction() { UserName = p.UserName, IconPath = p.IconFile });
+				store.Dispatch(new UpdateUserAction() { UserName = p.UserName, IconPath = p.IconFile });
 			});
 	}
 
@@ -72,7 +72,7 @@ public class FreeDesktopService(IDispatcher dispatcher, OrgFreedesktopAccounts f
 			.Where(t => t != null)
 			.ToImmutableList();
 
-		dispatcher.Dispatch(new UpdateDesktopFilesAction() { DesktopFiles = _desktopFiles });
+		store.Dispatch(new UpdateDesktopFilesAction() { DesktopFiles = _desktopFiles });
 	}
 
 	private IniFile ReadIniFile(string filePath)

@@ -1,6 +1,6 @@
 using System.Reactive.Linq;
-using Fluxor;
 using GLib;
+using Glimpse.Extensions.Redux;
 using Glimpse.Services.X11;
 using Glimpse.State;
 using Application = Gtk.Application;
@@ -11,7 +11,7 @@ public class X11DisplayServer : IDisplayServer
 {
 	private readonly XLibAdaptorService _xService;
 
-	public X11DisplayServer(XLibAdaptorService xService, IDispatcher dispatcher, Application application)
+	public X11DisplayServer(XLibAdaptorService xService, ReduxStore store, Application application)
 	{
 		_xService = xService;
 
@@ -21,9 +21,9 @@ public class X11DisplayServer : IDisplayServer
 
 		_xService.Windows.Subscribe(windowObs =>
 		{
-			windowObs.Take(1).Subscribe(w => dispatcher.Dispatch(new AddWindowAction(w)));
-			windowObs.Skip(1).Subscribe(w => dispatcher.Dispatch(new UpdateWindowAction() { WindowProperties = w }));
-			windowObs.TakeLast(1).Subscribe(w => dispatcher.Dispatch(new RemoveWindowAction() { WindowProperties = w }));
+			windowObs.Take(1).Subscribe(w => store.Dispatch(new AddWindowAction(w)));
+			windowObs.Skip(1).Subscribe(w => store.Dispatch(new UpdateWindowAction() { WindowProperties = w }));
+			windowObs.TakeLast(1).Subscribe(w => store.Dispatch(new RemoveWindowAction() { WindowProperties = w }));
 		});
 	}
 

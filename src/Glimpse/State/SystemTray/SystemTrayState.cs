@@ -1,12 +1,13 @@
 using System.Collections.Immutable;
-using Fluxor;
+using Glimpse.Extensions.Redux.Effects;
+using Glimpse.Extensions.Redux.Reducers;
 using Glimpse.Services.DBus;
 using Glimpse.Services.DBus.Introspection;
 using Glimpse.Services.SystemTray;
+using static Glimpse.Extensions.Redux.Effects.EffectsFactory;
 
 namespace Glimpse.State.SystemTray;
 
-[FeatureState]
 public class SystemTrayState
 {
 	public ImmutableDictionary<string, SystemTrayItemState> Items { get; init; }= ImmutableDictionary<string, SystemTrayItemState>.Empty;
@@ -80,86 +81,50 @@ public class UpdateStatusNotifierItemPropertiesAction
 
 public static class SystemTrayItemStateReducers
 {
-	[ReducerMethod]
-	public static SystemTrayState ReduceUpdateStatusNotifierItemPropertiesAction(SystemTrayState state, UpdateStatusNotifierItemPropertiesAction action)
+	public static readonly FeatureReducerCollection Reducers = new()
 	{
-		if (state.Items.TryGetValue(action.ServiceName, out var currentItem))
-		{
-			return new() { Items = state.Items.SetItem(action.ServiceName, new SystemTrayItemState(currentItem) { Properties = action.Properties }) };
-		}
-
-		return state;
-	}
-
-	[ReducerMethod]
-	public static SystemTrayState ReduceUpdateMenuLayoutAction(SystemTrayState state, UpdateMenuLayoutAction action)
-	{
-		if (state.Items.TryGetValue(action.ServiceName, out var currentItem))
-		{
-			return new() { Items = state.Items.SetItem(action.ServiceName, new SystemTrayItemState(currentItem) { RootMenuItem = action.RootMenuItem }) };
-		}
-
-		return state;
-	}
-
-	[ReducerMethod]
-	public static SystemTrayState ReduceAddBulkTrayItemsAction(SystemTrayState state, AddBulkTrayItemsAction action)
-	{
-		var newItemList = new LinkedList<SystemTrayItemState>();
-
-		foreach (var item in action.Items)
-		{
-			if (!state.Items.ContainsKey(item.GetServiceName()))
+		FeatureReducer.Build(new SystemTrayState())
+			.On<UpdateStatusNotifierItemPropertiesAction>((s, a) => s.Items.TryGetValue(a.ServiceName, out var currentItem)
+				? new() { Items = s.Items.SetItem(a.ServiceName, new SystemTrayItemState(currentItem) { Properties = a.Properties }) }
+				: s)
+			.On<UpdateMenuLayoutAction>((s, a) => s.Items.TryGetValue(a.ServiceName, out var currentItem)
+				? new() { Items = s.Items.SetItem(a.ServiceName, new SystemTrayItemState(currentItem) { RootMenuItem = a.RootMenuItem }) }
+				: s)
+			.On<AddBulkTrayItemsAction>((s, a) =>
 			{
-				newItemList.AddLast(item);
-			}
-		}
+				var newItemList = new LinkedList<SystemTrayItemState>();
 
-		// Add existing items too
+				foreach (var item in a.Items)
+				{
+					if (!s.Items.ContainsKey(item.GetServiceName()))
+					{
+						newItemList.AddLast(item);
+					}
+				}
 
-		return new SystemTrayState()
-		{
-			Items = newItemList
-				.DistinctBy(i => i.StatusNotifierItemDescription.ServiceName)
-				.ToImmutableDictionary(i => i.StatusNotifierItemDescription.ServiceName, i => i)
-		};
-	}
+				// Add existing items too
 
-	[ReducerMethod]
-	public static SystemTrayState ReduceAddTrayItemAction(SystemTrayState state, AddTrayItemAction action)
-	{
-		if (!state.Items.ContainsKey(action.ItemState.GetServiceName()))
-		{
-			return new() { Items = state.Items.Add(action.ItemState.GetServiceName(), action.ItemState) };
-
-		}
-
-		return state;
-	}
-
-	[ReducerMethod]
-	public static SystemTrayState ReduceRemoveTrayItemAction(SystemTrayState state, RemoveTrayItemAction action)
-	{
-		if (state.Items.ContainsKey(action.ServiceName))
-		{
-			return new() { Items = state.Items.Remove(action.ServiceName) };
-		}
-
-		return state;
-	}
+				return new SystemTrayState()
+				{
+					Items = newItemList
+						.DistinctBy(i => i.StatusNotifierItemDescription.ServiceName)
+						.ToImmutableDictionary(i => i.StatusNotifierItemDescription.ServiceName, i => i)
+				};
+			})
+			.On<AddTrayItemAction>((s, a) => !s.Items.ContainsKey(a.ItemState.GetServiceName())
+				? new() { Items = s.Items.Add(a.ItemState.GetServiceName(), a.ItemState) }
+				: s)
+			.On<RemoveTrayItemAction>((s, a) => s.Items.ContainsKey(a.ServiceName)
+				? new() { Items = s.Items.Remove(a.ServiceName) }
+				: s)
+	};
 }
 
-public class SystemTrayItemStateEffects(DBusSystemTrayService systemTrayService)
+public class SystemTrayItemStateEffects(DBusSystemTrayService systemTrayService) : IEffectsFactory
 {
-	[EffectMethod]
-	public async Task HandleActivateApplicationAction(ActivateApplicationAction action, IDispatcher dispatcher)
+	public IEnumerable<Effect> Create() => new[]
 	{
-		await systemTrayService.ActivateSystemTrayItemAsync(action.DbusObjectDescription, action.X, action.Y);
-	}
-
-	[EffectMethod]
-	public async Task HandleActivateMenuItemAction(ActivateMenuItemAction action, IDispatcher dispatcher)
-	{
-		await systemTrayService.ClickedItem(action.DbusObjectDescription, action.MenuItemId);
-	}
+		CreateEffect<ActivateApplicationAction>(async action => await systemTrayService.ActivateSystemTrayItemAsync(action.DbusObjectDescription, action.X, action.Y)),
+		CreateEffect<ActivateMenuItemAction>(async action => await systemTrayService.ClickedItem(action.DbusObjectDescription, action.MenuItemId))
+	};
 }

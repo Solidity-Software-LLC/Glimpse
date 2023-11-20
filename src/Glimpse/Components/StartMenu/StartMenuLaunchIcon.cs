@@ -1,11 +1,9 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using Fluxor;
-using Fluxor.Selectors;
 using GLib;
 using Glimpse.Components.StartMenu.Window;
-using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
+using Glimpse.Extensions.Redux;
 using Glimpse.Services.FreeDesktop;
 using Gtk;
 using Menu = Gtk.Menu;
@@ -15,10 +13,9 @@ namespace Glimpse.Components.StartMenu;
 
 public class StartMenuLaunchIcon : EventBox
 {
-	public StartMenuLaunchIcon(FreeDesktopService freeDesktopService, IStore store, StartMenuWindow startMenuWindow)
+	public StartMenuLaunchIcon(FreeDesktopService freeDesktopService, ReduxStore store, StartMenuWindow startMenuWindow)
 	{
-		var viewModelObservable = store.SubscribeSelector(StartMenuSelectors.ViewModel)
-			.ToObservable()
+		var viewModelObservable = store.Select(StartMenuSelectors.ViewModel)
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
 			.Replay(1);

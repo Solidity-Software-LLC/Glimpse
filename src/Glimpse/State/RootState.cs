@@ -1,20 +1,7 @@
 using System.Collections.Immutable;
-using Fluxor;
-using Gdk;
-using Glimpse.Services.Configuration;
 using Glimpse.Services.DisplayServer;
-using Glimpse.Services.FreeDesktop;
 
 namespace Glimpse.State;
-
-public record Entities
-{
-	public DataTable<string, DesktopFile> DesktopFiles { get; init; } = new();
-	public DataTable<string, Pixbuf> NamedIcons { get; init; } = new();
-	public DataTable<ulong, WindowProperties> Windows { get; init; } = new();
-	public DataTable<ulong, BitmapImage> Screenshots { get; init; } = new();
-	public virtual bool Equals(Entities other) => ReferenceEquals(this, other);
-}
 
 public record WindowProperties : IKeyed<ulong>
 {
@@ -55,14 +42,9 @@ public record SlotRef
 	public string DiscoveredDesktopFileId { get; init; } = "";
 }
 
-[FeatureState]
 public record RootState
 {
-	public ConfigurationFile Configuration { get; set; } = new();
-	public AccountState AccountState { get; init; } = new();
-	public Entities Entities { get; set; } = new();
 	public SlotReferences TaskbarSlots = new();
-	public StartMenuState StartMenuState = new();
 	public virtual bool Equals(RootState other) => ReferenceEquals(this, other);
 }
 

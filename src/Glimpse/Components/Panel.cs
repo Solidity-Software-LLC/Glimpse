@@ -1,8 +1,6 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using Autofac.Features.AttributeFilters;
-using Fluxor;
-using Fluxor.Selectors;
 using Gdk;
 using GLib;
 using Glimpse.Components.Calendar;
@@ -10,8 +8,8 @@ using Glimpse.Components.Shared;
 using Glimpse.Components.StartMenu;
 using Glimpse.Components.SystemTray;
 using Glimpse.Components.Taskbar;
-using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
+using Glimpse.Extensions.Redux;
 using Glimpse.Services;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
@@ -33,7 +31,7 @@ public class Panel : Window
 		SystemTrayBox systemTrayBox,
 		TaskbarView taskbarView,
 		StartMenuLaunchIcon startMenuLaunchIcon,
-		IStore store,
+		ReduxStore store,
 		FreeDesktopService freeDesktopService,
 		Monitor monitor,
 		[KeyFilter(Timers.OneSecond)] IObservable<DateTime> oneSecondTimer,
@@ -77,7 +75,7 @@ public class Panel : Window
 		Add(grid);
 		ShowAll();
 
-		store.SubscribeSelector(TaskbarSelectors.Slots).ToObservable()
+		store.Select(TaskbarSelectors.Slots)
 			.DistinctUntilChanged()
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
@@ -93,8 +91,7 @@ public class Panel : Window
 			.Subscribe(t => clockLabel.Text = t);
 
 		var taskManagerObs = store
-			.SubscribeSelector(RootStateSelectors.TaskManagerCommand)
-			.ToObservable()
+			.Select(RootStateSelectors.TaskManagerCommand)
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));
 

@@ -33,8 +33,6 @@
 	<ItemGroup>
 		<PackageReference Include="Autofac" Version="7.1.0" />
 		<PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
-		<PackageReference Include="Fluxor" Version="5.9.0"/>
-		<PackageReference Include="Fluxor.Selectors" Version="1.0.0-preview.1" />
 		<PackageReference Include="GtkSharp" Version="3.24.24.95"/>
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
 		<PackageReference Include="System.Reactive" Version="6.0.0"/>

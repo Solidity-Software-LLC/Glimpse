@@ -1,13 +1,11 @@
 using System.Reactive.Linq;
 using System.Text.Json;
-using Fluxor;
-using Fluxor.Selectors;
-using Glimpse.Extensions.Fluxor;
+using Glimpse.Extensions.Redux;
 using Glimpse.State;
 
 namespace Glimpse.Services.Configuration;
 
-public class ConfigurationService(IDispatcher dispatcher, IStore store)
+public class ConfigurationService(ReduxStore store)
 {
 	public Task InitializeAsync()
 	{
@@ -30,9 +28,9 @@ public class ConfigurationService(IDispatcher dispatcher, IStore store)
 			typeof(ConfigurationFile),
 			ConfigurationSerializationContext.Instance);
 
-		dispatcher.Dispatch(new UpdateConfigurationAction() { ConfigurationFile = config });
+		store.Dispatch(new UpdateConfigurationAction() { ConfigurationFile = config });
 
-		store.SubscribeSelector(RootStateSelectors.Configuration).ToObservable().Skip(1).Subscribe(f =>
+		store.Select(RootStateSelectors.Configuration).Skip(1).Subscribe(f =>
 		{
 			Console.WriteLine("Writing");
 			File.WriteAllText(configFile, JsonSerializer.Serialize(f, typeof(ConfigurationFile), ConfigurationSerializationContext.Instance));

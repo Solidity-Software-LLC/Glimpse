@@ -1,11 +1,10 @@
 using System.Reactive.Linq;
-using Fluxor;
-using Fluxor.Selectors;
 using Gdk;
 using GLib;
-using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Reactive;
+using Glimpse.Extensions.Redux;
+using Glimpse.Extensions.Redux.Selectors;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
 using Glimpse.State.SystemTray;
@@ -15,7 +14,7 @@ namespace Glimpse.Components.SystemTray;
 
 public class SystemTrayBox : Box
 {
-	public SystemTrayBox(IState<SystemTrayState> trayState, IDispatcher dispatcher, IStore store, FreeDesktopService freeDesktopService) : base(Orientation.Horizontal, 0)
+	public SystemTrayBox(ReduxStore store, FreeDesktopService freeDesktopService) : base(Orientation.Horizontal, 0)
 	{
 		StyleContext.AddClass("system-tray__taskbar-container");
 
@@ -24,12 +23,12 @@ public class SystemTrayBox : Box
 			.AddMany(new Image(Assets.Volume.ScaleSimple(24, 24, InterpType.Bilinear)));
 
 		volumeButton.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent))
-			.WithLatestFrom(store.SubscribeSelector(RootStateSelectors.VolumeCommand).ToObservable())
+			.WithLatestFrom(store.Select(RootStateSelectors.VolumeCommand))
 			.Subscribe(t => freeDesktopService.Run(t.Second));
 
 		PackEnd(volumeButton, false, false, 0);
 
-		trayState.ToObservable().TakeUntilDestroyed(this).ObserveOn(new GLibSynchronizationContext()).Select(x => x.Items).DistinctUntilChanged().UnbundleMany(i => i.Key).RemoveIndex().Subscribe(obs =>
+		store.Select(SelectorFactory.CreateSelector(s => s.GetFeatureState<SystemTrayState>())).TakeUntilDestroyed(this).ObserveOn(new GLibSynchronizationContext()).Select(x => x.Items).DistinctUntilChanged().UnbundleMany(i => i.Key).RemoveIndex().Subscribe(obs =>
 		{
 			var itemObservable = obs.TakeUntilDestroyed(this).Select(s => s.Value).DistinctUntilChanged();
 			var systemTrayIcon = new SystemTrayIcon(itemObservable);
@@ -38,12 +37,12 @@ public class SystemTrayBox : Box
 
 			systemTrayIcon.MenuItemActivated.TakeUntilDestroyed(this).WithLatestFrom(itemObservable).Subscribe(t =>
 			{
-				dispatcher.Dispatch(new ActivateMenuItemAction() { DbusObjectDescription = t.Second.DbusMenuDescription, MenuItemId = t.First });
+				store.Dispatch(new ActivateMenuItemAction() { DbusObjectDescription = t.Second.DbusMenuDescription, MenuItemId = t.First });
 			});
 
 			systemTrayIcon.ApplicationActivated.TakeUntilDestroyed(this).WithLatestFrom(itemObservable).Subscribe(t =>
 			{
-				dispatcher.Dispatch(new ActivateApplicationAction() { DbusObjectDescription = t.Second.StatusNotifierItemDescription, X = t.First.Item1, Y = t.First.Item2 });
+				store.Dispatch(new ActivateApplicationAction() { DbusObjectDescription = t.Second.StatusNotifierItemDescription, X = t.First.Item1, Y = t.First.Item2 });
 			});
 
 			itemObservable.Subscribe(_ => { }, _ => { }, () => systemTrayIcon.Destroy());

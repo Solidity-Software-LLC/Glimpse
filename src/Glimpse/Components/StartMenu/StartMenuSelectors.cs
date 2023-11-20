@@ -1,21 +1,22 @@
 using System.Collections.Immutable;
-using Fluxor.Selectors;
 using Glimpse.Extensions;
+using Glimpse.Extensions.Redux.Selectors;
 using Glimpse.Services.Configuration;
 using Glimpse.State;
+using static Glimpse.Extensions.Redux.Selectors.SelectorFactory;
 
 namespace Glimpse.Components.StartMenu;
 
 public static class StartMenuSelectors
 {
-	private static readonly ISelector<string> s_searchText = SelectorFactory.CreateSelector(RootStateSelectors.StartMenuState, s => s.SearchText);
-	private static readonly ISelector<string> s_powerButtonCommand = SelectorFactory.CreateSelector(RootStateSelectors.Configuration, s => s.PowerButtonCommand);
-	private static readonly ISelector<string> s_settingsButtonCommand = SelectorFactory.CreateSelector(RootStateSelectors.Configuration, s => s.SettingsButtonCommand);
-	private static readonly ISelector<string> s_taskManagerCommand = SelectorFactory.CreateSelector(RootStateSelectors.Configuration, s => s.TaskManagerCommand);
-	private static readonly ISelector<string> s_userSettingsCommand = SelectorFactory.CreateSelector(RootStateSelectors.Configuration, s => s.UserSettingsCommand);
-	private static readonly ISelector<ImmutableDictionary<StartMenuChips, StartMenuAppFilteringChip>> s_chips = SelectorFactory.CreateSelector(RootStateSelectors.StartMenuState, s => s.Chips);
+	private static readonly ISelector<string> s_searchText = CreateSelector(RootStateSelectors.StartMenuState, s => s.SearchText);
+	private static readonly ISelector<string> s_powerButtonCommand = CreateSelector(RootStateSelectors.Configuration, s => s.PowerButtonCommand);
+	private static readonly ISelector<string> s_settingsButtonCommand = CreateSelector(RootStateSelectors.Configuration, s => s.SettingsButtonCommand);
+	private static readonly ISelector<string> s_taskManagerCommand = CreateSelector(RootStateSelectors.Configuration, s => s.TaskManagerCommand);
+	private static readonly ISelector<string> s_userSettingsCommand = CreateSelector(RootStateSelectors.Configuration, s => s.UserSettingsCommand);
+	private static readonly ISelector<ImmutableDictionary<StartMenuChips, StartMenuAppFilteringChip>> s_chips = CreateSelector(RootStateSelectors.StartMenuState, s => s.Chips);
 
-	private static readonly ISelector<ActionBarViewModel> s_actionBarViewModelSelector = SelectorFactory.CreateSelector(
+	private static readonly ISelector<ActionBarViewModel> s_actionBarViewModelSelector = CreateSelector(
 		s_powerButtonCommand,
 		s_settingsButtonCommand,
 		s_userSettingsCommand,
@@ -28,7 +29,7 @@ public static class StartMenuSelectors
 			UserIconPath = userIconPath
 		});
 
-	private static readonly ISelector<ImmutableList<StartMenuAppViewModel>> s_allAppsSelector = SelectorFactory.CreateSelector(
+	private static readonly ISelector<ImmutableList<StartMenuAppViewModel>> s_allAppsSelector = CreateSelector(
 		RootStateSelectors.AllDesktopFiles,
 		s_searchText,
 		RootStateSelectors.Configuration,
@@ -71,7 +72,7 @@ public static class StartMenuSelectors
 			return results.OrderBy(r => r.Index).ToImmutableList();
 		});
 
-	private static readonly ISelector<ImmutableList<StartMenuLaunchIconContextMenuItem>> s_menuItems = SelectorFactory.CreateSelector(
+	private static readonly ISelector<ImmutableList<StartMenuLaunchIconContextMenuItem>> s_menuItems = CreateSelector(
 		RootStateSelectors.StartMenuLaunchIconContextMenuItems,
 		s_powerButtonCommand,
 		s_settingsButtonCommand,
@@ -84,7 +85,7 @@ public static class StartMenuSelectors
 			.Add(new() { DisplayText = "separator" })
 			.Add(new() { DisplayText = "Shutdown or sign out", Executable = powerButtonCommand }));
 
-	public static readonly ISelector<StartMenuViewModel> ViewModel = SelectorFactory.CreateSelector(
+	public static readonly ISelector<StartMenuViewModel> ViewModel = CreateSelector(
 		s_allAppsSelector,
 		s_searchText,
 		s_actionBarViewModelSelector,

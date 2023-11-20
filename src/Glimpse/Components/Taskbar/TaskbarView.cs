@@ -1,11 +1,9 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using Fluxor;
-using Fluxor.Selectors;
 using GLib;
 using Glimpse.Components.Shared.ForEach;
-using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
+using Glimpse.Extensions.Redux;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
@@ -15,11 +13,10 @@ namespace Glimpse.Components.Taskbar;
 
 public class TaskbarView : Box
 {
-	public TaskbarView(IStore store, IDisplayServer displayServer, FreeDesktopService freeDesktopService, IDispatcher dispatcher)
+	public TaskbarView(ReduxStore store, IDisplayServer displayServer, FreeDesktopService freeDesktopService)
 	{
 		var viewModelSelector = store
-			.SubscribeSelector(TaskbarSelectors.ViewModel)
-			.ToObservable()
+			.Select(TaskbarSelectors.ViewModel)
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new GLibSynchronizationContext())
 			.Replay(1);
@@ -65,7 +62,7 @@ public class TaskbarView : Box
 				.Where(_ => !windowPicker.Visible)
 				.Subscribe(t =>
 				{
-					dispatcher.Dispatch(new TakeScreenshotAction() { Windows = t.Tasks.Select(x => x.WindowRef).ToList() });
+					store.Dispatch(new TakeScreenshotAction() { Windows = t.Tasks.Select(x => x.WindowRef).ToList() });
 					windowPicker.Popup();
 				});
 
@@ -99,7 +96,7 @@ public class TaskbarView : Box
 				.Where(t => t.First.Event.Button == 1 && t.Second.Tasks.Count > 1 && !windowPicker.Visible)
 				.Subscribe(t =>
 				{
-					dispatcher.Dispatch(new TakeScreenshotAction() { Windows = t.Second.Tasks.Select(x => x.WindowRef).ToList() });
+					store.Dispatch(new TakeScreenshotAction() { Windows = t.Second.Tasks.Select(x => x.WindowRef).ToList() });
 					windowPicker.Popup();
 				});
 
@@ -116,7 +113,7 @@ public class TaskbarView : Box
 			contextMenu.Pin
 				.TakeUntilDestroyed(this)
 				.WithLatestFrom(viewModelObservable)
-				.Subscribe(t => dispatcher.Dispatch(new ToggleTaskbarPinningAction(t.Second.DesktopFile.Id)));
+				.Subscribe(t => store.Dispatch(new ToggleTaskbarPinningAction(t.Second.DesktopFile.Id)));
 
 			contextMenu.Launch
 				.TakeUntilDestroyed(this)
@@ -140,7 +137,7 @@ public class TaskbarView : Box
 		forEachGroup.AddClass("taskbar__container");
 		forEachGroup.OrderingChanged
 			.TakeUntilDestroyed(this)
-			.Subscribe(t => dispatcher.Dispatch(new UpdateTaskbarSlotOrderingSingleAction() { SlotRef = t.Item1.SlotRef, NewIndex = t.Item2 }));
+			.Subscribe(t => store.Dispatch(new UpdateTaskbarSlotOrderingSingleAction() { SlotRef = t.Item1.SlotRef, NewIndex = t.Item2 }));
 		forEachGroup.DragBeginObservable.TakeUntilDestroyed(this).Subscribe(icon => icon.CloseWindowPicker());
 
 		Add(forEachGroup);

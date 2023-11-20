@@ -1,27 +1,21 @@
-using Fluxor;
+using Glimpse.Extensions.Redux.Effects;
 using Glimpse.Services.DisplayServer;
+using static Glimpse.Extensions.Redux.Effects.EffectsFactory;
 
 namespace Glimpse.State;
 
-public class Effects
+public class Effects(IDisplayServer displayServer) : IEffectsFactory
 {
-	private readonly IDisplayServer _displayServer;
-
-	public Effects(IDisplayServer displayServer)
+	public IEnumerable<Effect> Create() => new[]
 	{
-		_displayServer = displayServer;
-	}
-
-	[EffectMethod]
-	public Task HandleTakeScreenshotAction(TakeScreenshotAction action, IDispatcher dispatcher)
-	{
-		dispatcher.Dispatch(new UpdateScreenshotsAction()
+		CreateEffect<TakeScreenshotAction>(action => new[]
 		{
-			Screenshots = action.Windows
-				.Select(w => (w.Id, _displayServer.TakeScreenshot(w))).Where(t => t.Item2 != null)
-				.ToDictionary(t => t.Id, t => t.Item2)
-		});
-
-		return Task.CompletedTask;
-	}
+			new UpdateScreenshotsAction()
+			{
+				Screenshots = action.Windows
+					.Select(w => (w.Id, displayServer.TakeScreenshot(w))).Where(t => t.Item2 != null)
+					.ToDictionary(t => t.Id, t => t.Item2)
+			}
+		}),
+	};
 }

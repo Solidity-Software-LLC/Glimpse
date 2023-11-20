@@ -1,14 +1,15 @@
 using System.Collections.Immutable;
-using Fluxor.Selectors;
 using Glimpse.Extensions.Gtk;
+using Glimpse.Extensions.Redux;
+using Glimpse.Extensions.Redux.Selectors;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
-
+using static Glimpse.Extensions.Redux.Selectors.SelectorFactory;
 namespace Glimpse.Components.Taskbar;
 
 public static class TaskbarSelectors
 {
-	public static readonly ISelector<SlotReferences> Slots = SelectorFactory.CreateSelector(
+	public static readonly ISelector<SlotReferences> Slots = CreateSelector(
 		RootStateSelectors.TaskbarPinnedLaunchers,
 		RootStateSelectors.DesktopFiles,
 		RootStateSelectors.Windows,
@@ -52,7 +53,7 @@ public static class TaskbarSelectors
 			return new SlotReferences { Refs = result };
 		});
 
-	public static readonly ISelector<SlotReferences> SortedSlots = SelectorFactory.CreateSelector(
+	public static readonly ISelector<SlotReferences> SortedSlots = CreateSelector(
 		Slots,
 		RootStateSelectors.TaskbarSlotCollection,
 		(slotCollection, ordering) =>
@@ -87,7 +88,7 @@ public static class TaskbarSelectors
 			return new SlotReferences { Refs = results };
 		});
 
-	public static readonly ISelector<TaskbarViewModel> ViewModel = SelectorFactory.CreateSelector(
+	public static readonly ISelector<TaskbarViewModel> ViewModel = CreateSelector(
 		SortedSlots,
 		RootStateSelectors.Windows,
 		RootStateSelectors.NamedIcons,

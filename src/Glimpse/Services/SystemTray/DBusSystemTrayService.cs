@@ -1,6 +1,6 @@
 using System.Reactive.Linq;
-using Fluxor;
 using Glimpse.Extensions;
+using Glimpse.Extensions.Redux;
 using Glimpse.Services.DBus;
 using Glimpse.Services.DBus.Core;
 using Glimpse.Services.DBus.Interfaces;
@@ -13,7 +13,7 @@ namespace Glimpse.Services.SystemTray;
 public class DBusSystemTrayService(
 	Connections connections,
 	IntrospectionService introspectionService,
-	IDispatcher dispatcher,
+	ReduxStore store,
 	OrgKdeStatusNotifierWatcher watcher,
 	OrgFreedesktopDBus orgFreedesktopDBus)
 {
@@ -30,7 +30,7 @@ public class DBusSystemTrayService(
 			.Select(s => Observable.FromAsync(() => CreateTrayItemState(s)).Take(1))
 			.Concat()
 			.Where(s => s != null)
-			.Subscribe(s => dispatcher.Dispatch(new AddTrayItemAction() { ItemState = s }));
+			.Subscribe(s => store.Dispatch(new AddTrayItemAction() { ItemState = s }));
 
 		await orgFreedesktopDBus.RequestNameAsync("org.kde.StatusNotifierWatcher", 0);
 	}
@@ -64,7 +64,7 @@ public class DBusSystemTrayService(
 			.TakeUntil(itemRemovedObservable)
 			.Subscribe(props =>
 			{
-				dispatcher.Dispatch(new UpdateStatusNotifierItemPropertiesAction()
+				store.Dispatch(new UpdateStatusNotifierItemPropertiesAction()
 				{
 					Properties = StatusNotifierItemProperties.From(props),
 					ServiceName = serviceName
@@ -76,13 +76,13 @@ public class DBusSystemTrayService(
 			.Throttle(TimeSpan.FromMilliseconds(250))
 			.Subscribe(menu =>
 			{
-				dispatcher.Dispatch(new UpdateMenuLayoutAction { ServiceName = serviceName, RootMenuItem = DbusMenuItem.From(menu.layout) });
+				store.Dispatch(new UpdateMenuLayoutAction { ServiceName = serviceName, RootMenuItem = DbusMenuItem.From(menu.layout) });
 			});
 
 		itemRemovedObservable
 			.Subscribe(_ =>
 			{
-				dispatcher.Dispatch(new RemoveTrayItemAction { ServiceName = serviceName });
+				store.Dispatch(new RemoveTrayItemAction { ServiceName = serviceName });
 			});
 
 		return new SystemTrayItemState()

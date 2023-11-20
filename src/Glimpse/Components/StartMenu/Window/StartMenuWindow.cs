@@ -1,13 +1,11 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using Fluxor;
-using Fluxor.Selectors;
 using Gdk;
 using GLib;
-using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Reactive;
+using Glimpse.Extensions.Redux;
 using Glimpse.Interop;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
@@ -24,7 +22,7 @@ public class StartMenuWindow : Gtk.Window
 
 	public IObservable<Point> WindowMoved { get; }
 
-	public StartMenuWindow(FreeDesktopService freeDesktopService, IDisplayServer displayServer, IStore store, IDispatcher dispatcher)
+	public StartMenuWindow(FreeDesktopService freeDesktopService, IDisplayServer displayServer, ReduxStore store)
 		: base(WindowType.Toplevel)
 	{
 		SkipPagerHint = true;
@@ -43,8 +41,7 @@ public class StartMenuWindow : Gtk.Window
 			.Select(e => new Point(e.X, e.Y))
 			.DistinctUntilChanged((a, b) => a.X == b.X && a.Y == b.Y);
 
-		var viewModelObservable = store.SubscribeSelector(StartMenuSelectors.ViewModel)
-			.ToObservable()
+		var viewModelObservable = store.Select(StartMenuSelectors.ViewModel)
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
 			.Replay(1);
@@ -60,11 +57,11 @@ public class StartMenuWindow : Gtk.Window
 		_startMenuContent = new StartMenuContent(viewModelObservable, actionBar);
 
 		this.ObserveEvent(_startMenuContent.DesktopFileAction).Subscribe(a => freeDesktopService.Run(a));
-		this.ObserveEvent(_startMenuContent.ChipActivated).Subscribe(c => dispatcher.Dispatch(new UpdateAppFilteringChip(c)));
-		this.ObserveEvent(_startMenuContent.AppOrderingChanged).Subscribe(t => dispatcher.Dispatch(new UpdateStartMenuPinnedAppOrderingAction(t.Item1.DesktopFile.IniFile.FilePath, t.Item2)));
-		this.ObserveEvent(_startMenuContent.ToggleStartMenuPinning).Subscribe(f => dispatcher.Dispatch(new ToggleStartMenuPinningAction(f)));
-		this.ObserveEvent(_startMenuContent.ToggleTaskbarPinning).Subscribe(f => dispatcher.Dispatch(new ToggleTaskbarPinningAction(f)));
-		this.ObserveEvent(_startMenuContent.SearchTextUpdated).Subscribe(text => dispatcher.Dispatch(new UpdateStartMenuSearchTextAction(text)));
+		this.ObserveEvent(_startMenuContent.ChipActivated).Subscribe(c => store.Dispatch(new UpdateAppFilteringChip(c)));
+		this.ObserveEvent(_startMenuContent.AppOrderingChanged).Subscribe(t => store.Dispatch(new UpdateStartMenuPinnedAppOrderingAction(t.Item1.DesktopFile.IniFile.FilePath, t.Item2)));
+		this.ObserveEvent(_startMenuContent.ToggleStartMenuPinning).Subscribe(f => store.Dispatch(new ToggleStartMenuPinningAction(f)));
+		this.ObserveEvent(_startMenuContent.ToggleTaskbarPinning).Subscribe(f => store.Dispatch(new ToggleTaskbarPinningAction(f)));
+		this.ObserveEvent(_startMenuContent.SearchTextUpdated).Subscribe(text => store.Dispatch(new UpdateStartMenuSearchTextAction(text)));
 		this.ObserveEvent(_startMenuContent.AppLaunch).Subscribe(desktopFile =>
 		{
 			Hide();

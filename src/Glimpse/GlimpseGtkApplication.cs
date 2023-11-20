@@ -1,17 +1,15 @@
 using System.Reactive.Linq;
 using System.Text;
 using Autofac;
-using Fluxor;
-using Fluxor.Selectors;
 using Gdk;
 using GLib;
 using Glimpse.Components;
 using Glimpse.Components.Calendar;
 using Glimpse.Components.StartMenu.Window;
 using Glimpse.Components.Taskbar;
-using Glimpse.Extensions.Fluxor;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Reactive;
+using Glimpse.Extensions.Redux;
 using Glimpse.State;
 using Gtk;
 using Application = Gtk.Application;
@@ -23,9 +21,7 @@ namespace Glimpse;
 public class GlimpseGtkApplication(
 	ILifetimeScope serviceProvider,
 	Application application,
-	IStore store,
-	IState<RootState> rootState,
-	IDispatcher dispatcher)
+	ReduxStore store)
 {
 	private List<Panel> _panels = new();
 
@@ -40,15 +36,13 @@ public class GlimpseGtkApplication(
 			args.ExitApplication = false;
 		};
 
-		store.SubscribeSelector(TaskbarSelectors.Slots)
-			.ToObservable()
+		store.Select(TaskbarSelectors.Slots)
 			.Take(1)
-			.Subscribe(slots => dispatcher.Dispatch(new UpdateTaskbarSlotOrderingBulkAction() { Slots = slots.Refs }));
+			.Subscribe(slots => store.Dispatch(new UpdateTaskbarSlotOrderingBulkAction() { Slots = slots.Refs }));
 
-		store.SubscribeSelector(TaskbarSelectors.SortedSlots)
-			.ToObservable()
+		store.Select(TaskbarSelectors.SortedSlots)
 			.DistinctUntilChanged()
-			.Subscribe(slots => dispatcher.Dispatch(new UpdateTaskbarSlotOrderingBulkAction() { Slots = slots.Refs }));
+			.Subscribe(slots => store.Dispatch(new UpdateTaskbarSlotOrderingBulkAction() { Slots = slots.Refs }));
 
 		Application.Init();
 		application.Register(Cancellable.Current);
@@ -91,7 +85,7 @@ public class GlimpseGtkApplication(
 		var screen = display.DefaultScreen;
 		var iconTheme = IconTheme.GetForScreen(screen);
 		var iconThemeChangedObs = Observable.FromEventPattern(iconTheme, nameof(iconTheme.Changed));
-		var desktopFilesObs = rootState.ToObservable().Select(r => r.Entities.DesktopFiles).DistinctUntilChanged();
+		var desktopFilesObs = store.Select(RootStateSelectors.DesktopFiles).DistinctUntilChanged();
 
 		desktopFilesObs.Merge(iconThemeChangedObs.WithLatestFrom(desktopFilesObs).Select(t => t.Second)).Subscribe(desktopFiles =>
 		{
@@ -101,16 +95,16 @@ public class GlimpseGtkApplication(
 				.Distinct()
 				.ToDictionary(n => n, n => iconTheme.LoadIcon(n, 64));
 
-			dispatcher.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = icons });
+			store.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = icons });
 		});
 
 		// Handle complete
-		rootState.ToObservable().Select(r => r.Entities.Windows.ById.Values).DistinctUntilChanged().UnbundleMany(g => g.WindowRef.Id).Subscribe(windowObs =>
+		store.Select(RootStateSelectors.Windows).Select(r => r.ById.Values).DistinctUntilChanged().UnbundleMany(g => g.WindowRef.Id).Subscribe(windowObs =>
 		{
 			windowObs.Select(g => g.Item1.IconName).DistinctUntilChanged().Subscribe(iconName =>
 			{
 				if (iconName == null) return;
-				dispatcher.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = new Dictionary<string, Pixbuf>() { { iconName, iconTheme.LoadIcon(iconName, 64) } } });
+				store.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = new Dictionary<string, Pixbuf>() { { iconName, iconTheme.LoadIcon(iconName, 64) } } });
 			});
 		});
 	}
