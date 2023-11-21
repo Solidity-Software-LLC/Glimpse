@@ -111,18 +111,26 @@ public class GlimpseGtkApplication(
 
 	private void LoadPanels(Display display)
 	{
-		_panels.ForEach(w =>
+		new GLibSynchronizationContext().Post(async _ =>
 		{
-			w.Close();
-			w.Dispose();
-		});
+			_panels.ForEach(w =>
+			{
+				w.Close();
+				w.Dispose();
+			});
 
-		_panels = display
-			.GetMonitors()
-			.Select(m => serviceProvider.Resolve<Panel>(new TypedParameter(typeof(Monitor), m)))
-			.ToList();
+			if (_panels.Any())
+			{
+				await Task.Delay(TimeSpan.FromSeconds(1));
+			}
 
-		_panels.ForEach(application.AddWindow);
+			_panels = display
+				.GetMonitors()
+				.Select(m => serviceProvider.Resolve<Panel>(new TypedParameter(typeof(Monitor), m)))
+				.ToList();
+
+			_panels.ForEach(application.AddWindow);
+		}, null);
 	}
 
 	public void Shutdown()
