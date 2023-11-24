@@ -15,6 +15,7 @@ using Gtk;
 using Application = Gtk.Application;
 using Monitor = Gdk.Monitor;
 using Task = System.Threading.Tasks.Task;
+using Thread = System.Threading.Thread;
 
 namespace Glimpse;
 
@@ -111,25 +112,32 @@ public class GlimpseGtkApplication(
 
 	private void LoadPanels(Display display)
 	{
-		new GLibSynchronizationContext().Post(async _ =>
+		new GLibSynchronizationContext().Post(_ =>
 		{
-			_panels.ForEach(w =>
+			var monitors = display.GetMonitors();
+			var removedPanels = _panels.Where(p => monitors.All(m => !p.IsOnMonitor(m))).ToList();
+			var newMonitors = monitors.Where(m => _panels.All(p => !p.IsOnMonitor(m))).ToList();
+			var remainingPanels = _panels.Except(removedPanels).ToList();
+			_panels = remainingPanels;
+
+			remainingPanels.ForEach(p =>
+			{
+				p.DockToBottom();
+			});
+
+			removedPanels.ForEach(w =>
 			{
 				w.Close();
 				w.Dispose();
 			});
 
-			if (_panels.Any())
+			newMonitors.ForEach(m =>
 			{
-				await Task.Delay(TimeSpan.FromSeconds(1));
-			}
-
-			_panels = display
-				.GetMonitors()
-				.Select(m => serviceProvider.Resolve<Panel>(new TypedParameter(typeof(Monitor), m)))
-				.ToList();
-
-			_panels.ForEach(application.AddWindow);
+				var newPanel = serviceProvider.Resolve<Panel>(new TypedParameter(typeof(Monitor), m));
+				application.AddWindow(newPanel);
+				newPanel.DockToBottom();
+				_panels.Add(newPanel);
+			});
 		}, null);
 	}
 

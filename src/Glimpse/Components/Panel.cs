@@ -1,5 +1,6 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using Autofac.Features.AttributeFilters;
 using Gdk;
 using GLib;
@@ -24,6 +25,7 @@ namespace Glimpse.Components;
 
 public class Panel : Window
 {
+	private readonly Monitor _monitor;
 	private readonly Menu _menu;
 	private const string ClockFormat = "h:mm tt\nM/d/yyyy";
 
@@ -37,6 +39,7 @@ public class Panel : Window
 		[KeyFilter(Timers.OneSecond)] IObservable<DateTime> oneSecondTimer,
 		CalendarWindow calendarWindow) : base(WindowType.Toplevel)
 	{
+		_monitor = monitor;
 		Decorated = false;
 		Resizable = false;
 		TypeHint = WindowTypeHint.Dock;
@@ -104,7 +107,6 @@ public class Panel : Window
 		_menu.ShowAll();
 
 		this.CreateContextMenuObservable().Subscribe(t => _menu.Popup());
-		DockToBottom(monitor);
 	}
 
 	protected override void OnDestroyed()
@@ -131,17 +133,22 @@ public class Panel : Window
 		return clockButton;
 	}
 
-	private void DockToBottom(Monitor monitor)
+	public void DockToBottom()
 	{
-		var monitorDimensions = monitor.Geometry;
+		var monitorDimensions = _monitor.Geometry;
 		SetSizeRequest(monitorDimensions.Width, AllocatedHeight);
-		Move(monitor.Workarea.Left, monitor.Workarea.Bottom - AllocatedHeight + 1);
-		ReserveSpace(monitor);
+		Move(_monitor.Workarea.Left, _monitor.Geometry.Bottom - AllocatedHeight + 1);
+		ReserveSpace();
 	}
 
-	private void ReserveSpace(Monitor monitor)
+	private void ReserveSpace()
 	{
-		var reservedSpaceLong = new long[] { 0, 0, 0, AllocatedHeight, 0, 0, 0, 0, 0, 0, monitor.Workarea.Left, monitor.Workarea.Left + monitor.Geometry.Width }.SelectMany(BitConverter.GetBytes).ToArray();
+		var reservedSpaceLong = new long[] { 0, 0, 0, AllocatedHeight, 0, 0, 0, 0, 0, 0, _monitor.Workarea.Left, _monitor.Workarea.Left + _monitor.Geometry.Width - 1 }.SelectMany(BitConverter.GetBytes).ToArray();
 		Property.Change(Window, Atom.Intern("_NET_WM_STRUT_PARTIAL", false), Atom.Intern("CARDINAL", false), 32, PropMode.Replace, reservedSpaceLong, 12);
+	}
+
+	public bool IsOnMonitor(Monitor monitor)
+	{
+		return monitor.Handle == _monitor.Handle;
 	}
 }
