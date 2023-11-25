@@ -9,6 +9,7 @@ using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
 using Glimpse.State.SystemTray;
 using Gtk;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Components.SystemTray;
 
@@ -22,7 +23,7 @@ public class SystemTrayBox : Box
 			.AddClass("system-tray__icon")
 			.AddMany(new Image(Assets.Volume.ScaleSimple(24, 24, InterpType.Bilinear)));
 
-		volumeButton.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent))
+		volumeButton.ObserveEvent(w => w.Events().ButtonReleaseEvent)
 			.WithLatestFrom(store.Select(RootStateSelectors.VolumeCommand))
 			.Subscribe(t => freeDesktopService.Run(t.Second));
 

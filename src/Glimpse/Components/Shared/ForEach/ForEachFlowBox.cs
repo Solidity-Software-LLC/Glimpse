@@ -5,6 +5,7 @@ using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Reactive;
 using Gtk;
 using Drag = Gtk.Drag;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Components.Shared.ForEach;
 
@@ -46,20 +47,20 @@ public class ForEachFlowBox<TViewModel, TWidget, TKey> : FlowBox where TWidget :
 			flowBoxChild.ShowAll();
 
 			flowBoxChild
-				.ObserveEvent<DragBeginArgs>(nameof(flowBoxChild.DragBegin))
+				.ObserveEvent(w => w.Events().DragBegin)
 				.WithLatestFrom(childWidget.IconWhileDragging)
 				.Subscribe(t => Drag.SourceSetIconPixbuf(flowBoxChild, t.Second));
 
 			flowBoxChild
-				.ObserveEvent<DragBeginArgs>(nameof(flowBoxChild.DragBegin))
+				.ObserveEvent(w => w.Events().DragBegin)
 				.Subscribe(_ => OnDragBeginInternal(flowBoxChild));
 
 			flowBoxChild
-				.ObserveEvent(nameof(flowBoxChild.DragEnd))
+				.ObserveEvent(w => w.Events().DragEnd)
 				.Subscribe(_ => OnDragEndInternal(flowBoxChild));
 
 			flowBoxChild
-				.ObserveEvent<DragFailedArgs>(nameof(flowBoxChild.DragFailed))
+				.ObserveEvent(w => w.Events().DragFailed)
 				.Subscribe(e => e.RetVal = true);
 
 			DisableDragAndDrop.Subscribe(b => ToggleDragSource(flowBoxChild, b));

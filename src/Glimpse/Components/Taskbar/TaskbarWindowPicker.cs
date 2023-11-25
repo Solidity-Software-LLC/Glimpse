@@ -10,6 +10,7 @@ using Gtk;
 using Pango;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Components.Taskbar;
 
@@ -31,7 +32,7 @@ public class TaskbarWindowPicker : Window
 
 		var layout = new Box(Orientation.Horizontal, 0);
 		Add(layout);
-		this.ObserveEvent(nameof(FocusOutEvent)).Subscribe(_ => ClosePopup());
+		this.ObserveEvent(w => w.Events().FocusOutEvent).Subscribe(_ => ClosePopup());
 
 		viewModelObservable.Select(vm => vm.Tasks).UnbundleMany(t => t.WindowRef.Id).RemoveIndex().Subscribe(taskObservable =>
 		{

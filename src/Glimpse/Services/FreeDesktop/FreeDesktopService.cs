@@ -7,6 +7,7 @@ using Glimpse.Interop;
 using Glimpse.Services.DBus;
 using Glimpse.Services.DBus.Interfaces;
 using Glimpse.State;
+using ReactiveMarbles.ObservableEvents;
 using Process = System.Diagnostics.Process;
 using Task = System.Threading.Tasks.Task;
 
@@ -39,10 +40,10 @@ public class FreeDesktopService(ReduxStore store, OrgFreedesktopAccounts freedes
 			watcher.EnableRaisingEvents = true;
 
 			_desktopFileChanged = _desktopFileChanged
-				.Merge(Observable.FromEventPattern(watcher, nameof(watcher.Changed)))
-				.Merge(Observable.FromEventPattern(watcher, nameof(watcher.Deleted)))
-				.Merge(Observable.FromEventPattern(watcher, nameof(watcher.Created)))
-				.Merge(Observable.FromEventPattern(watcher, nameof(watcher.Renamed)));
+				.Merge(watcher.Events().Changed)
+				.Merge(watcher.Events().Deleted)
+				.Merge(watcher.Events().Created)
+				.Merge(watcher.Events().Renamed);
 		}
 
 		_desktopFileChanged.Throttle(TimeSpan.FromSeconds(1)).Subscribe(_ =>

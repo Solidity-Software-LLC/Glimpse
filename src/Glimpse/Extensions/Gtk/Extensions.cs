@@ -4,6 +4,7 @@ using Gdk;
 using Glimpse.State;
 using Gtk;
 using Window = Gtk.Window;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Extensions.Gtk;
 
@@ -11,18 +12,16 @@ public static class Extensions
 {
 	public static IObservable<ButtonReleaseEventArgs> ObserveButtonRelease(this Widget widget)
 	{
-		return Observable.FromEventPattern<ButtonReleaseEventArgs>(widget, nameof(widget.ButtonReleaseEvent))
-			.TakeUntilDestroyed(widget)
-			.Select(e => e.EventArgs);
+		return widget.ObserveEvent(w => w.Events().ButtonReleaseEvent).TakeUntilDestroyed(widget);
 	}
 
-	public static T AddButtonStates<T>(this T widget) where T : Widget
+	public static Widget AddButtonStates(this Widget widget)
 	{
 		widget.AddEvents((int)(EventMask.ButtonPressMask | EventMask.ButtonReleaseMask | EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
-		widget.ObserveEvent(nameof(widget.EnterNotifyEvent)).Subscribe(_ => widget.SetStateFlags(StateFlags.Prelight, true));
-		widget.ObserveEvent(nameof(widget.LeaveNotifyEvent)).Subscribe(_ => widget.SetStateFlags(StateFlags.Normal, true));
-		widget.ObserveEvent(nameof(widget.ButtonPressEvent)).Subscribe(_ => widget.SetStateFlags(StateFlags.Active, true));
-		widget.ObserveEvent(nameof(widget.ButtonReleaseEvent)).Subscribe(_ => widget.SetStateFlags(StateFlags.Prelight, true));
+		widget.ObserveEvent(w => w.Events().EnterNotifyEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Prelight, true));
+		widget.ObserveEvent(w => w.Events().LeaveNotifyEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Normal, true));
+		widget.ObserveEvent(w => w.Events().ButtonPressEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Active, true));
+		widget.ObserveEvent(w => w.Events().ButtonReleaseEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Prelight, true));
 		return widget;
 	}
 
@@ -55,12 +54,7 @@ public static class Extensions
 
 	public static IObservable<T> TakeUntilDestroyed<T>(this IObservable<T> obs, Widget source)
 	{
-		return obs.TakeUntil(Observable.FromEventPattern(source, nameof(source.Destroyed)).Take(1));
-	}
-
-	public static IObservable<object> ObserveEvent(this Widget widget, string eventName)
-	{
-		return Observable.FromEventPattern<object>(widget, eventName).TakeUntilDestroyed(widget).Select(e => e.EventArgs);
+		return obs.TakeUntil(source.Events().Destroyed.Take(1));
 	}
 
 	public static IObservable<T> ObserveEvent<T>(this Widget widget, IObservable<T> obs)
@@ -68,19 +62,19 @@ public static class Extensions
 		return obs.TakeUntilDestroyed(widget);
 	}
 
-	public static IObservable<T> ObserveEvent<T>(this Widget widget, string eventName)
+	public static IObservable<T> ObserveEvent<TWidget, T>(this TWidget widget, Func<TWidget, IObservable<T>> f) where TWidget : Widget
 	{
-		return Observable.FromEventPattern<T>(widget, eventName).TakeUntilDestroyed(widget).Select(e => e.EventArgs);
+		return f(widget).TakeUntilDestroyed(widget);
 	}
 
 	public static IObservable<bool> CreateContextMenuObservable(this Widget widget)
 	{
-		var buttonPressObs = widget.ObserveEvent<ButtonReleaseEventArgs>(nameof(widget.ButtonReleaseEvent))
+		var buttonPressObs = widget.ObserveEvent(w => w.Events().ButtonReleaseEvent)
 			.Where(e => e.Event.Button == 3 && e.Event.Type == EventType.ButtonRelease)
 			.Do(e => e.RetVal = true)
 			.Select(_ => true);
 
-		var popupMenuObs = widget.ObserveEvent<PopupMenuArgs>(nameof(widget.PopupMenu))
+		var popupMenuObs = widget.ObserveEvent(w => w.Events().PopupMenu)
 			.Select(e => true);
 
 		return buttonPressObs.Merge(popupMenuObs);
@@ -145,13 +139,13 @@ public static class Extensions
 	{
 		iconObservable.Subscribe(t => image.Pixbuf = t.Item1);
 		widget.AddButtonStates();
-		widget.ObserveEvent(nameof(widget.EnterNotifyEvent)).Subscribe(_ => widget.QueueDraw());
-		widget.ObserveEvent(nameof(widget.LeaveNotifyEvent)).Subscribe(_ => widget.QueueDraw());
-		widget.ObserveEvent(nameof(widget.ButtonPressEvent)).Subscribe(_ => widget.QueueDraw());
-		widget.ObserveEvent(nameof(widget.ButtonPressEvent)).WithLatestFrom(iconObservable).Subscribe(t => image.Pixbuf = t.Second.SmallIcon);
-		widget.ObserveEvent(nameof(widget.ButtonReleaseEvent)).WithLatestFrom(iconObservable).Subscribe(t => image.Pixbuf = t.Second.BigIcon);
+		widget.ObserveEvent(w => w.Events().EnterNotifyEvent).Subscribe(_ => widget.QueueDraw());
+		widget.ObserveEvent(w => w.Events().LeaveNotifyEvent).Subscribe(_ => widget.QueueDraw());
+		widget.ObserveEvent(w => w.Events().ButtonPressEvent).Subscribe(_ => widget.QueueDraw());
+		widget.ObserveEvent(w => w.Events().ButtonPressEvent).WithLatestFrom(iconObservable).Subscribe(t => image.Pixbuf = t.Second.SmallIcon);
+		widget.ObserveEvent(w => w.Events().ButtonReleaseEvent).WithLatestFrom(iconObservable).Subscribe(t => image.Pixbuf = t.Second.BigIcon);
 
-		widget.ObserveEvent(nameof(widget.LeaveNotifyEvent)).WithLatestFrom(iconObservable).Subscribe(t =>
+		widget.ObserveEvent(w => w.Events().LeaveNotifyEvent).WithLatestFrom(iconObservable).Subscribe(t =>
 		{
 			image.Pixbuf = t.Second.BigIcon;
 		});

@@ -8,6 +8,7 @@ using Glimpse.Services.FreeDesktop;
 using Gtk;
 using Menu = Gtk.Menu;
 using MenuItem = Gtk.MenuItem;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Components.StartMenu;
 
@@ -20,8 +21,8 @@ public class StartMenuLaunchIcon : EventBox
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))
 			.Replay(1);
 
-		startMenuWindow.ObserveEvent(nameof(startMenuWindow.Shown)).TakeUntilDestroyed(this)
-			.Merge(startMenuWindow.ObserveEvent(nameof(startMenuWindow.Hidden)).TakeUntilDestroyed(this))
+		startMenuWindow.ObserveEvent(w => w.Events().Shown).TakeUntilDestroyed(this)
+			.Merge(startMenuWindow.ObserveEvent(w => w.Events().Hidden).TakeUntilDestroyed(this))
 			.Merge(startMenuWindow.WindowMoved.TakeUntilDestroyed(this).Select(x => (object) x))
 			.Subscribe(_ =>
 			{
@@ -47,7 +48,7 @@ public class StartMenuLaunchIcon : EventBox
 
 		var iconObservable = Observable.Return((Assets.MenuIcon.Scale(38), Assets.MenuIcon.Scale(32))).Replay(1);
 		this.AppIcon(image, iconObservable);
-		this.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent)).Where(e => e.Event.Button == 1).Subscribe(e =>
+		this.ObserveEvent(w => w.Events().ButtonReleaseEvent).Where(e => e.Event.Button == 1).Subscribe(e =>
 		{
 			startMenuWindow.ToggleVisibility();
 			e.RetVal = true;
@@ -68,7 +69,7 @@ public class StartMenuLaunchIcon : EventBox
 				else
 				{
 					var menuItem = new MenuItem(i.DisplayText);
-					menuItem.ObserveEvent(nameof(menuItem.Activated)).Subscribe(_ => freeDesktopService.Run(i.Executable + " " + i.Arguments));
+					menuItem.ObserveEvent(w => w.Events().Activated).Subscribe(_ => freeDesktopService.Run(i.Executable + " " + i.Arguments));
 					launchIconMenu.Add(menuItem);
 				}
 			}

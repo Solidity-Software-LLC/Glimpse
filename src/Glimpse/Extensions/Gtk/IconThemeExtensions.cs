@@ -3,6 +3,7 @@ using Gdk;
 using Glimpse.Components;
 using Glimpse.Services.DBus;
 using Gtk;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Extensions.Gtk;
 
@@ -10,7 +11,7 @@ public static class IconThemeExtensions
 {
 	public static IObservable<IconTheme> ObserveChange(this IconTheme iconTheme)
 	{
-		return Observable.FromEventPattern(iconTheme, nameof(iconTheme.Changed)).Select(_ => iconTheme);
+		return iconTheme.Events().Changed.Select(_ => iconTheme);
 	}
 
 	public static Pixbuf LoadIcon(this IconTheme iconTheme, string iconName, int size)

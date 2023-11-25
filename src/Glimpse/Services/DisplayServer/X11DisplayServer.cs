@@ -3,7 +3,9 @@ using GLib;
 using Glimpse.Extensions.Redux;
 using Glimpse.Services.X11;
 using Glimpse.State;
+using ReactiveMarbles.ObservableEvents;
 using Application = Gtk.Application;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Services.DisplayServer;
 
@@ -16,7 +18,7 @@ public class X11DisplayServer : IDisplayServer
 		_xService = xService;
 
 		var action = (SimpleAction) application.LookupAction("OpenStartMenu");
-		StartMenuOpened = Observable.FromEventPattern(action, nameof(action.Activated)).Select(_ => true);
+		StartMenuOpened = action.Events().Activated.Select(_ => true);
 		FocusChanged = _xService.FocusChanged.Select(w => (IWindowRef) w);
 
 		_xService.Windows.Subscribe(windowObs =>

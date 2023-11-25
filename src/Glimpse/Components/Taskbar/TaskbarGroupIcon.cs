@@ -6,6 +6,7 @@ using Glimpse.Components.Shared.ForEach;
 using Glimpse.Extensions.Gtk;
 using Gtk;
 using Color = Cairo.Color;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Components.Taskbar;
 
@@ -37,13 +38,13 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 		var iconObservable = viewModel
 			.Select(vm => vm.Icon)
 			.DistinctUntilChanged()
-			.CombineLatest(this.ObserveEvent<SizeAllocatedArgs>(nameof(SizeAllocated)).DistinctUntilChanged(a => a.Allocation.Width))
+			.CombineLatest(this.ObserveEvent(w => w.Events().SizeAllocated).DistinctUntilChanged(a => a.Allocation.Width))
 			.Select(t => (t.First.Scale(26), t.First.Scale(20)))
 			.Where(i => i.Item1 != null)
 			.Publish();
 
 		this.AppIcon(image, iconObservable);
-		this.ObserveEvent<ButtonReleaseEventArgs>(nameof(ButtonReleaseEvent)).Subscribe(e => e.RetVal = true);
+		this.ObserveEvent(w => w.Events().ButtonReleaseEvent).Subscribe(e => e.RetVal = true);
 		IconWhileDragging = iconObservable.Select(t => t.Item1);
 		iconObservable.Connect();
 	}

@@ -12,6 +12,7 @@ using Glimpse.Extensions.Reactive;
 using Glimpse.Extensions.Redux;
 using Glimpse.State;
 using Gtk;
+using ReactiveMarbles.ObservableEvents;
 using Application = Gtk.Application;
 using Monitor = Gdk.Monitor;
 using Task = System.Threading.Tasks.Task;
@@ -53,9 +54,9 @@ public class GlimpseGtkApplication(
 		var display = Display.Default;
 		var screen = display.DefaultScreen;
 		var action = (SimpleAction) application.LookupAction("LoadPanels");
-		Observable.FromEventPattern(action, nameof(action.Activated)).Subscribe(_ => LoadPanels(display));
-		Observable.FromEventPattern(screen, nameof(screen.SizeChanged)).Subscribe(_ => LoadPanels(display));
-		Observable.FromEventPattern(screen, nameof(screen.MonitorsChanged)).Subscribe(_ => LoadPanels(display));
+		action.Events().Activated.Subscribe(_ => LoadPanels(display));
+		screen.Events().SizeChanged.Subscribe(_ => LoadPanels(display));
+		screen.Events().MonitorsChanged.Subscribe(_ => LoadPanels(display));
 		application.AddWindow(serviceProvider.Resolve<StartMenuWindow>());
 		application.AddWindow(serviceProvider.Resolve<CalendarWindow>());
 		LoadPanels(display);
@@ -85,7 +86,7 @@ public class GlimpseGtkApplication(
 		var display = Display.Default;
 		var screen = display.DefaultScreen;
 		var iconTheme = IconTheme.GetForScreen(screen);
-		var iconThemeChangedObs = Observable.FromEventPattern(iconTheme, nameof(iconTheme.Changed));
+		var iconThemeChangedObs = iconTheme.Events().Changed;
 		var desktopFilesObs = store.Select(RootStateSelectors.DesktopFiles).DistinctUntilChanged();
 
 		desktopFilesObs.Merge(iconThemeChangedObs.WithLatestFrom(desktopFilesObs).Select(t => t.Second)).Subscribe(desktopFiles =>

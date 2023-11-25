@@ -8,6 +8,7 @@ using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
 using Gtk;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Components.Taskbar;
 
@@ -28,7 +29,7 @@ public class TaskbarView : Box
 			var windowPicker = new TaskbarWindowPicker(viewModelObservable);
 			var groupIcon = new TaskbarGroupIcon(viewModelObservable, windowPicker);
 
-			windowPicker.ObserveEvent(nameof(windowPicker.VisibilityNotifyEvent))
+			windowPicker.ObserveEvent(w => w.Events().VisibilityNotifyEvent)
 				.Subscribe(_ => windowPicker.CenterAbove(groupIcon));
 
 			windowPicker.PreviewWindowClicked
@@ -49,12 +50,12 @@ public class TaskbarView : Box
 				.TakeUntilDestroyed(this)
 				.Subscribe(displayServer.CloseWindow);
 
-			var cancelOpen = groupIcon.ObserveEvent(nameof(LeaveNotifyEvent))
-				.Merge(groupIcon.ObserveEvent(nameof(Unmapped)))
-				.Merge(Observable.FromEventPattern(this, nameof(Destroyed)))
+			var cancelOpen = groupIcon.ObserveEvent(w => w.Events().LeaveNotifyEvent)
+				.Merge(groupIcon.ObserveEvent(w => w.Events().Unmapped))
+				.Merge(this.ObserveEvent(w => w.Events().Destroyed))
 				.Take(1);
 
-			groupIcon.ObserveEvent<EnterNotifyEventArgs>(nameof(EnterNotifyEvent))
+			groupIcon.ObserveEvent(w => w.Events().EnterNotifyEvent)
 				.WithLatestFrom(replayLatestViewModelObservable)
 				.Where(t => t.Second.Tasks.Count > 0)
 				.Select(t => Observable.Timer(TimeSpan.FromMilliseconds(400), new SynchronizationContextScheduler(new GLibSynchronizationContext())).TakeUntil(cancelOpen).Select(_ => t.Second))
@@ -66,10 +67,10 @@ public class TaskbarView : Box
 					windowPicker.Popup();
 				});
 
-			var cancelClose = groupIcon.ObserveEvent(nameof(EnterNotifyEvent))
-				.Merge(windowPicker.ObserveEvent(nameof(EnterNotifyEvent)));
+			var cancelClose = groupIcon.ObserveEvent(w => w.Events().EnterNotifyEvent)
+				.Merge(windowPicker.ObserveEvent(w => w.Events().EnterNotifyEvent));
 
-			groupIcon.ObserveEvent(nameof(LeaveNotifyEvent)).Merge(windowPicker.ObserveEvent(nameof(LeaveNotifyEvent)))
+			groupIcon.ObserveEvent(w => w.Events().LeaveNotifyEvent).Merge(windowPicker.ObserveEvent(w => w.Events().LeaveNotifyEvent))
 				.Select(_ => Observable.Timer(TimeSpan.FromMilliseconds(400), new SynchronizationContextScheduler(new GLibSynchronizationContext())).TakeUntil(cancelClose))
 				.Switch()
 				.Where(_ => !windowPicker.IsPointerInside())
@@ -78,7 +79,7 @@ public class TaskbarView : Box
 			groupIcon.CreateContextMenuObservable()
 				.Subscribe(_ => contextMenu.Popup());
 
-			groupIcon.ObserveEvent<ButtonPressEventArgs>(nameof(groupIcon.ButtonPressEvent))
+			groupIcon.ObserveEvent(w => w.Events().ButtonPressEvent)
 				.Subscribe(_ => windowPicker.ClosePopup());
 
 			groupIcon.ObserveButtonRelease()

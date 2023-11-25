@@ -10,6 +10,7 @@ using Glimpse.State;
 using Gtk;
 using Key = Gdk.Key;
 using Menu = Gtk.Menu;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Components.StartMenu.Window;
 
@@ -54,8 +55,8 @@ public class StartMenuContent : Bin
 		_searchEntry.AddClass("start-menu__search-input");
 
 		SearchTextUpdated = Observable.Return("")
-			.Merge(Observable.FromEventPattern(_searchEntry, nameof(_searchEntry.TextInserted)).Select(_ => _searchEntry.Text))
-			.Merge(Observable.FromEventPattern(_searchEntry, nameof(_searchEntry.TextDeleted)).Select(_ => _searchEntry.Text))
+			.Merge(_searchEntry.ObserveEvent(w => w.Events().TextInserted).Select(_ => _searchEntry.Text))
+			.Merge(_searchEntry.ObserveEvent(w => w.Events().TextDeleted).Select(_ => _searchEntry.Text))
 			.TakeUntilDestroyed(this)
 			.Throttle(TimeSpan.FromMilliseconds(50), new SynchronizationContextScheduler(new GLibSynchronizationContext()))
 			.DistinctUntilChanged();
@@ -100,13 +101,13 @@ public class StartMenuContent : Bin
 		_apps.FilterFunc = c => _apps.GetViewModel(c)?.IsVisible ?? true;
 		_apps.AddClass("start-menu__apps");
 		_apps.DisableDragAndDrop = viewModelObservable.Select(vm => vm.DisableDragAndDrop).DistinctUntilChanged();
-		this.ObserveEvent(nameof(FocusChildSet)).Subscribe(_ => _apps.UnselectAll());
+		this.ObserveEvent(w => w.Events().FocusChildSet).Subscribe(_ => _apps.UnselectAll());
 
-		_apps.ObserveEvent<ChildActivatedArgs>(nameof(_apps.ChildActivated))
+		_apps.ObserveEvent(w => w.Events().ChildActivated)
 			.Select(e => _apps.GetViewModel(e.Child))
 			.Subscribe(vm => _appLaunch.OnNext(vm.DesktopFile));
 
-		_searchEntry.ObserveEvent<KeyReleaseEventArgs>(nameof(KeyReleaseEvent))
+		_searchEntry.ObserveEvent(w => w.Events().KeyReleaseEvent)
 			.Where(e => e.Event.Key == Key.Return || e.Event.Key == Key.KP_Enter)
 			.WithLatestFrom(viewModelObservable.Select(vm => vm.AllApps.Where(a => a.IsVisible)).DistinctUntilChanged())
 			.Where(t => t.Second.Any())
