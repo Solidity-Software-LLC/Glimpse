@@ -16,7 +16,6 @@ using ReactiveMarbles.ObservableEvents;
 using Application = Gtk.Application;
 using Monitor = Gdk.Monitor;
 using Task = System.Threading.Tasks.Task;
-using Thread = System.Threading.Thread;
 
 namespace Glimpse;
 
@@ -27,10 +26,14 @@ public class GlimpseGtkApplication(
 {
 	private List<Panel> _panels = new();
 
-	public async Task InitializeAsync()
+	public Task InitializeAsync()
 	{
-		await Task.Yield();
+		Task.Run(InitializeInternal);
+		return Task.CompletedTask;
+	}
 
+	private void InitializeInternal()
+	{
 		ExceptionManager.UnhandledException += args =>
 		{
 			Console.WriteLine("Unhandled Exception:");

@@ -164,16 +164,6 @@ public struct XImage
 	public ulong green_mask;
 	public ulong blue_mask;
 	public IntPtr obdata;
-
-	private struct funcs
-	{
-		IntPtr create_image;
-		IntPtr destroy_image;
-		IntPtr get_pixel;
-		IntPtr put_pixel;
-		IntPtr sub_image;
-		IntPtr add_pixel;
-	}
 }
 
 [StructLayout(LayoutKind.Sequential)]

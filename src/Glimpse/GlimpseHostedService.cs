@@ -43,7 +43,7 @@ public class GlimpseHostedService(
 			await configurationService.InitializeAsync();
 			await dBusSystemTrayService.InitializeAsync();
 			await xLibAdaptorService.InitializeAsync();
-			application.InitializeAsync();
+			await application.InitializeAsync();
 		}
 		catch (Exception e)
 		{

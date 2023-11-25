@@ -21,9 +21,10 @@
 		<InvariantGlobalization>true</InvariantGlobalization>
 		<HttpActivityPropagationSupport>false</HttpActivityPropagationSupport>
 		<EventSourceSupport>true</EventSourceSupport>
-		<TrimMode>Link</TrimMode>
+		<TrimMode>partial</TrimMode>
 		<DebuggerSupport>false</DebuggerSupport>
 		<PublishAot>false</PublishAot>
+		<TrimmerSingleWarn>false</TrimmerSingleWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -37,7 +38,7 @@
 		<PackageReference Include="GtkSharp" Version="3.24.24.95"/>
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
 		<PackageReference Include="ReactiveMarbles.ObservableEvents.SourceGenerator" Version="1.3.1" PrivateAssets="all" />
-		<PackageReference Include="System.Reactive" Version="6.0.0"/>
+		<PackageReference Include="System.Reactive" Version="6.0.1-preview.1"/>
 		<PackageReference Include="Tmds.DBus.Protocol" Version="0.15.0" />
 	</ItemGroup>
 

@@ -5,7 +5,6 @@ using Glimpse.Services.X11;
 using Glimpse.State;
 using ReactiveMarbles.ObservableEvents;
 using Application = Gtk.Application;
-using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Services.DisplayServer;
 
