@@ -34,25 +34,23 @@ jobs:
 
     - name: Publish
       run: dotnet publish -r linux-x64 -c Release
-      env:
-        Configuration: Release
 
-    - name: Zip
+    - name: Zip release
       run: |
         zip --junk-paths Glimpse.linux-x64.zip src/Glimpse/bin/Release/net8.0/linux-x64/publish/Glimpse
 
-    - name: release
+    - name: Create release
       uses: actions/create-release@v1
       id: create_release
       with:
         draft: false
         prerelease: false
-        release_name: Release ${{ github.ref }}
-        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
+        tag_name: ${{ github.run_id }}.${{ github.run_number }}.${{ github.run_attempt }}
       env:
         GITHUB_TOKEN: ${{ github.token }}
 
-    - name: upload linux artifact
+    - name: Upload linux-x64 artifact
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ github.token }}
