@@ -31,6 +31,7 @@
 		<EmbeddedResource Include="Assets/*" LogicalName="%(Filename)%(Extension)" />
 		<EmbeddedResource Include="Components/**/*.css" LogicalName="%(Filename)%(Extension)" />
 		<EmbeddedResource Include="install.sh" LogicalName="%(Filename)%(Extension)" />
+		<EmbeddedResource Include="uninstall.sh" LogicalName="%(Filename)%(Extension)" />
 	</ItemGroup>
 
 	<ItemGroup>

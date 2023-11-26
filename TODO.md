@@ -11,8 +11,6 @@ System Tray
 
 Packaging
 -----------
-* CI/CD pipeline
-* DEB package
 
 Technical
 ------------

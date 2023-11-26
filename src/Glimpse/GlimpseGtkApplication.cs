@@ -49,6 +49,7 @@ public class GlimpseGtkApplication(
 			.DistinctUntilChanged()
 			.Subscribe(slots => store.Dispatch(new UpdateTaskbarSlotOrderingBulkAction() { Slots = slots.Refs }));
 
+		application.RegisterSession = true;
 		Application.Init();
 		application.Register(Cancellable.Current);
 		LoadCss();
