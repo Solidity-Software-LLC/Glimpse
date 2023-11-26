@@ -29,6 +29,7 @@ using Tmds.DBus.Protocol;
 using Application = Gtk.Application;
 using DateTime = System.DateTime;
 using Effects = Glimpse.State.Effects;
+using System.CommandLine;
 
 namespace Glimpse;
 
@@ -36,15 +37,37 @@ public static class Program
 {
 	public static async Task<int> Main(string[] args)
 	{
-		AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) => Console.WriteLine(eventArgs.ExceptionObject);
+		var installCommand = new Command("install", "Install Glimpse");
+		installCommand.AddAlias("i");
+		installCommand.SetHandler(async c =>
+		{
+			Installation.Install();
+			c.ExitCode = await RunGlimpseAsync();
+		});
 
-		var builder = Host.CreateApplicationBuilder(args);
-		builder.ConfigureContainer(new AutofacServiceProviderFactory(ConfigureContainer));
-		builder.Services.AddHostedService<GlimpseHostedService>();
+		var rootCommand = new RootCommand("Glimpse");
+		rootCommand.AddCommand(installCommand);
+		rootCommand.SetHandler(async c => c.ExitCode = await RunGlimpseAsync());
+		return await rootCommand.InvokeAsync(args);
+	}
 
-		var host = builder.Build();
-		await host.RunAsync();
-		return 0;
+	private static async Task<int> RunGlimpseAsync()
+	{
+		try
+		{
+			AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) => Console.WriteLine(eventArgs.ExceptionObject);
+			var builder = Host.CreateApplicationBuilder(Array.Empty<string>());
+			builder.ConfigureContainer(new AutofacServiceProviderFactory(ConfigureContainer));
+			builder.Services.AddHostedService<GlimpseHostedService>();
+			var host = builder.Build();
+			await host.RunAsync();
+			return 0;
+		}
+		catch (Exception e)
+		{
+			Console.WriteLine(e);
+			return 1;
+		}
 	}
 
 	private static void ConfigureContainer(ContainerBuilder containerBuilder)

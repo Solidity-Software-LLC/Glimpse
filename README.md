@@ -4,16 +4,14 @@ Glimpse is a modern looking and familiar Windows 11-like panel for Linux.  It wa
 
 As of right now, Glimpse is tested on xUbuntu 22.04 but should work in other environments.
 
-## Setup
+## Installation
 
-1. Remove any org.kde.StatusNotifierWatcher hosts
-   1. e.g., ayatana-indicator-application
-2. Disable/remove existing panels
-   1. sudo chmod a-rwx /usr/bin/xfce4-panel
-3. Setup keybinding
-   1. Go to your keyboard settings
-   2. Remove the whisker menu keybinding
-   3. Setup a new keybinding
-      1. ```gdbus call --session --dest org.solidity-software-llc.glimpse --object-path /org/solidity_software_llc/glimpse --method org.gtk.Actions.Activate  "OpenStartMenu" [] {}```
-      2. Bind the command to ctrl + escape
-         1. XFCE's default xcape config will allow you to use the SUPER_L key to open the start menu
+1. Run ```Glimpse install```.
+2. Installation will do the following (see install.sh):
+   * Installs xmlstarlet using apt-get.  It's used to modify the keyboard shortcuts XFCE XML config.
+   * Copies the Glimpse binary into the ~/.local/bin/ directory.
+   * Creates an autostarting desktop file so Glimpse launches when you login.
+   * Updates the SUPER_L shortcut to open the Glimpse start menu instead of the whisker menu.
+   * Disables the XFCE panel.
+   * Kills the XFCE panel process.
+   * Removes the ayatana-indicator-application package.  Glimpse handles status notifier items itself.
