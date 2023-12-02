@@ -342,4 +342,20 @@ public static class ReaderExtensions
 		Reader reader = message.GetBodyReader();
 		return reader.ReadArray_arxxaesvz();
 	}
+
+	public static (uint @old_state, uint @new_state) ReadMessage_uu(Message message, object? _)
+	{
+		Reader reader = message.GetBodyReader();
+		uint arg0 = reader.ReadUInt32();
+		uint arg1 = reader.ReadUInt32();
+		return (arg0, arg1);
+	}
+
+	public static (string @name, DBusVariantItem @value) ReadMessage_sv(Message message, object? _)
+	{
+		Reader reader = message.GetBodyReader();
+		string arg0 = reader.ReadString();
+		DBusVariantItem arg1 = reader.ReadDBusVariant();
+		return (arg0, arg1);
+	}
 }

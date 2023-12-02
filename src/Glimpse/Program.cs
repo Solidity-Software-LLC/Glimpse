@@ -39,15 +39,31 @@ public static class Program
 	{
 		var installCommand = new Command("install", "Install Glimpse");
 		installCommand.AddAlias("i");
-		installCommand.SetHandler(async c =>
+		installCommand.SetHandler(async _ =>
 		{
-			Installation.Install();
-			c.ExitCode = await RunGlimpseAsync();
+			Installation.RunScript(Installation.InstallScriptResourceName);
+
+			var builder = Host.CreateApplicationBuilder(Array.Empty<string>());
+			builder.ConfigureContainer(new AutofacServiceProviderFactory(ConfigureContainer));
+			var host = builder.Build();
+
+			var connections = host.Services.GetRequiredService<Connections>();
+			await connections.System.ConnectAsync();
+			await connections.Session.ConnectAsync();
+
+			var xSessionManager = host.Services.GetRequiredService<XSessionManager>();
+			await xSessionManager.Register(Installation.DefaultInstallPath);
 		});
+
+		var uninstallCommand = new Command("uninstall", "Uninstall Glimpse");
+		uninstallCommand.AddAlias("u");
+		uninstallCommand.SetHandler(_ => Installation.RunScript(Installation.UninstallScriptResourceName));
 
 		var rootCommand = new RootCommand("Glimpse");
 		rootCommand.AddCommand(installCommand);
+		rootCommand.AddCommand(uninstallCommand);
 		rootCommand.SetHandler(async c => c.ExitCode = await RunGlimpseAsync());
+
 		return await rootCommand.InvokeAsync(args);
 	}
 
@@ -102,7 +118,10 @@ public static class Program
 		containerBuilder.RegisterType<XLibAdaptorService>().SingleInstance();
 		containerBuilder.RegisterType<OrgFreedesktopAccounts>().SingleInstance();
 		containerBuilder.RegisterType<OrgKdeStatusNotifierWatcher>().SingleInstance();
+		containerBuilder.RegisterType<XSessionManager>().SingleInstance();
+		containerBuilder.Register(c => new OrgXfceSessionClient(c.Resolve<Connections>().Session, "org_glimpse")).SingleInstance();
 		containerBuilder.Register(c => new OrgFreedesktopDBus(c.Resolve<Connections>().Session, Connection.DBusServiceName, Connection.DBusObjectPath)).SingleInstance();
+		containerBuilder.Register(c => new OrgXfceSessionManager(c.Resolve<Connections>().Session)).SingleInstance();
 		containerBuilder.RegisterInstance(new Connections()
 		{
 			Session = new Connection(Address.Session!),
@@ -110,7 +129,7 @@ public static class Program
 		}).ExternallyOwned();
 		containerBuilder.Register(_ =>
 		{
-			var app = new Application("org.solidity-software-llc.glimpse", ApplicationFlags.None);
+			var app = new Application("org.glimpse", ApplicationFlags.None);
 			app.AddAction(new SimpleAction("OpenStartMenu", null));
 			app.AddAction(new SimpleAction("LoadPanels", null));
 			return app;

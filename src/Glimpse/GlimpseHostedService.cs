@@ -18,7 +18,8 @@ public class GlimpseHostedService(
 	ConfigurationService configurationService,
 	DBusSystemTrayService dBusSystemTrayService,
 	XLibAdaptorService xLibAdaptorService,
-	IEffectsFactory[] effectFactories)
+	IEffectsFactory[] effectFactories,
+	XSessionManager x11XSessionManager)
 		: IHostedService
 {
 	public async Task StartAsync(CancellationToken cancellationToken)
@@ -44,6 +45,7 @@ public class GlimpseHostedService(
 			await dBusSystemTrayService.InitializeAsync();
 			await xLibAdaptorService.InitializeAsync();
 			await application.InitializeAsync();
+			await x11XSessionManager.Register(Installation.DefaultInstallPath);
 		}
 		catch (Exception e)
 		{
