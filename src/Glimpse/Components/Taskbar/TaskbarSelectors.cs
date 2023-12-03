@@ -59,7 +59,7 @@ public static class TaskbarSelectors
 					var allIcons = windowGroup.SelectMany(w => w.Icons).ToList();
 					var biggestIcon = allIcons.Any() ? allIcons.MaxBy(i => i.Width) : null;
 					icons.ById.TryGetValue(desktopFile.IconName, out var desktopFileIcon);
-					var icon = desktopFileIcon ?? biggestIcon?.ToPixbuf() ?? Assets.MissingImage;
+					var icon = desktopFileIcon ?? biggestIcon ?? Assets.MissingImage;
 
 					return new TaskbarGroupViewModel
 					{
@@ -68,12 +68,12 @@ public static class TaskbarSelectors
 						Icon = icon,
 						Tasks = windowGroup.Select(w => new SlotWindowViewModel
 						{
-							Icon = w.Icons.Any() ? w.Icons.MaxBy(i => i.Width)?.ToPixbuf() : Assets.MissingImage,
+							Icon = w.Icons.Any() ? w.Icons.MaxBy(i => i.Width) : Assets.MissingImage,
 							Title = w.Title,
 							WindowRef = w.WindowRef,
 							AllowedActions = w.AllowActions,
-							Screenshot = screenshots.ById.FirstOrDefault(s => s.Key == w.WindowRef.Id).Value?.ToPixbuf()
-								?? w.Icons?.MaxBy(i => i.Width)?.ToPixbuf()
+							Screenshot = screenshots.ById.FirstOrDefault(s => s.Key == w.WindowRef.Id).Value
+								?? w.Icons?.MaxBy(i => i.Width)
 								?? Assets.MissingImage
 						}).ToImmutableList(),
 						DemandsAttention = windowGroup.Any(w => w.DemandsAttention),

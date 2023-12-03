@@ -13,7 +13,7 @@ public static class RootStateSelectors
 	public static readonly ISelector<DataTable<string, DesktopFile>> DesktopFiles = CreateFeatureSelector<DataTable<string, DesktopFile>>();
 	public static readonly ISelector<DataTable<string, Pixbuf>> NamedIcons = CreateFeatureSelector<DataTable<string, Pixbuf>>();
 	public static readonly ISelector<DataTable<ulong, WindowProperties>> Windows = CreateFeatureSelector<DataTable<ulong, WindowProperties>>();
-	public static readonly ISelector<DataTable<ulong, BitmapImage>> Screenshots = CreateFeatureSelector<DataTable<ulong, BitmapImage>>();
+	public static readonly ISelector<DataTable<ulong, Pixbuf>> Screenshots = CreateFeatureSelector<DataTable<ulong, Pixbuf>>();
 	private static readonly ISelector<AccountState> s_accountState = CreateFeatureSelector<AccountState>();
 	public static readonly ISelector<string> UserIconPath = CreateSelector(s_accountState, s => s.IconPath);
 

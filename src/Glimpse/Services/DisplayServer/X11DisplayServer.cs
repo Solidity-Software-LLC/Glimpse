@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using Gdk;
 using GLib;
 using Glimpse.Extensions.Redux;
 using Glimpse.Services.X11;
@@ -32,7 +33,7 @@ public class X11DisplayServer : IDisplayServer
 	public IObservable<bool> StartMenuOpened { get; }
 	public IObservable<IWindowRef> FocusChanged { get; }
 
-	public BitmapImage TakeScreenshot(IWindowRef windowRef)
+	public Pixbuf TakeScreenshot(IWindowRef windowRef)
 	{
 		return _xService.CaptureWindowScreenshot((XWindowRef)windowRef);
 	}

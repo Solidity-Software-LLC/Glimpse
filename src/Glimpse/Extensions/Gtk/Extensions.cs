@@ -106,11 +106,6 @@ public static class Extensions
 		return buffer;
 	}
 
-	public static double AspectRatio(this BitmapImage image)
-	{
-		return (double)image.Width / image.Height;
-	}
-
 	public static double AspectRatio(this Pixbuf image)
 	{
 		return (double)image.Width / image.Height;
@@ -125,6 +120,11 @@ public static class Extensions
 		{
 			scaledWidth = maxWidth;
 			scaledHeight /= imageBuffer.AspectRatio();
+		}
+
+		if (imageBuffer.Width == (int) scaledWidth && imageBuffer.Height == (int) scaledHeight)
+		{
+			return imageBuffer;
 		}
 
 		return imageBuffer.ScaleSimple((int) scaledWidth, (int) scaledHeight, InterpType.Bilinear);

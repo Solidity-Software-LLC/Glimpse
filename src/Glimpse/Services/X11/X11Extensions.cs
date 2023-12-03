@@ -1,9 +1,11 @@
 using System.Reactive.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Gdk;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Interop.X11;
 using Glimpse.State;
+using Event = Glimpse.Interop.X11.Event;
 
 namespace Glimpse.Services.X11;
 
@@ -16,7 +18,7 @@ public static class X11Extensions
 			.Select(t => Marshal.PtrToStructure<XPropertyEvent>(t.eventPointer));
 	}
 
-	public static IObservable<List<BitmapImage>> ObserveIcons(this IObservable<XPropertyEvent> obs, ulong property)
+	public static IObservable<List<Pixbuf>> ObserveIcons(this IObservable<XPropertyEvent> obs, ulong property)
 	{
 		return obs
 			.Where(e => e.atom == property)
@@ -157,7 +159,7 @@ public static class X11Extensions
 		return false;
 	}
 
-	public static List<BitmapImage> GetIcons(this XWindowRef windowRef)
+	public static List<Pixbuf> GetIcons(this XWindowRef windowRef)
 	{
 		var success = XLib.XGetWindowProperty(windowRef.Display, windowRef.Window, XAtoms.NetWmIcon, 0, 1024 * 1024 * 10, false, 0, out var actualTypeReturn, out var actualFormatReturn, out var actualLength, out var bytesLeft, out var dataPointer);
 
@@ -186,15 +188,9 @@ public static class X11Extensions
 				imageData[i+3] = intBytes[3];
 			}
 
-			icons.Add(new BitmapImage()
-			{
-				Width = (int) width,
-				Height = (int) height,
-				Depth = 32,
-				Data = imageData
-			});
+			icons.Add(new BitmapImage() { Width = (int) width, Height = (int) height, Depth = 32, Data = imageData });
 		}
 
-		return icons;
+		return icons.Select(i => i.ToPixbuf()).ToList();
 	}
 }

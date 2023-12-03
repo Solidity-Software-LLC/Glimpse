@@ -43,7 +43,7 @@ public class TakeScreenshotAction
 
 public class UpdateScreenshotsAction
 {
-	public Dictionary<ulong, BitmapImage> Screenshots { get; set; }
+	public Dictionary<ulong, Pixbuf> Screenshots { get; set; }
 }
 
 public class AddOrUpdateNamedIconsAction

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Gdk;
 using Glimpse.Services.DisplayServer;
 
 namespace Glimpse.State;
@@ -9,7 +10,7 @@ public record WindowProperties : IKeyed<ulong>
 	public IWindowRef WindowRef { get; set; }
 	public string Title { get; init; }
 	public string IconName { get; init; }
-	public List<BitmapImage> Icons { get; init; }
+	public List<Pixbuf> Icons { get; init; }
 	public string ClassHintName { get; init; }
 	public string ClassHintClass { get; set; }
 	public bool DemandsAttention { get; set; }

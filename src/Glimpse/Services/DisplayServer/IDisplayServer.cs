@@ -1,4 +1,4 @@
-using Glimpse.State;
+using Gdk;
 
 namespace Glimpse.Services.DisplayServer;
 
@@ -11,7 +11,7 @@ public interface IDisplayServer
 	void StartResizing(IWindowRef windowRef);
 	void StartMoving(IWindowRef windowRef);
 	void CloseWindow(IWindowRef windowRef);
-	BitmapImage TakeScreenshot(IWindowRef windowRef);
+	Pixbuf TakeScreenshot(IWindowRef windowRef);
 
 	IObservable<bool> StartMenuOpened { get; }
 	IObservable<IWindowRef> FocusChanged { get; }

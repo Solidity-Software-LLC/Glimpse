@@ -1,11 +1,16 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
+using Cairo;
+using Gdk;
+using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Reactive;
 using Glimpse.Interop.X11;
 using Glimpse.Services.DisplayServer;
 using Glimpse.State;
 using Microsoft.Extensions.Hosting;
+using Event = Glimpse.Interop.X11.Event;
+using EventMask = Glimpse.Interop.X11.EventMask;
 using Task = System.Threading.Tasks.Task;
 
 namespace Glimpse.Services.X11;
@@ -83,7 +88,7 @@ public class XLibAdaptorService(IHostApplicationLifetime applicationLifetime) : 
 						ClassHintName = classHint.res_name,
 						ClassHintClass = classHint.res_class,
 						IconName = t.Third,
-						Icons = t.Second ?? new List<BitmapImage>(),
+						Icons = t.Second ?? new List<Pixbuf>(),
 						Title = t.First,
 						AllowActions = t.Fifth,
 						Pid = pid,
@@ -236,7 +241,7 @@ public class XLibAdaptorService(IHostApplicationLifetime applicationLifetime) : 
 		XLib.XFlush(windowRef.Display);
 	}
 
-	public BitmapImage CaptureWindowScreenshot(XWindowRef windowRef)
+	public Pixbuf CaptureWindowScreenshot(XWindowRef windowRef)
 	{
 		XLib.XGetWindowAttributes(windowRef.Display, windowRef.Window, out var windowAttributes);
 
@@ -253,12 +258,15 @@ public class XLibAdaptorService(IHostApplicationLifetime applicationLifetime) : 
 		}
 
 		var image = Marshal.PtrToStructure<XImage>(imagePointer);
-		var imageData = new byte[image.bytes_per_line * image.height];
-		Marshal.Copy(image.data, imageData, 0, imageData.Length);
+		var sourceImageSurface = new ImageSurface(image.data, image.depth == 24 ? Format.RGB24 : Format.Argb32, image.width, image.height, image.bytes_per_line);
+		var fullScaleImage = new Pixbuf(sourceImageSurface, 0, 0, sourceImageSurface.Width, sourceImageSurface.Height);
+		var scaledImage = fullScaleImage.ScaleToFit(100, 200);
 
-		var bitmap = new BitmapImage() { Data = imageData, Height = image.height, Width = image.width, Depth = windowAttributes.depth };
+		fullScaleImage.Dispose();
+		sourceImageSurface.Dispose();
 		XLib.XDestroyImage(imagePointer);
-		return bitmap;
+
+		return scaledImage;
 	}
 
 	public void CloseWindow(XWindowRef windowRef)
