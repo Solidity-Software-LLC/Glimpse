@@ -15,6 +15,8 @@ public record WindowProperties : IKeyed<ulong>
 	public bool DemandsAttention { get; set; }
 	public AllowedWindowActions[] AllowActions { get; set; }
 	public uint Pid { get; set; }
+	public DateTime CreationDate { get; set; }
+
 	public virtual bool Equals(WindowProperties other) => ReferenceEquals(this, other);
 }
 

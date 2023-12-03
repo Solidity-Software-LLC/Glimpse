@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Gdk;
 using Glimpse.Extensions;
 using Glimpse.Extensions.Redux.Reducers;
@@ -16,16 +17,14 @@ public class AllReducers
 			.On<ToggleStartMenuPinningAction>((s, a) => s with { StartMenu = s.StartMenu with { PinnedLaunchers = s.StartMenu.PinnedLaunchers.Toggle(a.DesktopFileId) } })
 			.On<UpdateStartMenuPinnedAppOrderingAction>((s, a) =>
 			{
-				var pinnedAppToMove = s.StartMenu.PinnedLaunchers.First(f => f == a.DesktopFileKey);
-				var newPinnedFiles = s.StartMenu.PinnedLaunchers.Remove(pinnedAppToMove).Insert(a.NewIndex, pinnedAppToMove);
-				return s with { StartMenu = s.StartMenu with { PinnedLaunchers = newPinnedFiles } };
+				if (s.StartMenu.PinnedLaunchers.SequenceEqual(a.DesktopFileKeys)) return s;
+				return s with { StartMenu = s.StartMenu with { PinnedLaunchers = a.DesktopFileKeys } };
 			})
-			.On<UpdateTaskbarSlotOrderingSingleAction>((s, a) =>
+			.On<UpdateTaskbarSlotOrderingBulkAction>((s, a) =>
 			{
-				var desktopFileIdMatch = s.Taskbar.PinnedLaunchers.FirstOrDefault(g => g == a.SlotRef.PinnedDesktopFileId);
-				if (desktopFileIdMatch == null) return s;
-				var newOrdering = s.Taskbar.PinnedLaunchers.Remove(desktopFileIdMatch).Insert(a.NewIndex, desktopFileIdMatch);
-				return s with { Taskbar = s.Taskbar with { PinnedLaunchers = newOrdering } };
+				var pinnedSlots = a.Slots.Select(r => r.PinnedDesktopFileId).Where(slot => !string.IsNullOrEmpty(slot)).ToImmutableList();
+				if (pinnedSlots.SequenceEqual(s.Taskbar.PinnedLaunchers)) return s;
+				return s with { Taskbar = s.Taskbar with { PinnedLaunchers = pinnedSlots } };
 			}),
 		FeatureReducer.Build(new DataTable<ulong, WindowProperties>())
 			.On<RemoveWindowAction>((s, a) => s.Remove(a.WindowProperties))
@@ -72,14 +71,13 @@ public class AllReducers
 				return s with { SearchText = a.SearchText, Chips = chips };
 			}),
 		FeatureReducer.Build(new RootState())
-			.On<UpdateTaskbarSlotOrderingBulkAction>((s, a) => s with { TaskbarSlots = new SlotReferences() { Refs = a.Slots } })
-			.On<UpdateTaskbarSlotOrderingSingleAction>((s, a) =>
+			.On<UpdateConfigurationAction>((s, a) => s with
 			{
-				var desktopFileIdMatch = !string.IsNullOrEmpty(a.SlotRef.PinnedDesktopFileId) ? s.TaskbarSlots.Refs.FirstOrDefault(g => g.PinnedDesktopFileId == a.SlotRef.PinnedDesktopFileId) : null;
-				var classHintMatch = !string.IsNullOrEmpty(a.SlotRef.ClassHintName) ? s.TaskbarSlots.Refs.FirstOrDefault(g => g.ClassHintName == a.SlotRef.ClassHintName) : null;
-				var slotToMove = desktopFileIdMatch ?? classHintMatch;
-				var newOrdering = s.TaskbarSlots.Refs.Remove(slotToMove).Insert(a.NewIndex, slotToMove);
-				return s with { TaskbarSlots = new SlotReferences() { Refs = newOrdering } };
+				TaskbarSlots = new SlotReferences()
+				{
+					Refs = a.ConfigurationFile.Taskbar.PinnedLaunchers.Select(l => new SlotRef() { PinnedDesktopFileId = l }).ToImmutableList()
+				}
 			})
+			.On<UpdateTaskbarSlotOrderingBulkAction>((s, a) => s with { TaskbarSlots = new SlotReferences() { Refs = a.Slots } })
 	};
 }

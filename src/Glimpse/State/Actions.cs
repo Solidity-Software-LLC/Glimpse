@@ -6,12 +6,6 @@ using Glimpse.Services.FreeDesktop;
 
 namespace Glimpse.State;
 
-public class UpdateTaskbarSlotOrderingSingleAction
-{
-	public SlotRef SlotRef { get; set; }
-	public int NewIndex { get; set; }
-}
-
 public class UpdateTaskbarSlotOrderingBulkAction
 {
 	public ImmutableList<SlotRef> Slots { get; set; }
@@ -64,5 +58,5 @@ public class UpdateConfigurationAction
 
 public record ToggleStartMenuPinningAction(string DesktopFileId);
 public record UpdateStartMenuSearchTextAction(string SearchText);
-public record UpdateStartMenuPinnedAppOrderingAction(string DesktopFileKey, int NewIndex);
+public record UpdateStartMenuPinnedAppOrderingAction(ImmutableList<string> DesktopFileKeys);
 public record UpdateAppFilteringChip(StartMenuChips Chip);

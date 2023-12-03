@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
 using Glimpse.Extensions.Gtk;
-using Glimpse.Extensions.Redux;
 using Glimpse.Extensions.Redux.Selectors;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
@@ -10,86 +9,39 @@ namespace Glimpse.Components.Taskbar;
 public static class TaskbarSelectors
 {
 	public static readonly ISelector<SlotReferences> Slots = CreateSelector(
-		RootStateSelectors.TaskbarPinnedLaunchers,
 		RootStateSelectors.DesktopFiles,
 		RootStateSelectors.Windows,
-		(pinnedLaunchers, desktopFiles, windows) =>
+		RootStateSelectors.UserSortedSlots,
+		(desktopFiles, windows, userSortedSlotCollection) =>
 		{
-			var result = ImmutableList<SlotRef>.Empty;
-			var groups = windows.ById.GroupBy(kv => kv.Value.ClassHintName).ToList();
-			var pinnedDesktopFileRefs = pinnedLaunchers.Select(l => desktopFiles.ContainsKey(l) ? desktopFiles.ById[l] : null).Where(f => f != null).ToList();
+			var result = ImmutableList<SlotRef>.Empty.AddRange(userSortedSlotCollection.Refs);
 
-			foreach (var pinned in pinnedDesktopFileRefs)
+			var previouslyFoundDesktopFiles = userSortedSlotCollection.Refs
+				.Select(l => desktopFiles.ContainsKey(l.PinnedDesktopFileId) ? desktopFiles.ById[l.PinnedDesktopFileId] : null)
+				.Where(f => f != null)
+				.ToList();
+
+			foreach (var window in windows.ById.Values.OrderBy(w => w.CreationDate))
 			{
-				result = result.Add(new SlotRef { PinnedDesktopFileId = pinned.Id });
-			}
+				if (result.Any(s => s.ClassHintName == window.ClassHintName)) continue;
+				var desktopFile = FindAppDesktopFileByName(previouslyFoundDesktopFiles, window) ?? FindAppDesktopFileByName(desktopFiles.ById.Values, window);
+				var matchingSlot = result.FirstOrDefault(s => s.PinnedDesktopFileId == desktopFile?.Id) ?? result.FirstOrDefault(s => s.DiscoveredDesktopFileId == desktopFile?.Id);
 
-			var pinnedDesktopFiles = result.Select(r => desktopFiles.ById[r.PinnedDesktopFileId]).ToList();
-
-			foreach (var g in groups)
-			{
-				var matchingDesktopFile = FindAppDesktopFileByName(pinnedDesktopFiles, g.First().Value)
-					?? FindAppDesktopFileByName(desktopFiles.ById.Values, g.First().Value);
-
-				if (matchingDesktopFile != null)
+				if (matchingSlot == null)
 				{
-					var existingSlot = result.FirstOrDefault(s => s.PinnedDesktopFileId == matchingDesktopFile.Id);
-
-					if (existingSlot != null && string.IsNullOrEmpty(existingSlot.ClassHintName))
-					{
-						result = result.Replace(existingSlot, existingSlot with { ClassHintName = g.Key });
-					}
-					else if (existingSlot == null)
-					{
-						result = result.Add(new SlotRef() { ClassHintName = g.Key, DiscoveredDesktopFileId = matchingDesktopFile.Id });
-					}
+					result = result.Add(new SlotRef() { ClassHintName = window.ClassHintName, DiscoveredDesktopFileId = desktopFile?.Id ?? "" });
 				}
-				else
+				else if (string.IsNullOrEmpty(matchingSlot.ClassHintName))
 				{
-					result = result.Add(new SlotRef { ClassHintName = g.Key });
+					result = result.Replace(matchingSlot, matchingSlot with { ClassHintName = window.ClassHintName });
 				}
 			}
 
 			return new SlotReferences { Refs = result };
 		});
 
-	public static readonly ISelector<SlotReferences> SortedSlots = CreateSelector(
-		Slots,
-		RootStateSelectors.TaskbarSlotCollection,
-		(slotCollection, ordering) =>
-		{
-			var updatedSlots = slotCollection.Refs;
-			var results = ImmutableList<SlotRef>.Empty;
-
-			foreach (var o in ordering.Refs)
-			{
-				if (!string.IsNullOrEmpty(o.PinnedDesktopFileId) && updatedSlots.FirstOrDefault(s => s.PinnedDesktopFileId == o.PinnedDesktopFileId) is { } m1)
-				{
-					results = results.Add(m1);
-				}
-				else if (!string.IsNullOrEmpty(o.ClassHintName) && updatedSlots.FirstOrDefault(s => s.ClassHintName == o.ClassHintName) is { } m2)
-				{
-					results = results.Add(m2);
-				}
-			}
-
-			foreach (var s in updatedSlots)
-			{
-				if (!string.IsNullOrEmpty(s.PinnedDesktopFileId) && results.FirstOrDefault(o => o.PinnedDesktopFileId == s.PinnedDesktopFileId) is null)
-				{
-					results = results.Add(s);
-				}
-				else if (!string.IsNullOrEmpty(s.ClassHintName) && results.FirstOrDefault(o => o.ClassHintName == s.ClassHintName) is null)
-				{
-					results = results.Add(s);
-				}
-			}
-
-			return new SlotReferences { Refs = results };
-		});
-
 	public static readonly ISelector<TaskbarViewModel> ViewModel = CreateSelector(
-		SortedSlots,
+		Slots,
 		RootStateSelectors.Windows,
 		RootStateSelectors.NamedIcons,
 		RootStateSelectors.DesktopFiles,

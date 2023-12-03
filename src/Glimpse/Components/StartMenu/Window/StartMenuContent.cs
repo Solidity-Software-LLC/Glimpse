@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -35,7 +36,7 @@ public class StartMenuContent : Bin
 	public IObservable<DesktopFile> AppLaunch => _appLaunch;
 	public IObservable<DesktopFileAction> DesktopFileAction => _runActionSubject;
 	public IObservable<StartMenuChips> ChipActivated { get; private set; }
-	public IObservable<(StartMenuAppViewModel, int)> AppOrderingChanged => _apps.OrderingChanged;
+	public IObservable<ImmutableList<string>> AppOrderingChanged => _apps.OrderingChanged.Select(next => next.Select(a => a.DesktopFile.Id).ToImmutableList());
 	public IObservable<string> ToggleTaskbarPinning => _toggleTaskbarPinningSubject;
 	public IObservable<string> ToggleStartMenuPinning => _toggleStartMenuPinningSubject;
 

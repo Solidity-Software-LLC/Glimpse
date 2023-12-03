@@ -24,7 +24,7 @@ public static class RootStateSelectors
 	public static readonly ISelector<ImmutableList<StartMenuLaunchIconContextMenuItem>> StartMenuLaunchIconContextMenuItems = CreateSelector(Configuration, s => s.StartMenuLaunchIconContextMenu);
 
 	private static readonly ISelector<RootState> s_rootState = CreateFeatureSelector<RootState>();
-	public static readonly ISelector<SlotReferences> TaskbarSlotCollection = CreateSelector(s_rootState, s => s.TaskbarSlots);
+	public static readonly ISelector<SlotReferences> UserSortedSlots = CreateSelector(s_rootState, s => s.TaskbarSlots);
 
 	public static readonly ISelector<ImmutableList<DesktopFile>> AllDesktopFiles =
 		CreateSelector(DesktopFiles, s => s.ById.Values

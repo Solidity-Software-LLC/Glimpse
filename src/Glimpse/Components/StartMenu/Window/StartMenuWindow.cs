@@ -58,7 +58,7 @@ public class StartMenuWindow : Gtk.Window
 
 		this.ObserveEvent(_startMenuContent.DesktopFileAction).Subscribe(a => freeDesktopService.Run(a));
 		this.ObserveEvent(_startMenuContent.ChipActivated).Subscribe(c => store.Dispatch(new UpdateAppFilteringChip(c)));
-		this.ObserveEvent(_startMenuContent.AppOrderingChanged).Subscribe(t => store.Dispatch(new UpdateStartMenuPinnedAppOrderingAction(t.Item1.DesktopFile.IniFile.FilePath, t.Item2)));
+		this.ObserveEvent(_startMenuContent.AppOrderingChanged).Subscribe(t => store.Dispatch(new UpdateStartMenuPinnedAppOrderingAction(t)));
 		this.ObserveEvent(_startMenuContent.ToggleStartMenuPinning).Subscribe(f => store.Dispatch(new ToggleStartMenuPinningAction(f)));
 		this.ObserveEvent(_startMenuContent.ToggleTaskbarPinning).Subscribe(f => store.Dispatch(new ToggleTaskbarPinningAction(f)));
 		this.ObserveEvent(_startMenuContent.SearchTextUpdated).Subscribe(text => store.Dispatch(new UpdateStartMenuSearchTextAction(text)));

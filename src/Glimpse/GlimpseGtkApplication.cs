@@ -6,7 +6,6 @@ using GLib;
 using Glimpse.Components;
 using Glimpse.Components.Calendar;
 using Glimpse.Components.StartMenu.Window;
-using Glimpse.Components.Taskbar;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Reactive;
 using Glimpse.Extensions.Redux;
@@ -41,15 +40,6 @@ public class GlimpseGtkApplication(
 			args.ExitApplication = false;
 		};
 
-		store.Select(TaskbarSelectors.Slots)
-			.Take(1)
-			.Subscribe(slots => store.Dispatch(new UpdateTaskbarSlotOrderingBulkAction() { Slots = slots.Refs }));
-
-		store.Select(TaskbarSelectors.SortedSlots)
-			.DistinctUntilChanged()
-			.Subscribe(slots => store.Dispatch(new UpdateTaskbarSlotOrderingBulkAction() { Slots = slots.Refs }));
-
-		application.RegisterSession = true;
 		Application.Init();
 		application.Register(Cancellable.Current);
 		LoadCss();

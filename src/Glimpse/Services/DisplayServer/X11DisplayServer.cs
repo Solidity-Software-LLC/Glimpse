@@ -5,6 +5,7 @@ using Glimpse.Services.X11;
 using Glimpse.State;
 using ReactiveMarbles.ObservableEvents;
 using Application = Gtk.Application;
+using DateTime = System.DateTime;
 
 namespace Glimpse.Services.DisplayServer;
 
@@ -22,7 +23,7 @@ public class X11DisplayServer : IDisplayServer
 
 		_xService.Windows.Subscribe(windowObs =>
 		{
-			windowObs.Take(1).Subscribe(w => store.Dispatch(new AddWindowAction(w)));
+			windowObs.Take(1).Subscribe(w => store.Dispatch(new AddWindowAction(w with { CreationDate = DateTime.UtcNow })));
 			windowObs.Skip(1).Subscribe(w => store.Dispatch(new UpdateWindowAction() { WindowProperties = w }));
 			windowObs.TakeLast(1).Subscribe(w => store.Dispatch(new RemoveWindowAction() { WindowProperties = w }));
 		});

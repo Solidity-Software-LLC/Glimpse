@@ -11,14 +11,14 @@ namespace Glimpse.Components.Shared.ForEach;
 
 public class ForEachFlowBox<TViewModel, TWidget, TKey> : FlowBox where TWidget : Widget, IForEachDraggable where TKey : IEquatable<TKey>
 {
-	private readonly Subject<(TViewModel, int)> _orderingChangedSubject = new();
+	private readonly Subject<List<TViewModel>> _orderingChangedSubject = new();
 	private readonly Subject<TWidget> _dragBeginSubject = new();
 	private readonly FlowBoxChild _draggingPlaceholderWidget = new FlowBoxChild() { Visible = true }.AddClass("foreach__dragging-placeholder");
 	private readonly string _dragIconTargetName;
 	private readonly TargetList _dragTargets;
 	private readonly ObservableProperty<bool> _disableDragAndDrop = new(false);
 
-	public IObservable<(TViewModel, int)> OrderingChanged => _orderingChangedSubject;
+	public IObservable<List<TViewModel>> OrderingChanged => _orderingChangedSubject;
 	public IObservable<TWidget> DragBeginObservable => _dragBeginSubject;
 
 	public IObservable<bool> DisableDragAndDrop
@@ -125,15 +125,21 @@ public class ForEachFlowBox<TViewModel, TWidget, TKey> : FlowBox where TWidget :
 
 	private void OnDragEndInternal(FlowBoxChild flowBoxChild)
 	{
-		var relativeIndex = Array.FindIndex(Children.Where(c => c.IsMapped).ToArray(), c => c == _draggingPlaceholderWidget);
-
 		var newIndex = _draggingPlaceholderWidget.Index;
 		if (newIndex < flowBoxChild.Index) newIndex--;
 		flowBoxChild.Data[ForEachDataKeys.Index] = newIndex;
 		flowBoxChild.Visible = true;
 
 		_draggingPlaceholderWidget.Visible = false;
-		_orderingChangedSubject.OnNext(((TViewModel)flowBoxChild.Data[ForEachDataKeys.Model], relativeIndex));
+
+		var newOrdering = Children
+			.Where(c => c.IsMapped)
+			.Cast<FlowBoxChild>()
+			.OrderBy(c => c.Data[ForEachDataKeys.Index])
+			.Select(c => (TViewModel)c.Data[ForEachDataKeys.Model])
+			.ToList();
+
+		_orderingChangedSubject.OnNext(newOrdering);
 		InvalidateSort();
 	}
 

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using GLib;
@@ -138,7 +139,7 @@ public class TaskbarView : Box
 		forEachGroup.AddClass("taskbar__container");
 		forEachGroup.OrderingChanged
 			.TakeUntilDestroyed(this)
-			.Subscribe(t => store.Dispatch(new UpdateTaskbarSlotOrderingSingleAction() { SlotRef = t.Item1.SlotRef, NewIndex = t.Item2 }));
+			.Subscribe(ordering => store.Dispatch(new UpdateTaskbarSlotOrderingBulkAction() { Slots = ordering.Select(s => s.SlotRef).ToImmutableList() }));
 		forEachGroup.DragBeginObservable.TakeUntilDestroyed(this).Subscribe(icon => icon.CloseWindowPicker());
 
 		Add(forEachGroup);

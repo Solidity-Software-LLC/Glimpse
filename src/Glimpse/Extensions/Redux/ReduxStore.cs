@@ -26,6 +26,7 @@ public sealed class ReduxStore
 
 		_stateSubject = new BehaviorSubject<StoreState>(State);
 		_actionTaskScheduler = dispatchedActionScheduler ?? new ConcurrentExclusiveSchedulerPair().ExclusiveScheduler;
+		Task.Run(ProcessActionQueue);
 	}
 
 	public StoreState State { get; private set; }
@@ -39,23 +40,25 @@ public sealed class ReduxStore
 		lock (_lock)
 		{
 			_actionQueue.Enqueue(Tuple.Create(task, action));
-			if (_actionQueue.Count > 1) return task.Task;
+			QueueHandle.Set();
 		}
 
-		Task.Factory.StartNew(ProcessActionQueue, CancellationToken.None, TaskCreationOptions.None, _actionTaskScheduler);
 		return task.Task;
 	}
+
+	private EventWaitHandle QueueHandle { get; } = new ManualResetEvent(false);
 
 	private void ProcessActionQueue()
 	{
 		while (true)
 		{
+			QueueHandle.WaitOne();
 			Tuple<TaskCompletionSource, object> t = null;
 
 			lock (_lock)
 			{
-				if (_actionQueue.Count == 0) break;
 				t = _actionQueue.Dequeue();
+				if (_actionQueue.Count == 0) QueueHandle.Reset();
 			}
 
 			UpdateState(Reduce(State, t.Item2));
