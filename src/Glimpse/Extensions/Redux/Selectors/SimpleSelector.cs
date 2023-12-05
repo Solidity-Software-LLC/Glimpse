@@ -4,8 +4,12 @@ namespace Glimpse.Extensions.Redux.Selectors;
 
 public sealed class SimpleSelector<TOutput> : ISelector<TOutput>
 {
-	public SimpleSelector(Func<StoreState, TOutput> selector)
+	private readonly IEqualityComparer<TOutput> _equalityComparer;
+	private readonly Cache<TOutput> _cachedOutput = new();
+
+	public SimpleSelector(Func<StoreState, TOutput> selector, IEqualityComparer<TOutput> equalityComparer = null)
 	{
+		_equalityComparer = equalityComparer ?? EqualityComparer<TOutput>.Default;
 		Selector = selector;
 	}
 
@@ -13,7 +17,14 @@ public sealed class SimpleSelector<TOutput> : ISelector<TOutput>
 
 	public TOutput Apply(StoreState input)
 	{
-		return Selector(input);
+		var result = Selector(input);
+
+		if (!_equalityComparer.Equals(_cachedOutput.Value, result))
+		{
+			_cachedOutput.Value = result;
+		}
+
+		return _cachedOutput.Value;
 	}
 
 	public IObservable<TOutput> Apply(IObservable<StoreState> input)
