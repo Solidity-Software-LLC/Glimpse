@@ -1,3 +1,4 @@
+using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
 using Glimpse.Components.Shared;
@@ -5,6 +6,7 @@ using Glimpse.Extensions.Gtk;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;
 using Gtk;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Components.Taskbar;
 
@@ -14,6 +16,9 @@ public class TaskbarGroupContextMenu : Menu
 	private readonly Subject<AllowedWindowActions> _windowAction = new();
 	private readonly Subject<DesktopFileAction> _desktopFileAction = new();
 	private readonly Subject<DesktopFile> _launch = new();
+	private static readonly Pixbuf s_closeIcon = Assets.Close.Scale(ThemeConstants.MenuItemIconSize);
+	private static readonly Pixbuf s_unpinIcon = Assets.UnpinIcon.Scale(ThemeConstants.MenuItemIconSize);
+	private static readonly Pixbuf s_pinIcon = Assets.PinIcon.Scale(ThemeConstants.MenuItemIconSize);
 
 	public TaskbarGroupContextMenu(IObservable<TaskbarGroupContextMenuViewModel> viewModel)
 	{
@@ -21,7 +26,7 @@ public class TaskbarGroupContextMenu : Menu
 
 		viewModel.Subscribe(vm =>
 		{
-			Children.ToList().ForEach(Remove);
+			Children.ToList().ForEach(c => c.Destroy());
 			CreateContextMenu(vm);
 		});
 	}
@@ -33,11 +38,14 @@ public class TaskbarGroupContextMenu : Menu
 
 	private void CreateContextMenu(TaskbarGroupContextMenuViewModel viewModel)
 	{
-		var launchIcon = viewModel.LaunchIcon.Scale(ThemeConstants.MenuItemIconSize);
 		CreateDesktopFileActions(viewModel.DesktopFile, viewModel.ActionIcons).ForEach(Add);
+
 		if (viewModel.DesktopFile.IniFile != null)
 		{
-			Add(CreateLaunchMenuItem(viewModel, launchIcon));
+			var launchIcon = viewModel.LaunchIcon.Scale(ThemeConstants.MenuItemIconSize);
+			var launchMenuItem = CreateLaunchMenuItem(viewModel, launchIcon);
+			launchMenuItem.Events().Destroyed.Take(1).Subscribe(_ => launchIcon.Dispose());
+			Add(launchMenuItem);
 			Add(CreatePinMenuItem(viewModel));
 		}
 
@@ -52,8 +60,8 @@ public class TaskbarGroupContextMenu : Menu
 	private MenuItem CreatePinMenuItem(TaskbarGroupContextMenuViewModel viewModel)
 	{
 		var pinLabel = viewModel.IsPinned ? "Unpin from taskbar" : "Pin to taskbar";
-		var icon = viewModel.IsPinned ? Assets.UnpinIcon : Assets.PinIcon;
-		var pinMenuItem = ContextMenuHelper.CreateMenuItem(pinLabel, icon.Scale(ThemeConstants.MenuItemIconSize));
+		var icon = viewModel.IsPinned ? s_unpinIcon : s_pinIcon;
+		var pinMenuItem = ContextMenuHelper.CreateMenuItem(pinLabel, icon);
 		pinMenuItem.ObserveButtonRelease().Subscribe(_ => _pinSubject.OnNext(true));
 		return pinMenuItem;
 	}
@@ -69,7 +77,7 @@ public class TaskbarGroupContextMenu : Menu
 	{
 		if (viewModel.CanClose)
 		{
-			var menuItem = ContextMenuHelper.CreateMenuItem("Close Window", Assets.Close.Scale(ThemeConstants.MenuItemIconSize));
+			var menuItem = ContextMenuHelper.CreateMenuItem("Close Window", s_closeIcon);
 			menuItem.ObserveButtonRelease().Subscribe(_ => _windowAction.OnNext(AllowedWindowActions.Close));
 			return menuItem;
 		}

@@ -1,7 +1,9 @@
+using System.Reactive.Linq;
 using Gdk;
 using Glimpse.Components.Shared;
 using Glimpse.Services.FreeDesktop;
 using Gtk;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Extensions.Gtk;
 
@@ -25,7 +27,9 @@ public static class ContextMenuHelper
 
 			foreach (var action in desktopFile.Actions)
 			{
-				var menuItem = CreateMenuItem(action.ActionName, icons[action.ActionName].Scale(ThemeConstants.MenuItemIconSize));
+				var actionIcon = icons[action.ActionName].Scale(ThemeConstants.MenuItemIconSize);
+				var menuItem = CreateMenuItem(action.ActionName, actionIcon);
+				menuItem.Events().Destroyed.Take(1).Subscribe(_ => actionIcon.Dispose());
 				menuItem.Data.Add("DesktopFileAction", action);
 				results.Add(menuItem);
 			}
