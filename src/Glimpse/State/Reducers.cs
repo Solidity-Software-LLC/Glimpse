@@ -30,11 +30,8 @@ public class AllReducers
 			.On<RemoveWindowAction>((s, a) => s.Remove(a.WindowProperties))
 			.On<UpdateWindowAction>((s, a) => s.UpsertOne(a.WindowProperties))
 			.On<AddWindowAction>((s, a) => s.UpsertOne(a.WindowProperties)),
-		FeatureReducer.Build(new DataTable<ulong, WindowProperties>())
-			.On<RemoveWindowAction>((s, a) => s.Remove(a.WindowProperties))
-			.On<UpdateWindowAction>((s, a) => s.UpsertOne(a.WindowProperties))
-			.On<AddWindowAction>((s, a) => s.UpsertOne(a.WindowProperties)),
 		FeatureReducer.Build(new DataTable<ulong, Pixbuf>())
+			.On<RemoveWindowAction>((s, a) => s.Remove(a.WindowProperties.WindowRef.Id))
 			.On<UpdateScreenshotsAction>((s, a) => s.UpsertMany(a.Screenshots)),
 		FeatureReducer.Build(new DataTable<string, Pixbuf>())
 			.On<AddOrUpdateNamedIconsAction>((s, a) => s.UpsertMany(a.Icons)),
