@@ -16,7 +16,7 @@ public static class IconThemeExtensions
 
 	public static Pixbuf LoadIcon(this IconTheme iconTheme, string iconName, int size)
 	{
-		return iconTheme.LoadIconByName(iconName, size) ?? Assets.MissingImage.Scale(size);
+		return iconTheme.LoadIconByName(iconName, size);
 	}
 
 	public static Pixbuf LoadIcon(this IconTheme iconTheme, StatusNotifierItemProperties properties)

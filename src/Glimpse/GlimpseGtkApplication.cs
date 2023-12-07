@@ -89,7 +89,9 @@ public class GlimpseGtkApplication(
 				.SelectMany(f => f.Actions.Select(a => a.IconName).Concat(new[] { f.IconName }))
 				.Where(i => !string.IsNullOrEmpty(i))
 				.Distinct()
-				.ToDictionary(n => n, n => iconTheme.LoadIcon(n, 64));
+				.Select(n => (n, iconTheme.LoadIcon(n, 64)))
+				.Where(t => t.Item2 != null)
+				.ToDictionary(t => t.n, t => t.Item2);
 
 			store.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = icons });
 		});
