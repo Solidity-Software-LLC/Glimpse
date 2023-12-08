@@ -9,6 +9,20 @@ public class FuncEqualityComparer<T> : IEqualityComparer<T>
 		_comparison = comparison;
 	}
 
-	public bool Equals(T x, T y) => _comparison(x, y);
+	public bool Equals(T x, T y)
+	{
+		if (ReferenceEquals(x, y))
+		{
+			return true;
+		}
+
+		if (x == null || y == null)
+		{
+			return false;
+		}
+
+		return _comparison(x, y);
+	}
+
 	public int GetHashCode(T obj) => obj.GetHashCode();
 }
