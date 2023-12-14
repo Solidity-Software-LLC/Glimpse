@@ -1,0 +1,67 @@
+<#@ template hostspecific="false" language="C#" #>
+<#@ output extension=".cs" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+using System.Reactive.Linq;
+
+namespace Glimpse.Extensions.Redux.Selectors;
+
+<#for (var i = 1; i <= 7; i++) {#>
+public sealed class MemoizedSelector<<#=Repeat(i, "S{i}")#>,TOutput> : ISelector<TOutput>
+{
+	private readonly Cache<TOutput> _cachedOutput = new();
+	public IEqualityComparer<TOutput> EqualityComparer { get; }
+	public IObservable<TOutput> Apply(IObservable<StoreState> input) => input.Select(Apply).DistinctUntilChanged();
+	public Func<<#=Repeat(i, "S{i}", ",")#>,TOutput> ProjectorFunction { get; }
+
+<#for (var j = 1; j <= i; j++) {#>
+	private readonly Cache<S<#=j#>> _cachedSelectorResult<#=j#> = new();
+	private readonly ISelector<S<#=j#>> _selector<#=j#>;
+<#}#>
+
+	public MemoizedSelector(
+		<#=Repeat(i, "ISelector<S{i}> selector{i}", ", ")#>,
+		Func<<#=Repeat(i, "S{i}")#>, TOutput> projectorFunction,
+		IEqualityComparer<TOutput> equalityComparer = null)
+	{
+		EqualityComparer = equalityComparer ?? EqualityComparer<TOutput>.Default;
+		ProjectorFunction = projectorFunction;
+		<#=Repeat(i, "_selector{i} = selector{i}", ";\r\n\t\t")#>;
+	}
+
+	public TOutput Apply(StoreState input)
+	{
+		<#=Repeat(i, "var selector{i}Result = _selector{i}.Apply(input)", ";\r\n\t\t")#>;
+
+		if (_cachedOutput.HasValue && <#=Repeat(i, "_cachedSelectorResult{i}.ValueEquals(selector{i}Result)", " && ")#>)
+		{
+			return _cachedOutput.Value;
+		}
+
+		<#=Repeat(i, "_cachedSelectorResult{i}.Value = selector{i}Result", ";\r\n\t\t")#>;
+
+		var projectionResult = ProjectorFunction(<#=Repeat(i, "selector{i}Result")#>);
+
+		if (!EqualityComparer.Equals(projectionResult, _cachedOutput.Value))
+		{
+			_cachedOutput.Value = projectionResult;
+		}
+
+		return _cachedOutput.Value;
+	}
+}
+<#}#>
+
+<#+
+	private string Repeat(int num, string template, string separator = ",")
+	{
+		var items = new string[num];
+
+		for (var i = 0; i < num; i++)
+		{
+			items[i] = template.Replace("{i}", (i + 1).ToString());
+		}
+
+		return string.Join(separator, items);
+	}
+#>
