@@ -20,15 +20,27 @@ public static class SelectorFactory
 
 	public static ISelector<TResult> CreateSelector<<#=Repeat(i, "S{i}")#>,TResult>(
 		<#=Repeat(i, "ISelector<S{i}> s{i}")#>,
-		Func<<#=Repeat(i, "S{i}")#>,TResult> proj,
+		Func<Cache<TResult>,<#=Repeat(i, "S{i}")#>,TResult> proj,
 		IEqualityComparer<TResult> equalityComparer = null) =>
 			 new MemoizedSelector<<#=Repeat(i, "S{i}")#>,TResult>(<#=Repeat(i, "s{i}")#>,proj,equalityComparer);
 
 	public static ISelector<TResult> CreateSelector<<#=Repeat(i, "S{i}")#>,TResult>(
 		<#=Repeat(i, "ISelector<S{i}> s{i}")#>,
-		Func<<#=Repeat(i, "S{i}")#>,TResult> proj,
+		Func<Cache<TResult>,<#=Repeat(i, "S{i}")#>,TResult> proj,
 		Func<TResult,TResult,bool> equalityComparer) =>
 			 new MemoizedSelector<<#=Repeat(i, "S{i}")#>,TResult>(<#=Repeat(i, "s{i}")#>,proj,new FuncEqualityComparer<TResult>(equalityComparer));
+
+	public static ISelector<TResult> CreateSelector<<#=Repeat(i, "S{i}")#>,TResult>(
+		<#=Repeat(i, "ISelector<S{i}> s{i}")#>,
+		Func<<#=Repeat(i, "S{i}")#>,TResult> proj,
+		IEqualityComparer<TResult> equalityComparer = null) =>
+			 new MemoizedSelector<<#=Repeat(i, "S{i}")#>,TResult>(<#=Repeat(i, "s{i}")#>,(_,<#=Repeat(i, "x{i}")#>) => proj(<#=Repeat(i, "x{i}")#>),equalityComparer);
+
+	public static ISelector<TResult> CreateSelector<<#=Repeat(i, "S{i}")#>,TResult>(
+		<#=Repeat(i, "ISelector<S{i}> s{i}")#>,
+		Func<<#=Repeat(i, "S{i}")#>,TResult> proj,
+		Func<TResult,TResult,bool> equalityComparer) =>
+			 new MemoizedSelector<<#=Repeat(i, "S{i}")#>,TResult>(<#=Repeat(i, "s{i}")#>,(_,<#=Repeat(i, "x{i}")#>) => proj(<#=Repeat(i, "x{i}")#>),new FuncEqualityComparer<TResult>(equalityComparer));
 <#
 	}
 #>

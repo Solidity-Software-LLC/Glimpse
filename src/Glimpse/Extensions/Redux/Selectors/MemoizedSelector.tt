@@ -12,7 +12,7 @@ public sealed class MemoizedSelector<<#=Repeat(i, "S{i}")#>,TOutput> : ISelector
 	private readonly Cache<TOutput> _cachedOutput = new();
 	public IEqualityComparer<TOutput> EqualityComparer { get; }
 	public IObservable<TOutput> Apply(IObservable<StoreState> input) => input.Select(Apply).DistinctUntilChanged();
-	public Func<<#=Repeat(i, "S{i}", ",")#>,TOutput> ProjectorFunction { get; }
+	public Func<Cache<TOutput>,<#=Repeat(i, "S{i}", ",")#>,TOutput> ProjectorFunction { get; }
 
 <#for (var j = 1; j <= i; j++) {#>
 	private readonly Cache<S<#=j#>> _cachedSelectorResult<#=j#> = new();
@@ -21,7 +21,7 @@ public sealed class MemoizedSelector<<#=Repeat(i, "S{i}")#>,TOutput> : ISelector
 
 	public MemoizedSelector(
 		<#=Repeat(i, "ISelector<S{i}> selector{i}", ", ")#>,
-		Func<<#=Repeat(i, "S{i}")#>, TOutput> projectorFunction,
+		Func<Cache<TOutput>,<#=Repeat(i, "S{i}")#>, TOutput> projectorFunction,
 		IEqualityComparer<TOutput> equalityComparer = null)
 	{
 		EqualityComparer = equalityComparer ?? EqualityComparer<TOutput>.Default;
@@ -40,7 +40,7 @@ public sealed class MemoizedSelector<<#=Repeat(i, "S{i}")#>,TOutput> : ISelector
 
 		<#=Repeat(i, "_cachedSelectorResult{i}.Value = selector{i}Result", ";\r\n\t\t")#>;
 
-		var projectionResult = ProjectorFunction(<#=Repeat(i, "selector{i}Result")#>);
+		var projectionResult = ProjectorFunction(_cachedOutput,<#=Repeat(i, "selector{i}Result")#>);
 
 		if (!EqualityComparer.Equals(projectionResult, _cachedOutput.Value))
 		{
