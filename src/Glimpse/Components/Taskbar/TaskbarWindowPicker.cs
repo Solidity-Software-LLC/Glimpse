@@ -5,7 +5,6 @@ using Glimpse.Components.Shared;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Reactive;
 using Glimpse.Services.DisplayServer;
-using Glimpse.State;
 using Gtk;
 using Pango;
 using Window = Gtk.Window;
@@ -19,7 +18,7 @@ public class TaskbarWindowPicker : Window
 	private readonly Subject<IWindowRef> _previewWindowClicked = new();
 	private readonly Subject<IWindowRef> _closeWindow = new();
 
-	public TaskbarWindowPicker(IObservable<TaskbarGroupViewModel> viewModelObservable) : base(WindowType.Popup)
+	public TaskbarWindowPicker(IObservable<SlotViewModel> viewModelObservable) : base(WindowType.Popup)
 	{
 		SkipPagerHint = true;
 		SkipTaskbarHint = true;
@@ -55,7 +54,7 @@ public class TaskbarWindowPicker : Window
 		ShowAll();
 	}
 
-	private Widget CreateAppPreview(IObservable<SlotWindowViewModel> taskObservable)
+	private Widget CreateAppPreview(IObservable<WindowViewModel> taskObservable)
 	{
 		var appName = new Label()
 			{
@@ -90,9 +89,13 @@ public class TaskbarWindowPicker : Window
 			.AddButtonStates();
 
 		taskObservable.Select(t => t.Title).DistinctUntilChanged().Subscribe(t => appName.Text = t);
-		taskObservable.Subscribe(t => appIcon.Pixbuf = t.Icon.Scale(ThemeConstants.MenuItemIconSize));
+		taskObservable.Subscribe(t =>
+		{
+			appIcon.Pixbuf?.Dispose();
+			appIcon.Pixbuf = t.Icon.Scale(ThemeConstants.MenuItemIconSize);
+		});
 		closeIconBox.ObserveButtonRelease().WithLatestFrom(taskObservable).Subscribe(t => _closeWindow.OnNext(t.Second.WindowRef));
-		taskObservable.Select(t => t.Screenshot).DistinctUntilChanged().Subscribe(s => screenshotImage.Pixbuf = s.ScaleToFit(100, 200));
+		taskObservable.Select(t => t.Screenshot).DistinctUntilChanged().Subscribe(s => screenshotImage.Pixbuf = s);
 		appPreview.ObserveButtonRelease().WithLatestFrom(taskObservable).Subscribe(t => _previewWindowClicked.OnNext(t.Second.WindowRef));
 
 		return appPreview;

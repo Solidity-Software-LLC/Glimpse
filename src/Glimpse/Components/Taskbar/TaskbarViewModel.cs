@@ -8,16 +8,17 @@ namespace Glimpse.Components.Taskbar;
 
 public record TaskbarViewModel
 {
-	public ImmutableList<TaskbarGroupViewModel> Groups { get; init; } = ImmutableList<TaskbarGroupViewModel>.Empty;
+	public ImmutableList<SlotViewModel> Groups { get; init; } = ImmutableList<SlotViewModel>.Empty;
 }
 
-public class SlotWindowViewModel
+public class WindowViewModel
 {
 	public string Title { get; init; }
 	public Pixbuf Icon { get; init; }
 	public IWindowRef WindowRef { get; init; }
 	public AllowedWindowActions[] AllowedActions { get; init; }
 	public Pixbuf Screenshot { get; init; }
+	public bool DemandsAttention { get; init; }
 }
 
 public class TaskbarGroupContextMenuViewModel
@@ -29,14 +30,14 @@ public class TaskbarGroupContextMenuViewModel
 	public bool CanClose { get; set; }
 }
 
-public record TaskbarGroupViewModel
+public record SlotViewModel
 {
-	public ImmutableList<SlotWindowViewModel> Tasks { get; init; } = ImmutableList<SlotWindowViewModel>.Empty;
+	public ImmutableList<WindowViewModel> Tasks { get; init; } = ImmutableList<WindowViewModel>.Empty;
 	public SlotRef SlotRef { get; set; }
 	public DesktopFile DesktopFile { get; init; }
 	public bool DemandsAttention { get; init; }
 	public Pixbuf Icon { get; init; }
 	public TaskbarGroupContextMenuViewModel ContextMenu { get; set; }
 
-	public virtual bool Equals(TaskbarGroupViewModel other) => ReferenceEquals(this, other);
+	public virtual bool Equals(SlotViewModel other) => ReferenceEquals(this, other);
 }

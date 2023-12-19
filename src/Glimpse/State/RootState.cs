@@ -17,6 +17,7 @@ public record WindowProperties : IKeyed<ulong>
 	public AllowedWindowActions[] AllowActions { get; set; }
 	public uint Pid { get; set; }
 	public DateTime CreationDate { get; set; }
+	public Pixbuf DefaultScreenshot { get; set; }
 
 	public virtual bool Equals(WindowProperties other) => ReferenceEquals(this, other);
 }

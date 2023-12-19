@@ -13,11 +13,11 @@ namespace Glimpse.Components.Taskbar;
 public class TaskbarGroupIcon : EventBox, IForEachDraggable
 {
 	private readonly TaskbarWindowPicker _taskbarWindowPicker;
-	private TaskbarGroupViewModel _currentViewModel;
+	private SlotViewModel _currentViewModel;
 
 	public IObservable<Pixbuf> IconWhileDragging { get; }
 
-	public TaskbarGroupIcon(IObservable<TaskbarGroupViewModel> viewModel, TaskbarWindowPicker taskbarWindowPicker)
+	public TaskbarGroupIcon(IObservable<SlotViewModel> viewModel, TaskbarWindowPicker taskbarWindowPicker)
 	{
 		_taskbarWindowPicker = taskbarWindowPicker;
 		Visible = false;

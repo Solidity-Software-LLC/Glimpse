@@ -32,9 +32,37 @@ public class AllReducers
 			.On<AddWindowAction>((s, a) => s.UpsertOne(a.WindowProperties)),
 		FeatureReducer.Build(new DataTable<ulong, Pixbuf>())
 			.On<RemoveWindowAction>((s, a) => s.Remove(a.WindowProperties.WindowRef.Id))
-			.On<UpdateScreenshotsAction>((s, a) => s.UpsertMany(a.Screenshots)),
+			.On<UpdateScreenshotsAction>((s, a) =>
+			{
+				var result = s;
+
+				foreach (var kv in a.Screenshots.Where(kv => result.ContainsKey(kv.Key)))
+				{
+					result.Get(kv.Key).Dispose();
+				}
+
+				return result.UpsertMany(a.Screenshots);
+			}),
 		FeatureReducer.Build(new DataTable<string, Pixbuf>())
-			.On<AddOrUpdateNamedIconsAction>((s, a) => s.UpsertMany(a.Icons)),
+			.On<AddOrUpdateNamedIconsAction>((s, a) =>
+			{
+				var result = s;
+
+				foreach (var kv in a.Icons)
+				{
+					if (result.ContainsKey(kv.Key) && kv.Value == null)
+					{
+						result.Get(kv.Key)?.Dispose();
+						result = result.Remove(kv.Key);
+					}
+					else if (kv.Value != null)
+					{
+						result = result.UpsertOne(kv.Key, kv.Value);
+					}
+				}
+
+				return result;
+			}),
 		FeatureReducer.Build(new DataTable<string, DesktopFile>())
 			.On<UpdateDesktopFilesAction>((s, a) => s.UpsertMany(a.DesktopFiles)),
 		FeatureReducer.Build(new AccountState())

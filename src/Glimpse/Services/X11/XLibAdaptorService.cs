@@ -3,6 +3,7 @@ using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using Cairo;
 using Gdk;
+using Glimpse.Components;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Reactive;
 using Glimpse.Interop.X11;
@@ -68,6 +69,10 @@ public class XLibAdaptorService(IHostApplicationLifetime applicationLifetime) : 
 				var iconObs = Observable.Return(windowRef.GetIcons()).Concat(propertyChangeObs.ObserveIcons(XAtoms.NetWmIcon));
 				var iconNameObs = Observable.Return(windowRef.GetStringProperty(XAtoms.NetWmIconName)).Concat(propertyChangeObs.ObserveStringProperty(XAtoms.NetWmIconName));
 
+				var defaultScreenshotObs = iconObs
+					.Select(icons => (icons?.MaxBy(i => i.Width) ?? Assets.MissingImage).Scale(128))
+					.Scan((x, y) => { x?.Dispose(); return y; });
+
 				var stateObs = Observable.Return(windowRef.GetAtomArray(XAtoms.NetWmState))
 					.Concat(propertyChangeObs.ObserveAtomArray(XAtoms.NetWmState))
 					.Select(s => s.Where(x => x == XAtoms.NetWmStateDemandsAttention).ToList())
@@ -81,7 +86,7 @@ public class XLibAdaptorService(IHostApplicationLifetime applicationLifetime) : 
 				XLib.XGetClassHint(windowRef.Display, windowRef.Window, out var classHint);
 
 				var windowPropsObs = titleObs
-					.CombineLatest(iconObs, iconNameObs, stateObs, allowedActionsObs)
+					.CombineLatest(iconObs, iconNameObs, stateObs, allowedActionsObs, defaultScreenshotObs)
 					.Select(t => new WindowProperties()
 					{
 						WindowRef = windowRef,
@@ -92,7 +97,8 @@ public class XLibAdaptorService(IHostApplicationLifetime applicationLifetime) : 
 						Title = t.First,
 						AllowActions = t.Fifth,
 						Pid = pid,
-						DemandsAttention = t.Fourth.Contains(XAtoms.NetWmStateDemandsAttention)
+						DemandsAttention = t.Fourth.Contains(XAtoms.NetWmStateDemandsAttention),
+						DefaultScreenshot = t.Sixth
 					})
 					.Throttle(TimeSpan.FromMilliseconds(250))
 					.DistinctUntilChanged()
