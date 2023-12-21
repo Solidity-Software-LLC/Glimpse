@@ -30,6 +30,8 @@ public class TaskbarWindowPicker : Window
 		Visual = Screen.RgbaVisual;
 		KeepAbove = true;
 
+		this.Events().DeleteEvent.Subscribe(e => e.RetVal = true);
+
 		var layout = new Box(Orientation.Horizontal, 0);
 		Add(layout);
 		this.ObserveEvent(w => w.Events().FocusOutEvent).Subscribe(_ => ClosePopup());

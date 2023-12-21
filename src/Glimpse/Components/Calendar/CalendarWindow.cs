@@ -12,6 +12,7 @@ using Gtk;
 using DateTime = System.DateTime;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Components.Calendar;
 
@@ -35,6 +36,8 @@ public class CalendarWindow : Window
 		KeepAbove = true;
 		WidthRequest = 335;
 		AppPaintable = true;
+
+		this.Events().DeleteEvent.Subscribe(e => e.RetVal = true);
 
 		var todayLabel = new Label();
 		todayLabel.Halign = Align.Fill;

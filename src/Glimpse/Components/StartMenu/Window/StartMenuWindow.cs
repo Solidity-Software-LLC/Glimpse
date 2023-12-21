@@ -12,6 +12,7 @@ using Glimpse.Services.FreeDesktop;
 using Glimpse.State;
 using Key = Gdk.Key;
 using WindowType = Gtk.WindowType;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Components.StartMenu.Window;
 
@@ -35,6 +36,8 @@ public class StartMenuWindow : Gtk.Window
 		AppPaintable = true;
 		Visible = false;
 		KeepAbove = true;
+
+		this.Events().DeleteEvent.Subscribe(e => e.RetVal = true);
 
 		WindowMoved = _configureEventSubject
 			.TakeUntilDestroyed(this)

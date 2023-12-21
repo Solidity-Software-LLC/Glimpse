@@ -21,6 +21,7 @@ using Menu = Gtk.Menu;
 using Monitor = Gdk.Monitor;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.Components;
 
@@ -47,6 +48,7 @@ public class Panel : Window
 		AppPaintable = true;
 		Visual = Screen.RgbaVisual;
 
+		this.Events().DeleteEvent.Subscribe(e => e.RetVal = true);
 		this.ObserveButtonRelease().Subscribe(_ => Window.Focus(0));
 
 		var centerBox = new Box(Orientation.Horizontal, 0);
