@@ -8,6 +8,7 @@
 		<RootNamespace>Glimpse</RootNamespace>
 		<NoWarn>CS8632;CS8851</NoWarn>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<AssemblyName>glimpse</AssemblyName>
 	</PropertyGroup>
 
 	<PropertyGroup Condition=" '$(Configuration)' != 'Debug' ">

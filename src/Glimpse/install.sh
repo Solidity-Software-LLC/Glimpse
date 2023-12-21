@@ -8,7 +8,7 @@ mkdir $installationDirectory
 
 echo
 echo "### Copy binary to ${installationDirectory}"
-cp ./Glimpse $installationDirectory
+cp ./glimpse $installationDirectory
 
 echo
 echo "### Updating SUPER_L shortcut"
@@ -26,7 +26,7 @@ for ((i=0 ; i<$xfceStartupNumApps; i++)); do
 	xfceApp=$(xfconf-query -c xfce4-session -p "/sessions/Failsafe/Client${i}_Command" | awk 'FNR == 3 {print}')
 	if [[ $xfceApp == "xfce4-panel" ]]
 	then
-		xfconf-query -c xfce4-session -p "/sessions/Failsafe/Client${i}_Command" -s "${installationDirectory}Glimpse" -a
+		xfconf-query -c xfce4-session -p "/sessions/Failsafe/Client${i}_Command" -s "${installationDirectory}glimpse" -a
 	fi
 done
 

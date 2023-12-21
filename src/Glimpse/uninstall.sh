@@ -4,7 +4,7 @@ installationDirectory="$HOME/.local/bin/"
 
 echo
 echo "### Remove binary from ${installationDirectory}"
-rm ${installationDirectory}/Glimpse
+rm ${installationDirectory}/glimpse
 
 echo
 echo "### Reset SUPER_L shortcut"
@@ -17,14 +17,14 @@ xfceStartupNumApps=$(xfconf-query -c xfce4-session -p /sessions/Failsafe/Count)
 
 for ((i=0 ; i<$xfceStartupNumApps; i++)); do
 	xfceApp=$(xfconf-query -c xfce4-session -p "/sessions/Failsafe/Client${i}_Command" | awk 'FNR == 3 {print}')
-	if [[ $xfceApp =~ /Glimpse$ ]]
+	if [[ $xfceApp =~ /glimpse$ ]]
 	then
 		xfconf-query -c xfce4-session -p "/sessions/Failsafe/Client${i}_Command" -r
 	fi
 done
 
 echo "### Stopping Glimpse"
-pkill -9 Glimpse
+pkill -9 glimpse
 
 echo
 echo "### Installing ayatana-indicator-application"
