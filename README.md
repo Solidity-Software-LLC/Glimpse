@@ -4,11 +4,11 @@ Glimpse is a modern looking and familiar Windows 11-like panel for XFCE.  It was
 
 ## Installation
 
-1. Run ```Glimpse install```.
+1. Run ```glimpse install```.
 2. Installation will do the following (see install.sh):
    * Copies the Glimpse binary into the ~/.local/bin/ directory.
-   * Creates an autostarting desktop file so Glimpse launches when you login.
+   * Replaces the xfce-panel with glimpse via xfconf-query.
    * Updates the SUPER_L shortcut to open the Glimpse start menu instead of the whisker menu.
-   * Disables the XFCE panel.
    * Kills the XFCE panel process.
    * Removes the ayatana-indicator-application package.  Glimpse handles status notifier items itself.
+   * NOTE: You need to save a new X session if you're not using the default one.
