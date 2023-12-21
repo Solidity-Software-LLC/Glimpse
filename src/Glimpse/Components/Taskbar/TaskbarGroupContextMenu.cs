@@ -29,12 +29,20 @@ public class TaskbarGroupContextMenu : Menu
 			Children.ToList().ForEach(c => c.Destroy());
 			CreateContextMenu(vm);
 		});
+
+		this.Events().Destroyed.Take(1).Subscribe(_ =>
+		{
+			_pinSubject.OnCompleted();
+			_windowAction.OnCompleted();
+			_desktopFileAction.OnCompleted();
+			_launch.OnCompleted();
+		});
 	}
 
 	public IObservable<bool> Pin => _pinSubject;
 	public IObservable<AllowedWindowActions> WindowAction => _windowAction;
-	public Subject<DesktopFileAction> DesktopFileAction => _desktopFileAction;
-	public Subject<DesktopFile> Launch => _launch;
+	public IObservable<DesktopFileAction> DesktopFileAction => _desktopFileAction;
+	public IObservable<DesktopFile> Launch => _launch;
 
 	private void CreateContextMenu(TaskbarGroupContextMenuViewModel viewModel)
 	{

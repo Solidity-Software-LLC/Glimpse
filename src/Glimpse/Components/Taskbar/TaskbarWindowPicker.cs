@@ -37,7 +37,13 @@ public class TaskbarWindowPicker : Window
 		{
 			var preview = CreateAppPreview(taskObservable);
 			layout.Add(preview);
-			taskObservable.DistinctUntilChanged().Subscribe(_ => { }, _ => { }, () => layout.Remove(preview));
+			taskObservable.TakeLast(1).Subscribe(_ => preview.Destroy());
+		});
+
+		this.Events().Destroyed.Take(1).Subscribe(_ =>
+		{
+			_previewWindowClicked.OnCompleted();
+			_closeWindow.OnCompleted();
 		});
 	}
 
@@ -89,11 +95,7 @@ public class TaskbarWindowPicker : Window
 			.AddButtonStates();
 
 		taskObservable.Select(t => t.Title).DistinctUntilChanged().Subscribe(t => appName.Text = t);
-		taskObservable.Subscribe(t =>
-		{
-			appIcon.Pixbuf?.Dispose();
-			appIcon.Pixbuf = t.Icon.Scale(ThemeConstants.MenuItemIconSize);
-		});
+		taskObservable.Subscribe(t => appIcon.Pixbuf = t.Icon.Scale(ThemeConstants.MenuItemIconSize));
 		closeIconBox.ObserveButtonRelease().WithLatestFrom(taskObservable).Subscribe(t => _closeWindow.OnNext(t.Second.WindowRef));
 		taskObservable.Select(t => t.Screenshot).DistinctUntilChanged().Subscribe(s => screenshotImage.Pixbuf = s);
 		appPreview.ObserveButtonRelease().WithLatestFrom(taskObservable).Subscribe(t => _previewWindowClicked.OnNext(t.Second.WindowRef));

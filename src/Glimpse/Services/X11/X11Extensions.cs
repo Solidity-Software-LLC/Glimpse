@@ -9,7 +9,7 @@ using Event = Glimpse.Interop.X11.Event;
 
 namespace Glimpse.Services.X11;
 
-public static class X11Extensions
+public static unsafe class X11Extensions
 {
 	public static IObservable<XPropertyEvent> ObservePropertyEvent(this IObservable<(XAnyEvent someEvent, IntPtr eventPointer)> obs)
 	{
@@ -76,6 +76,7 @@ public static class X11Extensions
 			var dataSize = (int)(actualLength * (ulong)actualFormatReturn / 8);
 			var propBytes = new byte[dataSize];
 			Marshal.Copy(dataPointer, propBytes, 0, dataSize);
+			XLib.XFree(dataPointer);
 			return Encoding.UTF8.GetString(propBytes);
 		}
 
@@ -99,6 +100,7 @@ public static class X11Extensions
 
 		var data = new byte[dataSize];
 		Marshal.Copy(dataPointer, data, 0, dataSize);
+		XLib.XFree(dataPointer);
 		using var reader = new BinaryReader(new MemoryStream(data));
 		var atomNames = new LinkedList<ulong>();
 
@@ -119,6 +121,7 @@ public static class X11Extensions
 
 		var data = new byte[dataSize];
 		Marshal.Copy(dataPointer, data, 0, dataSize);
+		XLib.XFree(dataPointer);
 		using var reader = new BinaryReader(new MemoryStream(data));
 		var atoms = new LinkedList<ulong>();
 
@@ -161,14 +164,12 @@ public static class X11Extensions
 
 	public static List<Pixbuf> GetIcons(this XWindowRef windowRef)
 	{
-		var success = XLib.XGetWindowProperty(windowRef.Display, windowRef.Window, XAtoms.NetWmIcon, 0, 1024 * 1024 * 10, false, 0, out var actualTypeReturn, out var actualFormatReturn, out var actualLength, out var bytesLeft, out var dataPointer);
+		var success = XLib.XGetWindowProperty(windowRef.Display, windowRef.Window, XAtoms.NetWmIcon, 0, 1024 * 1024 * 10, false, 0, out var actualTypeReturn, out _, out var actualLength, out _, out var dataPointer);
 
 		if (success != 0 || actualTypeReturn == 0) return null;
 
-		var data = new byte[actualLength * 8];
-		Marshal.Copy(dataPointer, data, 0, data.Length);
-		XLib.XFree(dataPointer);
-		using var binaryReader = new BinaryReader(new MemoryStream(data));
+		using var memoryStream = new UnmanagedMemoryStream((byte*)dataPointer, (long)actualLength * 8);
+		using var binaryReader = new BinaryReader(memoryStream);
 		var icons = new List<BitmapImage>();
 
 		while (binaryReader.PeekChar() != -1)
@@ -180,16 +181,17 @@ public static class X11Extensions
 
 			for (var i = 0; i < numPixels * sizeof(int); i += sizeof(int))
 			{
-				var intBytes = BitConverter.GetBytes(binaryReader.ReadInt32());
+				imageData[i] = binaryReader.ReadByte();
+				imageData[i+1] = binaryReader.ReadByte();
+				imageData[i+2] = binaryReader.ReadByte();
+				imageData[i+3] = binaryReader.ReadByte();
 				binaryReader.ReadInt32();
-				imageData[i] = intBytes[0];
-				imageData[i+1] = intBytes[1];
-				imageData[i+2] = intBytes[2];
-				imageData[i+3] = intBytes[3];
 			}
 
 			icons.Add(new BitmapImage() { Width = (int) width, Height = (int) height, Depth = 32, Data = imageData });
 		}
+
+		XLib.XFree(dataPointer);
 
 		return icons.Select(i => i.ToPixbuf()).ToList();
 	}

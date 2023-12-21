@@ -24,7 +24,7 @@ public static class GtkExtensions
 	public static void RemoveAllChildren(this Container widget)
 	{
 		var widgets = widget.Children.ToList();
-		widgets.ForEach(widget.Remove);
+		widgets.ForEach(w => w.Destroy());
 	}
 
 	public static bool ContainsPoint(this Widget widget, int px, int py)

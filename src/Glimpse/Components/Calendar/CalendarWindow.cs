@@ -80,7 +80,7 @@ public class CalendarWindow : Window
 		displayedDateTimeObs.Subscribe(dt =>
 		{
 			monthLabel.Text = dt.ToString("MMMM yyyy");
-			if (currentDateTimeGrid != null) layout.Remove(currentDateTimeGrid);
+			if (currentDateTimeGrid != null) currentDateTimeGrid.Destroy();
 			currentDateTimeGrid = CreateDateGrid(dt);
 			layout.Add(currentDateTimeGrid);
 		});

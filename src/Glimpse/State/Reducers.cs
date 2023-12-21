@@ -31,26 +31,8 @@ public class AllReducers
 			.On<UpdateWindowAction>((s, a) => s.UpsertOne(a.WindowProperties))
 			.On<AddWindowAction>((s, a) => s.UpsertOne(a.WindowProperties)),
 		FeatureReducer.Build(new DataTable<ulong, Pixbuf>())
-			.On<RemoveWindowAction>((s, a) =>
-			{
-				if (s.ContainsKey(a.WindowProperties.WindowRef.Id))
-				{
-					s.Get(a.WindowProperties.WindowRef.Id).Dispose();
-				}
-
-				return s.Remove(a.WindowProperties.WindowRef.Id);
-			})
-			.On<UpdateScreenshotsAction>((s, a) =>
-			{
-				var result = s;
-
-				foreach (var kv in a.Screenshots.Where(kv => result.ContainsKey(kv.Key)))
-				{
-					result.Get(kv.Key).Dispose();
-				}
-
-				return result.UpsertMany(a.Screenshots);
-			}),
+			.On<RemoveWindowAction>((s, a) => s.Remove(a.WindowProperties.WindowRef.Id))
+			.On<UpdateScreenshotsAction>((s, a) => s.UpsertMany(a.Screenshots)),
 		FeatureReducer.Build(new DataTable<string, Pixbuf>())
 			.On<AddOrUpdateNamedIconsAction>((s, a) =>
 			{
@@ -60,7 +42,6 @@ public class AllReducers
 				{
 					if (result.ContainsKey(kv.Key) && kv.Value == null)
 					{
-						result.Get(kv.Key)?.Dispose();
 						result = result.Remove(kv.Key);
 					}
 					else if (kv.Value != null)

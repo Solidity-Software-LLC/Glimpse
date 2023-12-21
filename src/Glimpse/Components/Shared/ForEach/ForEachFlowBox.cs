@@ -63,19 +63,17 @@ public class ForEachFlowBox<TViewModel, TWidget, TKey> : FlowBox where TWidget :
 				.ObserveEvent(w => w.Events().DragFailed)
 				.Subscribe(e => e.RetVal = true);
 
-			DisableDragAndDrop.Subscribe(b => ToggleDragSource(flowBoxChild, b));
+			DisableDragAndDrop.TakeUntil(itemObservable.TakeLast(1)).Subscribe(b => ToggleDragSource(flowBoxChild, b));
 
 			itemObservable
-				.TakeUntilDestroyed(this)
 				.Select(i => i.Item1)
 				.DistinctUntilChanged()
 				.Subscribe(i => flowBoxChild.Data[ForEachDataKeys.Model] = i);
 
 			itemObservable
-				.TakeUntilDestroyed(this)
 				.Select(i => i.Item2)
 				.DistinctUntilChanged()
-				.Subscribe(i => flowBoxChild.Data[ForEachDataKeys.Index] = i, _ => { }, () => Remove(flowBoxChild));
+				.Subscribe(i => flowBoxChild.Data[ForEachDataKeys.Index] = i, _ => { }, () => flowBoxChild.Destroy());
 		});
 
 		itemsObservable.Subscribe(_ =>
