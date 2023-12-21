@@ -37,7 +37,7 @@ jobs:
 
     - name: Zip release
       run: |
-        zip --junk-paths Glimpse.linux-x64.zip src/Glimpse/bin/Release/net8.0/linux-x64/publish/Glimpse
+        zip --junk-paths glimpse.linux-x64.zip src/Glimpse/bin/Release/net8.0/linux-x64/publish/glimpse
 
     - name: Create release
       uses: actions/create-release@v1
@@ -56,6 +56,6 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: Glimpse.linux-x64.zip
-        asset_name: Glimpse.linux-x64.zip
+        asset_path: glimpse.linux-x64.zip
+        asset_name: glimpse.linux-x64.zip
         asset_content_type: application/gzip
