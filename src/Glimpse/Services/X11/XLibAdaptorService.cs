@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Cairo;
 using Gdk;
 using Glimpse.Components;
+using Glimpse.Extensions;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Reactive;
 using Glimpse.Interop.X11;

@@ -1,6 +1,7 @@
 using System.Reactive.Linq;
 using Gdk;
 using Glimpse.Components.Shared.ForEach;
+using Glimpse.Extensions;
 using Glimpse.Extensions.Gtk;
 using Gtk;
 using Pango;

@@ -9,6 +9,7 @@ using Glimpse.Components.Shared;
 using Glimpse.Components.StartMenu;
 using Glimpse.Components.SystemTray;
 using Glimpse.Components.Taskbar;
+using Glimpse.Extensions;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Redux;
 using Glimpse.Services;

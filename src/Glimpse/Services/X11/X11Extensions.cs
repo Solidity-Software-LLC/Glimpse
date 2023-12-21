@@ -1,7 +1,9 @@
+using System.Buffers;
 using System.Reactive.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Gdk;
+using Glimpse.Extensions;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Interop.X11;
 using Glimpse.State;
@@ -170,14 +172,14 @@ public static unsafe class X11Extensions
 
 		using var memoryStream = new UnmanagedMemoryStream((byte*)dataPointer, (long)actualLength * 8);
 		using var binaryReader = new BinaryReader(memoryStream);
-		var icons = new List<BitmapImage>();
+		var icons = new List<Pixbuf>();
 
 		while (binaryReader.PeekChar() != -1)
 		{
 			var width = binaryReader.ReadInt64();
 			var height = binaryReader.ReadInt64();
 			var numPixels = width * height;
-			var imageData = new byte[numPixels * sizeof(int)];
+			var imageData = ArrayPool<byte>.Shared.Rent((int) numPixels * sizeof(int));
 
 			for (var i = 0; i < numPixels * sizeof(int); i += sizeof(int))
 			{
@@ -188,11 +190,12 @@ public static unsafe class X11Extensions
 				binaryReader.ReadInt32();
 			}
 
-			icons.Add(new BitmapImage() { Width = (int) width, Height = (int) height, Depth = 32, Data = imageData });
+			icons.Add(ImageHelper.CreatePixbuf(imageData, 32, (int) width, (int) height));
+			ArrayPool<byte>.Shared.Return(imageData);
 		}
 
 		XLib.XFree(dataPointer);
 
-		return icons.Select(i => i.ToPixbuf()).ToList();
+		return icons;
 	}
 }

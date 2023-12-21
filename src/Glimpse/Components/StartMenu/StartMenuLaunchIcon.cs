@@ -2,6 +2,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using GLib;
 using Glimpse.Components.StartMenu.Window;
+using Glimpse.Extensions;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Extensions.Redux;
 using Glimpse.Services.FreeDesktop;

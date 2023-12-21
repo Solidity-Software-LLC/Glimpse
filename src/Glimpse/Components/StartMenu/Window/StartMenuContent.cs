@@ -5,6 +5,7 @@ using System.Reactive.Subjects;
 using GLib;
 using Glimpse.Components.Shared;
 using Glimpse.Components.Shared.ForEach;
+using Glimpse.Extensions;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Services.FreeDesktop;
 using Glimpse.State;

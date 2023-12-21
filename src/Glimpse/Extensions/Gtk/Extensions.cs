@@ -98,43 +98,6 @@ public static class Extensions
 		return widget;
 	}
 
-	public static Pixbuf ToPixbuf(this BitmapImage image)
-	{
-		var surface = new ImageSurface(image.Data, image.Depth == 24 ? Format.RGB24 : Format.Argb32, image.Width, image.Height, 4 * image.Width);
-		var buffer = new Pixbuf(surface, 0, 0, image.Width, image.Height);
-		surface.Dispose();
-		return buffer;
-	}
-
-	public static double AspectRatio(this Pixbuf image)
-	{
-		return (double)image.Width / image.Height;
-	}
-
-	public static Pixbuf ScaleToFit(this Pixbuf imageBuffer, int maxHeight, int maxWidth)
-	{
-		var scaledWidth = maxHeight * imageBuffer.AspectRatio();
-		var scaledHeight = (double) maxHeight;
-
-		if (scaledWidth > maxWidth)
-		{
-			scaledWidth = maxWidth;
-			scaledHeight /= imageBuffer.AspectRatio();
-		}
-
-		if (imageBuffer.Width == (int) scaledWidth && imageBuffer.Height == (int) scaledHeight)
-		{
-			return imageBuffer;
-		}
-
-		return imageBuffer.ScaleSimple((int) scaledWidth, (int) scaledHeight, InterpType.Bilinear);
-	}
-
-	public static Pixbuf Scale(this Pixbuf image, int size)
-	{
-		return image.ScaleSimple(size, size, InterpType.Bilinear);
-	}
-
 	public static void AppIcon(this Widget widget, Image image, IObservable<(Pixbuf BigIcon, Pixbuf SmallIcon)> iconObservable)
 	{
 		iconObservable.Subscribe(t => image.Pixbuf = t.Item1);

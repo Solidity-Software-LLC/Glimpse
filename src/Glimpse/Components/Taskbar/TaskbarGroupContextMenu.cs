@@ -2,6 +2,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
 using Glimpse.Components.Shared;
+using Glimpse.Extensions;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Services.DisplayServer;
 using Glimpse.Services.FreeDesktop;

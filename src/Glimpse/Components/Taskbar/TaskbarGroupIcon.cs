@@ -3,6 +3,7 @@ using System.Reactive.Subjects;
 using Cairo;
 using Gdk;
 using Glimpse.Components.Shared.ForEach;
+using Glimpse.Extensions;
 using Glimpse.Extensions.Gtk;
 using Gtk;
 using Color = Cairo.Color;
