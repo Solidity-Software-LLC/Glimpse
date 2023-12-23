@@ -1,0 +1,61 @@
+<#@ template hostspecific="false" language="C#" #>
+<#@ output extension=".cs" #>
+<#@ import namespace="System" #>
+
+namespace Glimpse.Extensions.Redux.Selectors;
+
+public static class SelectorFactory
+{
+	public static ISelector<TFinalResult> CreateFeatureSelector<TFinalResult>() where TFinalResult : class =>
+		new SimpleSelector<TFinalResult>(s => s.GetFeatureState<TFinalResult>());
+
+	public static ISelector<TFinalResult> CreateSelector<TFinalResult>(
+		Func<StoreState, TFinalResult> projectorFunction,
+		IEqualityComparer<TFinalResult> equalityComparer = null) =>
+			new SimpleSelector<TFinalResult>(projectorFunction, equalityComparer);
+<#
+	for (var i = 1; i <= 7; i++)
+	{
+#>
+
+	public static ISelector<TResult> CreateSelector<<#=Repeat(i, "S{i}")#>,TResult>(
+		<#=Repeat(i, "ISelector<S{i}> s{i}")#>,
+		Func<Cache<TResult>,<#=Repeat(i, "S{i}")#>,TResult> proj,
+		IEqualityComparer<TResult> equalityComparer = null) =>
+			 new MemoizedSelector<<#=Repeat(i, "S{i}")#>,TResult>(<#=Repeat(i, "s{i}")#>,proj,equalityComparer);
+
+	public static ISelector<TResult> CreateSelector<<#=Repeat(i, "S{i}")#>,TResult>(
+		<#=Repeat(i, "ISelector<S{i}> s{i}")#>,
+		Func<Cache<TResult>,<#=Repeat(i, "S{i}")#>,TResult> proj,
+		Func<TResult,TResult,bool> equalityComparer) =>
+			 new MemoizedSelector<<#=Repeat(i, "S{i}")#>,TResult>(<#=Repeat(i, "s{i}")#>,proj,EqualityComparer<TResult>.Create(equalityComparer));
+
+	public static ISelector<TResult> CreateSelector<<#=Repeat(i, "S{i}")#>,TResult>(
+		<#=Repeat(i, "ISelector<S{i}> s{i}")#>,
+		Func<<#=Repeat(i, "S{i}")#>,TResult> proj,
+		IEqualityComparer<TResult> equalityComparer = null) =>
+			 new MemoizedSelector<<#=Repeat(i, "S{i}")#>,TResult>(<#=Repeat(i, "s{i}")#>,(_,<#=Repeat(i, "x{i}")#>) => proj(<#=Repeat(i, "x{i}")#>),equalityComparer);
+
+	public static ISelector<TResult> CreateSelector<<#=Repeat(i, "S{i}")#>,TResult>(
+		<#=Repeat(i, "ISelector<S{i}> s{i}")#>,
+		Func<<#=Repeat(i, "S{i}")#>,TResult> proj,
+		Func<TResult,TResult,bool> equalityComparer) =>
+			 new MemoizedSelector<<#=Repeat(i, "S{i}")#>,TResult>(<#=Repeat(i, "s{i}")#>,(_,<#=Repeat(i, "x{i}")#>) => proj(<#=Repeat(i, "x{i}")#>),EqualityComparer<TResult>.Create(equalityComparer));
+<#
+	}
+#>
+}
+
+<#+
+	private string Repeat(int num, string template, string separator = ",")
+	{
+		var items = new string[num];
+
+		for (var i = 0; i < num; i++)
+		{
+			items[i] = template.Replace("{i}", (i + 1).ToString());
+		}
+
+		return string.Join(separator, items);
+	}
+#>

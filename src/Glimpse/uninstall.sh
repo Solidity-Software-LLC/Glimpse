@@ -27,8 +27,16 @@ echo "### Stopping Glimpse"
 pkill -9 glimpse
 
 echo
-echo "### Installing ayatana-indicator-application"
-sudo apt-get install ayatana-indicator-application
+echo "### Enable xfce4-notifyd.service"
+systemctl --user unmask xfce4-notifyd.service
+systemctl --user start xfce4-notifyd.service
+rm ~/.config/autostart/xfce4-notifyd.desktop
+
+echo
+echo "### Enable ayatana-indicator-application"
+systemctl --user unmask ayatana-indicator-application
+systemctl --user start ayatana-indicator-application
+rm ~/.config/autostart/ayatana-indicator-application.desktop
 
 echo
 echo "Uninstall complete"

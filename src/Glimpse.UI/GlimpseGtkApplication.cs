@@ -1,0 +1,227 @@
+using System.Collections.Immutable;
+using System.Reactive.Linq;
+using System.Text;
+using Autofac;
+using Gdk;
+using GLib;
+using Glimpse.Extensions.Gtk;
+using Glimpse.Freedesktop;
+using Glimpse.Images;
+using Glimpse.Lib.System.Reactive;
+using Glimpse.Redux;
+using Glimpse.UI.Components;
+using Glimpse.UI.Components.Calendar;
+using Glimpse.UI.Components.Notifications;
+using Glimpse.UI.Components.StartMenu.Window;
+using Glimpse.UI.State;
+using Glimpse.Xorg.State;
+using Gtk;
+using Microsoft.Extensions.Hosting;
+using ReactiveMarbles.ObservableEvents;
+using Application = Gtk.Application;
+using Monitor = Gdk.Monitor;
+using Task = System.Threading.Tasks.Task;
+
+namespace Glimpse.UI;
+
+public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application application, ReduxStore store) : IHostedService
+{
+	private List<Panel> _panels = new();
+
+	public Task StartAsync(CancellationToken cancellationToken)
+	{
+		Task.Run(StartInternal);
+		return Task.CompletedTask;
+	}
+
+	public Task StopAsync(CancellationToken cancellationToken)
+	{
+		Application.Quit();
+		return Task.CompletedTask;
+	}
+
+	private void StartInternal()
+	{
+		ExceptionManager.UnhandledException += args =>
+		{
+			Console.WriteLine("Unhandled Exception:");
+			Console.WriteLine(args.ExceptionObject);
+			args.ExitApplication = false;
+		};
+
+		Application.Init();
+		application.Register(Cancellable.Current);
+		LoadCss();
+		WatchIcons();
+		WatchNotifications();
+
+		var openStartMenuAction = (SimpleAction) application.LookupAction("OpenStartMenu");
+		openStartMenuAction.Events().Activated.Select(_ => true).Subscribe(_ => store.Dispatch(new StartMenuOpenedAction()));
+
+		var display = Display.Default;
+		var screen = display.DefaultScreen;
+		var action = (SimpleAction) application.LookupAction("LoadPanels");
+		action.Events().Activated.Subscribe(_ => LoadPanels(display));
+		screen.Events().SizeChanged.Subscribe(_ => LoadPanels(display));
+		screen.Events().MonitorsChanged.Subscribe(_ => LoadPanels(display));
+		application.AddWindow(serviceProvider.Resolve<StartMenuWindow>());
+		application.AddWindow(serviceProvider.Resolve<CalendarWindow>());
+		LoadPanels(display);
+		Application.Run();
+	}
+
+	private void LoadCss()
+	{
+		var assembly = typeof(GlimpseGtkApplication).Assembly;
+		var allCss = new StringBuilder();
+
+		foreach (var cssFile in assembly.GetManifestResourceNames().Where(n => n.EndsWith(".css")))
+		{
+			using var cssFileStream = new StreamReader(assembly.GetManifestResourceStream(cssFile));
+			allCss.AppendLine(cssFileStream.ReadToEnd());
+		}
+
+		var display = Display.Default;
+		var screen = display.DefaultScreen;
+		var screenCss = new CssProvider();
+		screenCss.LoadFromData(allCss.ToString());
+		StyleContext.AddProviderForScreen(screen, screenCss, uint.MaxValue);
+	}
+
+	private void StackNotificationsOnMonitor(Monitor monitor, int panelHeight, ImmutableList<NotificationWindow> notificationWindows)
+	{
+		var currentTopOfWidgetBelowNotification = monitor.Geometry.Height - panelHeight;
+
+		for (var i = 0; i < notificationWindows.Count; i++)
+		{
+			var window = notificationWindows[i];
+			var windowLeft = monitor.Workarea.Right - window.Allocation.Width - 8;
+			var windowTop = currentTopOfWidgetBelowNotification - window.Allocation.Height - 8;
+			window.Move(windowLeft, windowTop);
+			currentTopOfWidgetBelowNotification = windowTop;
+		}
+
+	}
+	private void WatchNotifications()
+	{
+		var notificationsPerMonitor = new Dictionary<Monitor, ImmutableList<NotificationWindow>>();
+
+		store
+			.Select(NotificationSelectors.ViewModel)
+			.ObserveOn(new GLibSynchronizationContext())
+			.Select(vm => vm.Notifications)
+			.UnbundleMany(n => n.Id)
+			.RemoveIndex()
+			.Subscribe(notificationObservable =>
+			{
+				try
+				{
+					var display = Display.Default;
+					display.GetPointer(out var x, out var y);
+					var eventMonitor = display.GetMonitorAtPoint(x, y);
+					var newWindow = new NotificationWindow(notificationObservable);
+					application.AddWindow(newWindow);
+
+					var panel = _panels.FirstOrDefault(p => p.IsOnMonitor(eventMonitor));
+					panel.Window.GetGeometry(out _, out _, out _, out var panelHeight);
+
+					newWindow.Events().SizeAllocated.Take(1).TakeUntilDestroyed(newWindow).Subscribe(_ =>
+					{
+						var windowLeft = eventMonitor.Workarea.Right - newWindow.Allocation.Width - 8;
+						var windowTop = eventMonitor.Geometry.Height - panelHeight - newWindow.Allocation.Height - 8;
+						newWindow.Move(windowLeft, windowTop);
+						if (notificationsPerMonitor.TryGetValue(eventMonitor, out var notificationWindows))
+						{
+							StackNotificationsOnMonitor(eventMonitor, panelHeight, notificationWindows);
+						}
+					});
+
+					notificationsPerMonitor.TryAdd(eventMonitor, ImmutableList<NotificationWindow>.Empty);
+					notificationsPerMonitor[eventMonitor] = notificationsPerMonitor[eventMonitor].Add(newWindow);
+					notificationObservable
+						.Take(1)
+						.Delay(s => Observable.Timer(s.Duration))
+						.ObserveOn(new GLibSynchronizationContext())
+						.Subscribe(_ =>
+						{
+							newWindow.Dispose();
+							notificationsPerMonitor[eventMonitor] = notificationsPerMonitor[eventMonitor].Remove(newWindow);
+
+							if (notificationsPerMonitor.TryGetValue(eventMonitor, out var notificationWindows))
+							{
+								StackNotificationsOnMonitor(eventMonitor, panelHeight, notificationWindows);
+							}
+						});
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine(e);
+				}
+			});
+	}
+
+	private void WatchIcons()
+	{
+		var display = Display.Default;
+		var screen = display.DefaultScreen;
+		var iconTheme = IconTheme.GetForScreen(screen);
+		var iconThemeChangedObs = iconTheme.Events().Changed;
+		var desktopFilesObs = store.Select(FreedesktopSelectors.DesktopFiles).DistinctUntilChanged();
+
+		desktopFilesObs.Merge(iconThemeChangedObs.WithLatestFrom(desktopFilesObs).Select(t => t.Second)).Subscribe(desktopFiles =>
+		{
+			var icons = desktopFiles.ById.Values
+				.SelectMany(f => f.Actions.Select(a => a.IconName).Concat(new[] { f.IconName }))
+				.Where(i => !string.IsNullOrEmpty(i))
+				.Distinct()
+				.Select(n => (n, new GtkGlimpseImage() { Pixbuf = iconTheme.LoadIcon(n, 64) }))
+				.Where(t => t.Item2.Pixbuf != null)
+				.ToDictionary(t => t.n, t => (IGlimpseImage) t.Item2);
+
+			store.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = icons });
+		});
+
+		// Handle complete
+		store.Select(XorgSelectors.Windows).Select(r => r.ById.Values).DistinctUntilChanged().UnbundleMany(g => g.WindowRef.Id).Subscribe(windowObs =>
+		{
+			windowObs.Select(g => g.Item1.IconName).DistinctUntilChanged().Subscribe(iconName =>
+			{
+				if (iconName == null) return;
+				var icon = iconTheme.LoadIcon(iconName, 64);
+				var image = icon == null ? null : new GtkGlimpseImage() { Pixbuf = iconTheme.LoadIcon(iconName, 64) };
+				store.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = new Dictionary<string, IGlimpseImage>() { { iconName, image } } });
+			});
+		});
+	}
+
+	private void LoadPanels(Display display)
+	{
+		new GLibSynchronizationContext().Post(_ =>
+		{
+			var monitors = display.GetMonitors();
+			var removedPanels = _panels.Where(p => monitors.All(m => !p.IsOnMonitor(m))).ToList();
+			var newMonitors = monitors.Where(m => _panels.All(p => !p.IsOnMonitor(m))).ToList();
+			var remainingPanels = _panels.Except(removedPanels).ToList();
+			_panels = remainingPanels;
+
+			remainingPanels.ForEach(p =>
+			{
+				p.DockToBottom();
+			});
+
+			removedPanels.ForEach(w =>
+			{
+				w.Close();
+				w.Dispose();
+			});
+
+			newMonitors.ForEach(m =>
+			{
+				var newPanel = serviceProvider.Resolve<Panel>(new TypedParameter(typeof(Monitor), m));
+				application.AddWindow(newPanel);
+				newPanel.DockToBottom();
+				_panels.Add(newPanel);
+			});
+		}, null);
+	}
+}

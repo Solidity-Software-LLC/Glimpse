@@ -1,13 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
-		<ImplicitUsings>enable</ImplicitUsings>
 		<OutputType>Exe</OutputType>
 		<GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
 		<RootNamespace>Glimpse</RootNamespace>
-		<NoWarn>CS8632;CS8851</NoWarn>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<AssemblyName>glimpse</AssemblyName>
 	</PropertyGroup>
 
@@ -34,6 +30,16 @@
 		<EmbeddedResource Include="Components/**/*.css" LogicalName="%(Filename)%(Extension)" />
 		<EmbeddedResource Include="install.sh" LogicalName="%(Filename)%(Extension)" />
 		<EmbeddedResource Include="uninstall.sh" LogicalName="%(Filename)%(Extension)" />
+	</ItemGroup>
+	
+	<ItemGroup>
+		<ProjectReference Include="..\Glimpse.Configuration\Glimpse.Configuration.csproj" />
+		<ProjectReference Include="..\Glimpse.Gtk\Glimpse.Gtk.csproj"/>
+		<ProjectReference Include="..\Glimpse.Redux\Glimpse.Redux.csproj"/>
+		<ProjectReference Include="..\Glimpse.UI\Glimpse.UI.csproj" />
+		<ProjectReference Include="..\Glimpse.Xorg\Glimpse.Xorg.csproj"/>
+		<ProjectReference Include="..\Glimpse.Freedesktop\Glimpse.Freedesktop.csproj"/>
+		<ProjectReference Include="..\Glimpse.Images\Glimpse.Images.csproj"/>
 	</ItemGroup>
 
 	<ItemGroup>

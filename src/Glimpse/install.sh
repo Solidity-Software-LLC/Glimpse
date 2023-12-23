@@ -35,9 +35,22 @@ echo "### Stopping XFCE panel"
 pkill -9 xfce4-panel
 
 echo
-echo "### Removing ayatana-indicator-application"
-sudo apt-get purge ayatana-indicator-application
-pkill -9 ayatana
+echo "### Disable xfce4-notifyd.service"
+systemctl --user mask xfce4-notifyd.service
+pkill -9 xfce4-notifyd
+sudo tee ~/.config/autostart/xfce4-notifyd.desktop << EOF
+[Desktop Entry]
+Hidden=true
+EOF
+
+echo
+echo "### Disable ayatana-indicator-application.service"
+systemctl --user mask ayatana-indicator-application
+pkill -9 ayatana-indicat
+sudo tee ~/.config/autostart/ayatana-indicator-application.desktop << EOF
+[Desktop Entry]
+Hidden=true
+EOF
 
 echo
 echo "Installation complete"
