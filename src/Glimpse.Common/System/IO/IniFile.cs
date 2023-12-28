@@ -1,4 +1,4 @@
-namespace Glimpse.Lib.System.IO;
+namespace Glimpse.Common.System.IO;
 
 public class IniSection
 {

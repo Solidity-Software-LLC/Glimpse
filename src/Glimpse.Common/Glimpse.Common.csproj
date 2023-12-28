@@ -1,8 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+	<PropertyGroup>
+	  <RootNamespace>Glimpse.Common</RootNamespace>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<PackageReference Include="GtkSharp" Version="3.24.24.95"/>
-		<PackageReference Include="ReactiveMarbles.ObservableEvents.SourceGenerator" Version="1.3.1" PrivateAssets="all"/>
+		<PackageReference Include="ReactiveMarbles.ObservableEvents.SourceGenerator" Version="1.3.1" PrivateAssets="all" />
 		<PackageReference Include="System.Reactive" Version="6.0.1-preview.1"/>
 	</ItemGroup>
 

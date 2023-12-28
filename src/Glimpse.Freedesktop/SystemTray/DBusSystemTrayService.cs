@@ -1,9 +1,9 @@
 using System.Reactive.Linq;
+using Glimpse.Common.System;
 using Glimpse.Freedesktop.DBus;
 using Glimpse.Freedesktop.DBus.Core;
 using Glimpse.Freedesktop.DBus.Interfaces;
 using Glimpse.Freedesktop.DBus.Introspection;
-using Glimpse.Lib.System;
 using Glimpse.Redux;
 using Tmds.DBus.Protocol;
 

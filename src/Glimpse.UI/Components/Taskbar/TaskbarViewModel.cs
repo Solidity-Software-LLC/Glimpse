@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
+using Glimpse.Common.Images;
 using Glimpse.Freedesktop.DesktopEntries;
-using Glimpse.Images;
 using Glimpse.UI.State;
 using Glimpse.Xorg;
 

@@ -1,8 +1,8 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
-using Glimpse.Lib.Gtk;
-using Glimpse.Lib.System.Reactive;
+using Glimpse.Common.Gtk;
+using Glimpse.Common.System.Reactive;
 using Gtk;
 using ReactiveMarbles.ObservableEvents;
 using Drag = Gtk.Drag;

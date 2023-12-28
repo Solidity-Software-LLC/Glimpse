@@ -1,4 +1,4 @@
-namespace Glimpse.Lib.System.Collections;
+namespace Glimpse.Common.System.Collections;
 
 public static class CollectionComparer
 {

@@ -1,4 +1,4 @@
-using Glimpse.Images;
+using Glimpse.Common.Images;
 using Glimpse.Redux;
 
 namespace Glimpse.Xorg;

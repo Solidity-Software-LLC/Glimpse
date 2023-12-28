@@ -1,7 +1,7 @@
 using System.Reactive;
 using System.Reactive.Linq;
 
-namespace Glimpse.Lib.System.Reactive;
+namespace Glimpse.Common.System.Reactive;
 
 public sealed class GroupedObservable<TKey, TValue> : ObservableBase<TValue>, IGroupedObservable<TKey, TValue>
 {

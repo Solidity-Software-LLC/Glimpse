@@ -1,7 +1,7 @@
 using System.Reactive.Linq;
+using Glimpse.Common.Gtk;
+using Glimpse.Common.Images;
 using Glimpse.Freedesktop.DesktopEntries;
-using Glimpse.Images;
-using Glimpse.Lib.Gtk;
 using Glimpse.UI.Components.Shared;
 using Gtk;
 using ReactiveMarbles.ObservableEvents;

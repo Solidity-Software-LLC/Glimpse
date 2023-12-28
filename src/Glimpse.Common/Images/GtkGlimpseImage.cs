@@ -1,6 +1,6 @@
 ﻿using Gdk;
 
-namespace Glimpse.Images;
+namespace Glimpse.Common.Images;
 
 public class GtkGlimpseImage : IGlimpseImage
 {

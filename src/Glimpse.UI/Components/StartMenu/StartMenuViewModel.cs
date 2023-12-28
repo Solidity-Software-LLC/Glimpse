@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
+using Glimpse.Common.Images;
 using Glimpse.Configuration;
 using Glimpse.Freedesktop.DesktopEntries;
-using Glimpse.Images;
 using Glimpse.UI.State;
 
 namespace Glimpse.UI.Components.StartMenu;

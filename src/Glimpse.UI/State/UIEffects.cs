@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
+using Glimpse.Common.System.Collections.Immutable;
 using Glimpse.Configuration;
-using Glimpse.Lib.System.Collections.Immutable;
 using Glimpse.Redux.Effects;
 using static Glimpse.Redux.Effects.EffectsFactory;
 

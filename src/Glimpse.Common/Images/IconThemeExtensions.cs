@@ -3,7 +3,7 @@ using Gdk;
 using Gtk;
 using ReactiveMarbles.ObservableEvents;
 
-namespace Glimpse.Extensions.Gtk;
+namespace Glimpse.Common.Images;
 
 public static class IconThemeExtensions
 {

@@ -1,11 +1,11 @@
 using System.Reactive.Linq;
 using Gdk;
-using Glimpse.Images;
+using Glimpse.Common.Images;
 using Gtk;
 using ReactiveMarbles.ObservableEvents;
 using Window = Gtk.Window;
 
-namespace Glimpse.Lib.Gtk;
+namespace Glimpse.Common.Gtk;
 
 public static class MoreGtkExtensions
 {

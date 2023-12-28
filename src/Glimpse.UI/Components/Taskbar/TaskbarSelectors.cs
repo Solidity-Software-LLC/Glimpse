@@ -1,8 +1,8 @@
 using System.Collections.Immutable;
+using Glimpse.Common.Images;
+using Glimpse.Common.System.Collections;
 using Glimpse.Freedesktop;
 using Glimpse.Freedesktop.DesktopEntries;
-using Glimpse.Images;
-using Glimpse.Lib.System.Collections;
 using Glimpse.Redux.Selectors;
 using Glimpse.UI.State;
 using Glimpse.Xorg;

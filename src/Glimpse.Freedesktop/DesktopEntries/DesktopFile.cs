@@ -1,4 +1,4 @@
-using Glimpse.Lib.System.IO;
+using Glimpse.Common.System.IO;
 using Glimpse.Redux;
 
 namespace Glimpse.Freedesktop.DesktopEntries;

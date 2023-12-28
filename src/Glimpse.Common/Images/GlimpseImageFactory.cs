@@ -2,7 +2,7 @@ using System.Reflection;
 using Cairo;
 using Gdk;
 
-namespace Glimpse.Images;
+namespace Glimpse.Common.Images;
 
 public static class GlimpseImageFactory
 {

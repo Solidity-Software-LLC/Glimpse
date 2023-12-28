@@ -1,6 +1,6 @@
 using System.Reactive.Linq;
-using Glimpse.Images;
-using Glimpse.Lib.Gtk;
+using Glimpse.Common.Gtk;
+using Glimpse.Common.Images;
 using Gtk;
 
 namespace Glimpse.UI.Components.StartMenu.Window;

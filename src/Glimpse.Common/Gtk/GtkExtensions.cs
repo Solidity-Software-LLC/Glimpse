@@ -3,7 +3,7 @@ using Gtk;
 using Monitor = Gdk.Monitor;
 using Window = Gdk.Window;
 
-namespace Glimpse.Lib.Gtk;
+namespace Glimpse.Common.Gtk;
 
 public static class GtkExtensions
 {

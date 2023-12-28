@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
+using Glimpse.Common.System;
 using Glimpse.Configuration;
 using Glimpse.Freedesktop;
-using Glimpse.Lib.System;
 using Glimpse.Redux.Selectors;
 using Glimpse.UI.State;
 using static Glimpse.Redux.Selectors.SelectorFactory;

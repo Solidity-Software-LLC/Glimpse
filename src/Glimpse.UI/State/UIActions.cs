@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Glimpse.Images;
+using Glimpse.Common.Images;
 
 namespace Glimpse.UI.State;
 

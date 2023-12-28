@@ -1,5 +1,5 @@
 using Gdk;
-using Glimpse.Extensions;
+using Glimpse.Common.Images;
 using Glimpse.Freedesktop.DBus;
 using Gtk;
 

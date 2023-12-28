@@ -1,4 +1,4 @@
-namespace Glimpse.Lib.System;
+namespace Glimpse.Common.System;
 
 public class FuncEqualityComparer<T> : IEqualityComparer<T>
 {

@@ -1,6 +1,6 @@
 ﻿using System.Reactive.Subjects;
+using Glimpse.Common.Images;
 using Glimpse.Freedesktop.DBus.Core;
-using Glimpse.Images;
 using Tmds.DBus.Protocol;
 
 #pragma warning disable

@@ -1,4 +1,4 @@
-namespace Glimpse.Images;
+namespace Glimpse.Common.Images;
 
 public interface IGlimpseImage : IDisposable
 {

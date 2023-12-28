@@ -1,6 +1,6 @@
 using Cairo;
 
-namespace Glimpse.Lib.Gtk;
+namespace Glimpse.Common.Gtk;
 
 public static class CairoExtensions
 {

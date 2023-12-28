@@ -1,11 +1,11 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
-using Glimpse.Extensions.Gtk;
+using Glimpse.Common.Gtk;
+using Glimpse.Common.Images;
+using Glimpse.Common.System.Reactive;
 using Glimpse.Freedesktop;
 using Glimpse.Freedesktop.DBus.Interfaces;
-using Glimpse.Lib.Gtk;
-using Glimpse.Lib.System.Reactive;
 using Gtk;
 using Menu = Gtk.Menu;
 

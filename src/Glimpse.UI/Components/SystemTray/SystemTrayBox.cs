@@ -1,10 +1,10 @@
 using System.Reactive.Linq;
 using GLib;
+using Glimpse.Common.Gtk;
+using Glimpse.Common.System.Reactive;
 using Glimpse.Configuration;
 using Glimpse.Freedesktop;
 using Glimpse.Freedesktop.DesktopEntries;
-using Glimpse.Lib.Gtk;
-using Glimpse.Lib.System.Reactive;
 using Glimpse.Redux;
 using Glimpse.Redux.Selectors;
 using Gtk;

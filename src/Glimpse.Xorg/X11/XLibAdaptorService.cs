@@ -1,9 +1,9 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
-using Glimpse.Images;
+using Glimpse.Common.Images;
+using Glimpse.Common.System.Reactive;
 using Glimpse.Interop.XLib;
-using Glimpse.Lib.System.Reactive;
 using Microsoft.Extensions.Hosting;
 using Task = System.Threading.Tasks.Task;
 

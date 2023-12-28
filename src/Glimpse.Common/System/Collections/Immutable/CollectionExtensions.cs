@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 
-namespace Glimpse.Lib.System.Collections.Immutable;
+namespace Glimpse.Common.System.Collections.Immutable;
 
 public struct Pairing<TKey, TLeft, TRight>
 {

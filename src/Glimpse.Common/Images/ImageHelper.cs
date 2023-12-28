@@ -1,4 +1,4 @@
-namespace Glimpse.Extensions;
+namespace Glimpse.Common.Images;
 
 public static class ImageHelper
 {

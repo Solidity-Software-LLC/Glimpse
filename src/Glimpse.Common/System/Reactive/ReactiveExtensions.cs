@@ -1,7 +1,7 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 
-namespace Glimpse.Lib.System.Reactive;
+namespace Glimpse.Common.System.Reactive;
 
 public static class ReactiveExtensions
 {

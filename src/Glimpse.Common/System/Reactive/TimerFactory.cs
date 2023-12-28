@@ -1,6 +1,6 @@
 using System.Reactive.Linq;
 
-namespace Glimpse.Lib.System.Reactive;
+namespace Glimpse.Common.System.Reactive;
 
 public static class TimerFactory
 {

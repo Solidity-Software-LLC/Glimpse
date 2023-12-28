@@ -1,6 +1,6 @@
 using System.Reactive.Linq;
-using Glimpse.Images;
-using Glimpse.Lib.Gtk;
+using Glimpse.Common.Gtk;
+using Glimpse.Common.Images;
 using Glimpse.UI.Components.Shared.ForEach;
 using Gtk;
 using Pango;
