@@ -1,6 +1,7 @@
 using System.Reactive.Linq;
 using Cairo;
 using Glimpse.Images;
+using Glimpse.Lib.Gtk;
 using Glimpse.UI.Components.Shared.ForEach;
 using Gtk;
 using ReactiveMarbles.ObservableEvents;

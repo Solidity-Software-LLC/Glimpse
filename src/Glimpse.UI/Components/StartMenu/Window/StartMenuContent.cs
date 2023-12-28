@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using GLib;
 using Glimpse.Freedesktop.DesktopEntries;
+using Glimpse.Lib.Gtk;
 using Glimpse.UI.Components.Shared;
 using Glimpse.UI.Components.Shared.ForEach;
 using Glimpse.UI.State;

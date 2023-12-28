@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using Glimpse.Lib.Gtk;
 using Glimpse.UI.State;
 using Gtk;
 

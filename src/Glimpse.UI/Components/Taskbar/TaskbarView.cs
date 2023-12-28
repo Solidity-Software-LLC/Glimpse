@@ -3,6 +3,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using GLib;
 using Glimpse.Freedesktop.DesktopEntries;
+using Glimpse.Lib.Gtk;
 using Glimpse.Redux;
 using Glimpse.UI.Components.Shared.ForEach;
 using Glimpse.UI.State;

@@ -1,6 +1,7 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
+using Glimpse.Lib.Gtk;
 using Glimpse.Lib.System.Reactive;
 using Gtk;
 using ReactiveMarbles.ObservableEvents;

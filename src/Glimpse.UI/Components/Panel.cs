@@ -5,6 +5,7 @@ using Gdk;
 using GLib;
 using Glimpse.Configuration;
 using Glimpse.Freedesktop.DesktopEntries;
+using Glimpse.Lib.Gtk;
 using Glimpse.Redux;
 using Glimpse.UI.Components.Calendar;
 using Glimpse.UI.Components.Shared;

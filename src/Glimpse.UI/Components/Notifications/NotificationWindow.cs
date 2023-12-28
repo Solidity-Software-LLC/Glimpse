@@ -1,4 +1,5 @@
 using Gdk;
+using Glimpse.Lib.Gtk;
 using Gtk;
 using Pango;
 using ReactiveMarbles.ObservableEvents;

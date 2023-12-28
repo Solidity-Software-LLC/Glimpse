@@ -5,6 +5,7 @@ using Gdk;
 using GLib;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Interop.Gdk;
+using Glimpse.Lib.Gtk;
 using Glimpse.Lib.System.Reactive;
 using Glimpse.Redux;
 using Glimpse.UI.State;

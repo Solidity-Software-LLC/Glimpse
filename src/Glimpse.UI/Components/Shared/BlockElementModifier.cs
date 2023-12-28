@@ -1,3 +1,4 @@
+using Glimpse.Lib.Gtk;
 using Gtk;
 
 namespace Glimpse.UI.Components.Shared;

@@ -5,7 +5,7 @@ using Gtk;
 using ReactiveMarbles.ObservableEvents;
 using Window = Gtk.Window;
 
-namespace Glimpse.UI;
+namespace Glimpse.Lib.Gtk;
 
 public static class MoreGtkExtensions
 {

@@ -3,6 +3,7 @@ using GLib;
 using Glimpse.Configuration;
 using Glimpse.Freedesktop;
 using Glimpse.Freedesktop.DesktopEntries;
+using Glimpse.Lib.Gtk;
 using Glimpse.Lib.System.Reactive;
 using Glimpse.Redux;
 using Glimpse.Redux.Selectors;

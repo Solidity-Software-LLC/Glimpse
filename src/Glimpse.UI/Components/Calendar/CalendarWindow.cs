@@ -4,6 +4,7 @@ using Autofac.Features.AttributeFilters;
 using Gdk;
 using GLib;
 using Glimpse.Interop.Gdk;
+using Glimpse.Lib.Gtk;
 using Glimpse.Redux;
 using Glimpse.Xorg;
 using Glimpse.Xorg.State;

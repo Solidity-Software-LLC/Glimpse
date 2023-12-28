@@ -7,6 +7,7 @@ using GLib;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Freedesktop;
 using Glimpse.Images;
+using Glimpse.Lib.Gtk;
 using Glimpse.Lib.System.Reactive;
 using Glimpse.Redux;
 using Glimpse.UI.Components;

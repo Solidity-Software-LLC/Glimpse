@@ -4,6 +4,7 @@ using Gdk;
 using Glimpse.Extensions.Gtk;
 using Glimpse.Freedesktop;
 using Glimpse.Freedesktop.DBus.Interfaces;
+using Glimpse.Lib.Gtk;
 using Glimpse.Lib.System.Reactive;
 using Gtk;
 using Menu = Gtk.Menu;

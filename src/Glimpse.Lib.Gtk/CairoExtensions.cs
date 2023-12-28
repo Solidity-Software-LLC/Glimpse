@@ -1,8 +1,8 @@
 using Cairo;
 
-namespace Glimpse.UI;
+namespace Glimpse.Lib.Gtk;
 
-public static class DrawingExtensions
+public static class CairoExtensions
 {
 	public static void RoundedRectangle(this Context cr, int x, int y, int width, int height, int cornerRadius)
 	{
