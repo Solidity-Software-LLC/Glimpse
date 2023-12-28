@@ -3,6 +3,7 @@ using System.Reactive.Subjects;
 using Autofac.Features.AttributeFilters;
 using Gdk;
 using GLib;
+using Glimpse.Interop.Gdk;
 using Glimpse.Redux;
 using Glimpse.Xorg;
 using Glimpse.Xorg.State;

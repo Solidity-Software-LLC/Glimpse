@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
 
-namespace Glimpse.Xorg.X11;
+namespace Glimpse.Interop.XLib;
 
-internal class XLib
+public class XLib
 {
 	private const string LibraryName = "libX11.so.6";
 

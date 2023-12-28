@@ -6,7 +6,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Glimpse.Gtk\Glimpse.Gtk.csproj"/>
+		<ProjectReference Include="..\Glimpse.Interop\Glimpse.Interop.csproj" />
 		<ProjectReference Include="..\Glimpse.Redux\Glimpse.Redux.csproj"/>
 		<ProjectReference Include="..\Glimpse.Lib\Glimpse.Lib.csproj"/>
 		<ProjectReference Include="..\Glimpse.Xorg\Glimpse.Xorg.csproj"/>

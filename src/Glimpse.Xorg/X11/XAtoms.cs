@@ -1,3 +1,5 @@
+using Glimpse.Interop.XLib;
+
 namespace Glimpse.Xorg.X11;
 
 public class XAtom

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<ItemGroup>
-		<ProjectReference Include="..\Glimpse.Gtk\Glimpse.Gtk.csproj" />
+		<ProjectReference Include="..\Glimpse.Interop\Glimpse.Interop.csproj" />
 		<ProjectReference Include="..\Glimpse.Lib\Glimpse.Lib.csproj" />
 		<ProjectReference Include="..\Glimpse.Redux\Glimpse.Redux.csproj" />
 		<ProjectReference Include="..\Glimpse.Images\Glimpse.Images.csproj" />

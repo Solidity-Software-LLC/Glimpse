@@ -4,7 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimpse", "src\Glimpse\Glim
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimpse.Redux", "src\Glimpse.Redux\Glimpse.Redux.csproj", "{4328EFD8-095C-4E80-88C8-E6113F64389F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimpse.Gtk", "src\Glimpse.Gtk\Glimpse.Gtk.csproj", "{EF5FB95A-9374-4F15-91E0-E4D34AAC1A27}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimpse.Interop", "src\Glimpse.Interop\Glimpse.Interop.csproj", "{EF5FB95A-9374-4F15-91E0-E4D34AAC1A27}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimpse.Freedesktop", "src\Glimpse.Freedesktop\Glimpse.Freedesktop.csproj", "{F523A8B1-0E5C-457B-A11E-C14844A7721A}"
 EndProject

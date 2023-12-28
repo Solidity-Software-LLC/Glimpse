@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Reactive.Linq;
 using Glimpse.Freedesktop.DBus;
 using Glimpse.Freedesktop.DBus.Interfaces;
+using Glimpse.Interop.Gdk;
 using Glimpse.Lib.System.IO;
 using Glimpse.Redux;
 using ReactiveMarbles.ObservableEvents;

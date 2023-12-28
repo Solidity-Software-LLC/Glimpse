@@ -34,7 +34,7 @@
 	
 	<ItemGroup>
 		<ProjectReference Include="..\Glimpse.Configuration\Glimpse.Configuration.csproj" />
-		<ProjectReference Include="..\Glimpse.Gtk\Glimpse.Gtk.csproj"/>
+		<ProjectReference Include="..\Glimpse.Interop\Glimpse.Interop.csproj" />
 		<ProjectReference Include="..\Glimpse.Redux\Glimpse.Redux.csproj"/>
 		<ProjectReference Include="..\Glimpse.UI\Glimpse.UI.csproj" />
 		<ProjectReference Include="..\Glimpse.Xorg\Glimpse.Xorg.csproj"/>

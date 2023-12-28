@@ -3,6 +3,7 @@ using System.Reactive.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using Glimpse.Images;
+using Glimpse.Interop.XLib;
 
 namespace Glimpse.Xorg.X11;
 

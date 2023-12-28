@@ -8,6 +8,7 @@
 		<ProjectReference Include="..\Glimpse.Redux\Glimpse.Redux.csproj"/>
 		<ProjectReference Include="..\Glimpse.Lib\Glimpse.Lib.csproj"/>
 		<ProjectReference Include="..\Glimpse.Images\Glimpse.Images.csproj"/>
+		<ProjectReference Include="..\Glimpse.Interop\Glimpse.Interop.csproj"/>
 	</ItemGroup>
 
 	<ItemGroup>
