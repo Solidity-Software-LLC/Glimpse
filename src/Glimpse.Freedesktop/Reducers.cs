@@ -33,6 +33,18 @@ internal class Reducers
 			.On<AddNotificationAction>((s, a) => s with
 			{
 				Notifications = s.Notifications.Add(new () { FreedesktopNotification = a.Notification, CreationDateUtc = DateTime.UtcNow })
+			})
+			.On<NotificationTimerExpiredAction>((s, a) =>
+			{
+				var notificationToRemove = s.Notifications.FirstOrDefault(x => x.FreedesktopNotification.Id == a.NotificationId);
+				if (notificationToRemove == null) return s;
+				return s with { Notifications = s.Notifications.Remove(notificationToRemove) };
+			})
+			.On<CloseNotificationAction>((s, a) =>
+			{
+				var notificationToRemove = s.Notifications.FirstOrDefault(x => x.FreedesktopNotification.Id == a.NotificationId);
+				if (notificationToRemove == null) return s;
+				return s with { Notifications = s.Notifications.Remove(notificationToRemove) };
 			}),
 		FeatureReducer.Build(new DataTable<string, DesktopFile>())
 			.On<UpdateDesktopFilesAction>((s, a) => s.UpsertMany(a.DesktopFiles)),

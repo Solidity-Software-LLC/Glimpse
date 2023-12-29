@@ -16,3 +16,5 @@ public class UpdateUserAction
 }
 
 public record AddNotificationAction(FreedesktopNotification Notification);
+public record NotificationTimerExpiredAction(uint NotificationId);
+public record CloseNotificationAction(uint NotificationId);

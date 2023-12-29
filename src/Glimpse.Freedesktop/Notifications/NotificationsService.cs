@@ -1,3 +1,4 @@
+using System.Reactive.Linq;
 using Glimpse.Freedesktop.DBus;
 using Glimpse.Freedesktop.DBus.Interfaces;
 using Glimpse.Redux;
@@ -18,6 +19,12 @@ public class NotificationsService(
 		freedesktopNotifications.Notifications.Subscribe(n =>
 		{
 			store.Dispatch(new AddNotificationAction(n));
+			Observable.Timer(n.Duration).Take(1).Subscribe(_ => store.Dispatch(new NotificationTimerExpiredAction(n.Id)));
 		});
+	}
+
+	public void CloseNotification(uint notificationId)
+	{
+		store.Dispatch(new CloseNotificationAction(notificationId));
 	}
 }

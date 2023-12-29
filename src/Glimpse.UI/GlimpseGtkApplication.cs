@@ -8,6 +8,7 @@ using Glimpse.Common.Gtk;
 using Glimpse.Common.Images;
 using Glimpse.Common.System.Reactive;
 using Glimpse.Freedesktop;
+using Glimpse.Freedesktop.Notifications;
 using Glimpse.Redux;
 using Glimpse.UI.Components;
 using Glimpse.UI.Components.Calendar;
@@ -105,13 +106,13 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 	private void WatchNotifications()
 	{
 		var notificationsPerMonitor = new Dictionary<Monitor, ImmutableList<NotificationWindow>>();
+		var notificationsService = serviceProvider.Resolve<NotificationsService>();
 
 		store
 			.Select(NotificationSelectors.ViewModel)
 			.ObserveOn(new GLibSynchronizationContext())
 			.Select(vm => vm.Notifications)
 			.UnbundleMany(n => n.Id)
-			.RemoveIndex()
 			.Subscribe(notificationObservable =>
 			{
 				try
@@ -119,11 +120,15 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 					var display = Display.Default;
 					display.GetPointer(out var x, out var y);
 					var eventMonitor = display.GetMonitorAtPoint(x, y);
-					var newWindow = new NotificationWindow(notificationObservable);
+					var newWindow = new NotificationWindow(notificationObservable.Select(x => x.Item1));
 					application.AddWindow(newWindow);
 
 					var panel = _panels.FirstOrDefault(p => p.IsOnMonitor(eventMonitor));
 					panel.Window.GetGeometry(out _, out _, out _, out var panelHeight);
+
+					newWindow.CloseNotification
+						.TakeUntil(notificationObservable.TakeLast(1))
+						.Subscribe(_ => notificationsService.CloseNotification(notificationObservable.Key));
 
 					newWindow.Events().SizeAllocated.Take(1).TakeUntilDestroyed(newWindow).Subscribe(_ =>
 					{
@@ -138,20 +143,17 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 
 					notificationsPerMonitor.TryAdd(eventMonitor, ImmutableList<NotificationWindow>.Empty);
 					notificationsPerMonitor[eventMonitor] = notificationsPerMonitor[eventMonitor].Add(newWindow);
-					notificationObservable
-						.Take(1)
-						.Delay(s => Observable.Timer(s.Duration))
-						.ObserveOn(new GLibSynchronizationContext())
-						.Subscribe(_ =>
-						{
-							newWindow.Dispose();
-							notificationsPerMonitor[eventMonitor] = notificationsPerMonitor[eventMonitor].Remove(newWindow);
 
-							if (notificationsPerMonitor.TryGetValue(eventMonitor, out var notificationWindows))
-							{
-								StackNotificationsOnMonitor(eventMonitor, panelHeight, notificationWindows);
-							}
-						});
+					notificationObservable.TakeLast(1).ObserveOn(new GLibSynchronizationContext()).Subscribe(_ =>
+					{
+						newWindow.Dispose();
+						notificationsPerMonitor[eventMonitor] = notificationsPerMonitor[eventMonitor].Remove(newWindow);
+
+						if (notificationsPerMonitor.TryGetValue(eventMonitor, out var notificationWindows))
+						{
+							StackNotificationsOnMonitor(eventMonitor, panelHeight, notificationWindows);
+						}
+					});
 				}
 				catch (Exception e)
 				{
