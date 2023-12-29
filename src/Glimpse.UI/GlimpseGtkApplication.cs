@@ -128,7 +128,7 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 
 					newWindow.CloseNotification
 						.TakeUntil(notificationObservable.TakeLast(1))
-						.Subscribe(_ => notificationsService.CloseNotification(notificationObservable.Key));
+						.Subscribe(_ => notificationsService.DismissNotification(notificationObservable.Key));
 
 					newWindow.ActionInvoked
 						.TakeUntil(notificationObservable.TakeLast(1))

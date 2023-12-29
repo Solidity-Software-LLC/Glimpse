@@ -49,6 +49,9 @@ public class OrgFreedesktopNotifications(DBusConnections dBusConnections) : IMet
 	private readonly Subject<FreedesktopNotification> _notificationSubject = new();
 	public IObservable<FreedesktopNotification> Notifications => _notificationSubject;
 
+	private readonly Subject<uint> _closeNotificationSubject = new();
+	public IObservable<uint> CloseNotificationRequested => _closeNotificationSubject;
+
 	public async ValueTask HandleMethodAsync(MethodContext context)
 	{
 		switch (context.Request.InterfaceAsString)
@@ -303,6 +306,7 @@ public class OrgFreedesktopNotifications(DBusConnections dBusConnections) : IMet
 
 	private ValueTask OnCloseNotificationAsync(uint id)
 	{
+		_closeNotificationSubject.OnNext(id);
 		return ValueTask.CompletedTask;
 	}
 
