@@ -5,4 +5,16 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<NoWarn>CS8632;CS8851</NoWarn>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<AdditionalFiles Include="..\..\.refrules" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="ReferenceCopAnalyzer" Version="0.3.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
 </Project>
