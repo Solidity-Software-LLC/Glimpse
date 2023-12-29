@@ -311,7 +311,7 @@ public class OrgFreedesktopNotifications(DBusConnections dBusConnections) : IMet
 		return ValueTask.FromResult<(string name, string vendor, string version, string spec_version)>(("glimpse", "glimpse", "1", "1.2"));
 	}
 
-	private void EmitNotificationClosed(uint id, uint reason)
+	public void EmitNotificationClosed(uint id, uint reason)
 	{
 		var writer = Connection.GetMessageWriter();
 		writer.WriteSignalHeader(null, Path, "org.freedesktop.Notifications", "NotificationClosed", "uu");
@@ -321,7 +321,7 @@ public class OrgFreedesktopNotifications(DBusConnections dBusConnections) : IMet
 		writer.Dispose();
 	}
 
-	private void EmitActionInvoked(uint id, string action_key)
+	public void EmitActionInvoked(uint id, string action_key)
 	{
 		var writer = Connection.GetMessageWriter();
 		writer.WriteSignalHeader(null, Path, "org.freedesktop.Notifications", "ActionInvoked", "us");

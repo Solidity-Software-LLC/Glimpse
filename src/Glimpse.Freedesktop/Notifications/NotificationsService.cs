@@ -23,6 +23,11 @@ public class NotificationsService(
 		});
 	}
 
+	public void ActionInvoked(uint notificationId, string action)
+	{
+		freedesktopNotifications.EmitActionInvoked(notificationId, action);
+	}
+
 	public void CloseNotification(uint notificationId)
 	{
 		store.Dispatch(new CloseNotificationAction(notificationId));

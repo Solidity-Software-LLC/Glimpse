@@ -130,6 +130,10 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 						.TakeUntil(notificationObservable.TakeLast(1))
 						.Subscribe(_ => notificationsService.CloseNotification(notificationObservable.Key));
 
+					newWindow.ActionInvoked
+						.TakeUntil(notificationObservable.TakeLast(1))
+						.Subscribe(action => notificationsService.ActionInvoked(notificationObservable.Key, action));
+
 					newWindow.Events().SizeAllocated.Take(1).TakeUntilDestroyed(newWindow).Subscribe(_ =>
 					{
 						var windowLeft = eventMonitor.Workarea.Right - newWindow.Allocation.Width - 8;

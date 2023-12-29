@@ -13,8 +13,11 @@ namespace Glimpse.UI.Components.Notifications;
 
 public class NotificationContent : Bin
 {
-	private readonly Subject<Unit> _closeSubject = new();
-	public IObservable<Unit> CloseNotification => _closeSubject;
+	private readonly Subject<string> _actionInvokedSubject = new();
+	public IObservable<string> ActionInvoked => _actionInvokedSubject;
+
+	private readonly Subject<Unit> _closeNotificationSubject = new();
+	public IObservable<Unit> CloseNotification => _closeNotificationSubject;
 
 	public NotificationContent(IObservable<NotificationViewModel> notificationStateObs)
 	{
@@ -49,7 +52,7 @@ public class NotificationContent : Bin
 		closeButton.AddButtonStates();
 		closeButton.Image = new Image(Assets.Close.Scale(16).ToPixbuf());
 		closeButton.Halign = Align.End;
-		closeButton.ObserveButtonRelease().Subscribe(_ => _closeSubject.OnNext(Unit.Default));
+		closeButton.ObserveButtonRelease().Subscribe(_ => _closeNotificationSubject.OnNext(Unit.Default));
 
 		var appIcon = new Image();
 		var image = new Image().AddClass("notifications__image");
@@ -92,6 +95,7 @@ public class NotificationContent : Bin
 				actionButton.AddButtonStates();
 				actionButton.AddClass("notifications_action-button");
 				actionButton.ShowAll();
+				actionButton.ObserveButtonRelease().Subscribe(_ => _actionInvokedSubject.OnNext(action));
 				actionsRow.Add(actionButton);
 			}
 		});
@@ -124,5 +128,6 @@ public class NotificationWindow : Window
 		ShowAll();
 	}
 
+	public IObservable<string> ActionInvoked => _content.ActionInvoked;
 	public IObservable<Unit> CloseNotification => _content.CloseNotification;
 }

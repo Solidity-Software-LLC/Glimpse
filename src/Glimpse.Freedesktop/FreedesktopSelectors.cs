@@ -9,7 +9,7 @@ namespace Glimpse.Freedesktop;
 public class FreedesktopSelectors
 {
 	public static readonly ISelector<DataTable<string, DesktopFile>> DesktopFiles = CreateFeatureSelector<DataTable<string, DesktopFile>>();
-	public static readonly ISelector<NotificationsState> NotificationsState = CreateFeatureSelector<NotificationsState>();
+	public static readonly ISelector<DataTable<uint, NotificationState>> NotificationsState = CreateFeatureSelector<DataTable<uint, NotificationState>>();
 	private static readonly ISelector<AccountState> s_accountState = CreateFeatureSelector<AccountState>();
 	public static readonly ISelector<string> UserIconPath = CreateSelector(s_accountState, s => s.IconPath);
 

@@ -33,7 +33,7 @@ public static class NotificationSelectors
 		{
 			return new NotificationsViewModel()
 			{
-				Notifications = notifications.Notifications.Select(n =>
+				Notifications = notifications.ById.Values.Select(n =>
 				{
 					var desktopFile = desktopFiles.FirstOrDefault(d => d.Name == n.FreedesktopNotification.AppName);
 

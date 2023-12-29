@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Glimpse.Freedesktop.DBus.Interfaces;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Redux;
@@ -13,39 +12,22 @@ public record AccountState
 	public virtual bool Equals(AccountState other) => ReferenceEquals(this, other);
 }
 
-public record NotificationsState
-{
-	public ImmutableList<NotificationState> Notifications = ImmutableList<NotificationState>.Empty;
-}
-
-public record NotificationState
+public record NotificationState : IKeyed<uint>
 {
 	public FreedesktopNotification FreedesktopNotification { get; set; }
 	public bool IsDismissed { get; set; }
 	public DateTime CreationDateUtc { get; set; }
+	public uint Id => FreedesktopNotification.Id;
 }
 
 internal class Reducers
 {
 	public static readonly FeatureReducerCollection AllReducers = new()
 	{
-		FeatureReducer.Build(new NotificationsState())
-			.On<AddNotificationAction>((s, a) => s with
-			{
-				Notifications = s.Notifications.Add(new () { FreedesktopNotification = a.Notification, CreationDateUtc = DateTime.UtcNow })
-			})
-			.On<NotificationTimerExpiredAction>((s, a) =>
-			{
-				var notificationToRemove = s.Notifications.FirstOrDefault(x => x.FreedesktopNotification.Id == a.NotificationId);
-				if (notificationToRemove == null) return s;
-				return s with { Notifications = s.Notifications.Remove(notificationToRemove) };
-			})
-			.On<CloseNotificationAction>((s, a) =>
-			{
-				var notificationToRemove = s.Notifications.FirstOrDefault(x => x.FreedesktopNotification.Id == a.NotificationId);
-				if (notificationToRemove == null) return s;
-				return s with { Notifications = s.Notifications.Remove(notificationToRemove) };
-			}),
+		FeatureReducer.Build(new DataTable<uint, NotificationState>())
+			.On<AddNotificationAction>((s, a) => s.UpsertOne(new NotificationState() { FreedesktopNotification = a.Notification, CreationDateUtc = DateTime.UtcNow }))
+			.On<NotificationTimerExpiredAction>((s, a) => s.Remove(a.NotificationId))
+			.On<CloseNotificationAction>((s, a) => s.Remove(a.NotificationId)),
 		FeatureReducer.Build(new DataTable<string, DesktopFile>())
 			.On<UpdateDesktopFilesAction>((s, a) => s.UpsertMany(a.DesktopFiles)),
 		FeatureReducer.Build(new AccountState())
