@@ -1,8 +1,6 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using GLib;
-using Glimpse.Common.Gtk;
-using Glimpse.Common.Images;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Redux;
 using Glimpse.UI.Components.StartMenu.Window;

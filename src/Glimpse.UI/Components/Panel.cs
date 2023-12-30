@@ -3,7 +3,6 @@ using System.Reactive.Linq;
 using Autofac.Features.AttributeFilters;
 using Gdk;
 using GLib;
-using Glimpse.Common.Gtk;
 using Glimpse.Configuration;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Redux;

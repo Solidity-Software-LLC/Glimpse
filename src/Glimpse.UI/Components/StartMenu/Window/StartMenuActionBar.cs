@@ -1,6 +1,4 @@
 using System.Reactive.Linq;
-using Gdk;
-using Glimpse.Common.Gtk;
 using Glimpse.Common.Images;
 using Gtk;
 

@@ -1,6 +1,4 @@
 using System.Reactive.Linq;
-using Glimpse.Common.Gtk;
-using Glimpse.Common.Images;
 using Glimpse.UI.Components.Shared.ForEach;
 using Glimpse.UI.State;
 using Gtk;

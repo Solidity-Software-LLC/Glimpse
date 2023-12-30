@@ -1,6 +1,5 @@
 using System.Reactive.Linq;
 using Cairo;
-using Glimpse.Common.Gtk;
 using Glimpse.UI.Components.Shared.ForEach;
 using Glimpse.UI.State;
 using Gtk;

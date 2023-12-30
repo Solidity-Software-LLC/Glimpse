@@ -3,7 +3,6 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
 using GLib;
-using Glimpse.Common.Gtk;
 using Glimpse.Common.System.Reactive;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Interop.Gdk;

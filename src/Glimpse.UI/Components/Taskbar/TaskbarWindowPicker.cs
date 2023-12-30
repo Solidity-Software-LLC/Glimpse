@@ -1,7 +1,6 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Gdk;
-using Glimpse.Common.Gtk;
 using Glimpse.Common.System.Reactive;
 using Glimpse.UI.Components.Shared;
 using Glimpse.Xorg;

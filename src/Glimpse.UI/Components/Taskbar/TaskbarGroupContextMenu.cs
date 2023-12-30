@@ -1,6 +1,5 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using Glimpse.Common.Gtk;
 using Glimpse.Common.Images;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.UI.Components.Shared;

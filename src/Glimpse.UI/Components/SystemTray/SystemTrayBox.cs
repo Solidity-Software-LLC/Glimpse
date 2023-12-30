@@ -1,7 +1,5 @@
 using System.Reactive.Linq;
-using Gdk;
 using GLib;
-using Glimpse.Common.Gtk;
 using Glimpse.Common.System.Reactive;
 using Glimpse.Configuration;
 using Glimpse.Freedesktop;
