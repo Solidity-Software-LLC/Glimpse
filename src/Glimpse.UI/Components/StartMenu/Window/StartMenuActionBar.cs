@@ -18,7 +18,7 @@ public class StartMenuActionBar : Box
 			.DistinctUntilChanged()
 			.TakeUntilDestroyed(this)
 			.Select(path => string.IsNullOrEmpty(path) || !File.Exists(path) ? Assets.Person.Scale(42) : GlimpseImageFactory.From(path))
-			.Select(p => p.Scale(42).Image)
+			.Select(p => p.Scale(42).Pixbuf)
 			.Subscribe(p => userImage.Pixbuf = p);
 
 		var userButton = new Button()
@@ -29,12 +29,12 @@ public class StartMenuActionBar : Box
 
 		userButton.Valign = Align.Center;
 
-		var settingsButton = new Button(new Image(Assets.Settings.Scale(24).Image));
+		var settingsButton = new Button(new Image(Assets.Settings.Scale(24).Pixbuf));
 		settingsButton.AddClass("start-menu__settings");
 		settingsButton.Valign = Align.Center;
 		settingsButton.Halign = Align.End;
 
-		var powerButton = new Button(new Image(Assets.Power.Scale(24).Image));
+		var powerButton = new Button(new Image(Assets.Power.Scale(24).Pixbuf));
 		powerButton.AddClass("start-menu__power");
 		powerButton.Valign = Align.Center;
 		powerButton.Halign = Align.End;

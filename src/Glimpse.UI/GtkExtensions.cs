@@ -65,7 +65,7 @@ public static class GtkExtensions
 
 	private static void SetImage(this Image image, ImageViewModel vm, int width, int height)
 	{
-		image.Pixbuf = vm.Image.ScaleToFit(width, height).Image;
+		image.Pixbuf = vm.Image.ScaleToFit(width, height).Pixbuf;
 	}
 
 	public static void BindViewModel(this Image image, IObservable<ImageViewModel> imageViewModel, int width, int height)
@@ -90,7 +90,7 @@ public static class GtkExtensions
 			else if (vm.IconName.StartsWith("/"))
 			{
 				var glimpseImage = GlimpseImageFactory.From(new Pixbuf(vm.IconName, size, size));
-				image.Pixbuf = glimpseImage.Image;
+				image.Pixbuf = glimpseImage.Pixbuf;
 				image.Data["Small"] = glimpseImage.Scale(size - 6);
 				image.Data["Big"] = glimpseImage;
 			}
@@ -104,17 +104,17 @@ public static class GtkExtensions
 		widget.ObserveEvent(w => w.Events().ButtonPressEvent).WithLatestFrom(iconObservable).Subscribe(t =>
 		{
 			if (image.Pixbuf == null) image.PixelSize = size - 6;
-			else image.Pixbuf = ((GtkGlimpseImage)image.Data["Small"])?.Image;
+			else image.Pixbuf = ((GtkGlimpseImage)image.Data["Small"])?.Pixbuf;
 		});
 		widget.ObserveEvent(w => w.Events().ButtonReleaseEvent).WithLatestFrom(iconObservable).Subscribe(t =>
 		{
 			if (image.Pixbuf == null) image.PixelSize = size;
-			else image.Pixbuf = ((GtkGlimpseImage)image.Data["Big"])?.Image;
+			else image.Pixbuf = ((GtkGlimpseImage)image.Data["Big"])?.Pixbuf;
 		});
 		widget.ObserveEvent(w => w.Events().LeaveNotifyEvent).WithLatestFrom(iconObservable).Subscribe(t =>
 		{
 			if (image.Pixbuf == null) image.PixelSize = size;
-			else image.Pixbuf = ((GtkGlimpseImage)image.Data["Big"])?.Image;
+			else image.Pixbuf = ((GtkGlimpseImage)image.Data["Big"])?.Pixbuf;
 		});
 	}
 

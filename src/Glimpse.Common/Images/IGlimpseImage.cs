@@ -8,5 +8,5 @@ public interface IGlimpseImage : IDisposable
 	int Height { get; }
 	IGlimpseImage ScaleToFit(int maxHeight, int maxWidth);
 	IGlimpseImage Scale(int size);
-	Pixbuf Image { get; }
+	Pixbuf Pixbuf { get; }
 }

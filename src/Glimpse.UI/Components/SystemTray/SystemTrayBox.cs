@@ -19,7 +19,7 @@ public class SystemTrayBox : Box
 
 		var volumeButton = new Button()
 			.AddClass("system-tray__icon")
-			.AddMany(new Image(Assets.Volume.Scale(24).Image));
+			.AddMany(new Image(Assets.Volume.Scale(24).Pixbuf));
 
 		volumeButton.ObserveEvent(w => w.Events().ButtonReleaseEvent)
 			.WithLatestFrom(store.Select(ConfigurationSelectors.VolumeCommand))

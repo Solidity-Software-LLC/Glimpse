@@ -46,7 +46,7 @@ public class NotificationContent : Bin
 
 		var closeButton = new Button();
 		closeButton.AddButtonStates();
-		closeButton.Image = new Image(Assets.Close.Scale(16).Image);
+		closeButton.Image = new Image(Assets.Close.Scale(16).Pixbuf);
 		closeButton.Halign = Align.End;
 		closeButton.ObserveButtonRelease().Subscribe(_ => _closeNotificationSubject.OnNext(Unit.Default));
 

@@ -48,7 +48,7 @@ public class ForEachFlowBox<TViewModel, TWidget, TKey> : FlowBox where TWidget :
 			flowBoxChild
 				.ObserveEvent(w => w.Events().DragBegin)
 				.WithLatestFrom(childWidget.IconWhileDragging)
-				.Subscribe(t => Drag.SourceSetIconPixbuf(flowBoxChild, t.Second.Image.Image));
+				.Subscribe(t => Drag.SourceSetIconPixbuf(flowBoxChild, t.Second.Image.Pixbuf));
 
 			flowBoxChild
 				.ObserveEvent(w => w.Events().DragBegin)
