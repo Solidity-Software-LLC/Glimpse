@@ -50,7 +50,7 @@ public class StartMenuContent : Bin
 		_searchEntry.IsEditable = true;
 		_searchEntry.Valign = Align.Center;
 		_searchEntry.Halign = Align.Center;
-		_searchEntry.PrimaryIconStock = Stock.Find;
+		_searchEntry.PrimaryIconName = "edit-find-symbolic";
 		_searchEntry.PlaceholderText = "Search all applications";
 		_searchEntry.AddClass("start-menu__search-input");
 

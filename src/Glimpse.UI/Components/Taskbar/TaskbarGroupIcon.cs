@@ -1,5 +1,6 @@
 using System.Reactive.Linq;
 using Cairo;
+using Glimpse.Common.Images;
 using Glimpse.UI.Components.Shared.ForEach;
 using Glimpse.UI.State;
 using Gtk;
@@ -43,7 +44,7 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 
 		this.AppIcon(image, iconObservable, 26);
 		this.ObserveEvent(w => w.Events().ButtonReleaseEvent).Subscribe(e => e.RetVal = true);
-		IconWhileDragging = iconObservable;
+		IconWhileDragging = iconObservable.Select(i => i with { Image = (IGlimpseImage) image.Data["Big"] });
 
 		iconObservable.Connect();
 	}
