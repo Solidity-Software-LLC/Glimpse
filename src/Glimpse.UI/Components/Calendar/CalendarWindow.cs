@@ -56,12 +56,12 @@ public class CalendarWindow : Window
 
 		var monthUpButton = new Button();
 		monthUpButton.AddButtonStates();
-		monthUpButton.Image = new Image(Assets.CaretUp.Scale(16).Pixbuf);
+		monthUpButton.Image = new Image { IconName = "go-up-symbolic", PixelSize = 16 };
 		monthUpButton.ObserveButtonRelease().WithLatestFrom(displayedDateTimeObs).Subscribe(t => displayedDateTimeObs.OnNext(t.Second.AddMonths(-1)));
 
 		var monthDownButton = new Button();
 		monthDownButton.AddButtonStates();
-		monthDownButton.Image = new Image(Assets.CaretDown.Scale(16).Pixbuf);
+		monthDownButton.Image = new Image { IconName = "go-down-symbolic", PixelSize = 16 };
 		monthDownButton.ObserveButtonRelease().WithLatestFrom(displayedDateTimeObs).Subscribe(t => displayedDateTimeObs.OnNext(t.Second.AddMonths(1)));
 
 		var monthSelectorLayout = new Box(Orientation.Horizontal, 0);
