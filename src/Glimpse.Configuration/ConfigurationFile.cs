@@ -37,5 +37,6 @@ public record StartMenuConfiguration
 
 public record TaskbarConfiguration
 {
+	public string StartMenuLaunchIconName { get; set; } = "start-here";
 	public ImmutableList<string> PinnedLaunchers { get; set; } = ImmutableList<string>.Empty;
 }

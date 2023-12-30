@@ -42,12 +42,12 @@ public class StartMenuLaunchIcon : EventBox
 		CanFocus = false;
 		this.AddClass("start-menu__launch-icon");
 
-		var iconObservable = Observable.Return(new ImageViewModel() { IconName = "start-here" });
+		var iconObservable = viewModelObservable.Select(v => v.StartMenuLaunchIconName).DistinctUntilChanged().Select(n => new ImageViewModel() { IconName = n });
 		var image = new Image();
 		image.SetSizeRequest(42, 42);
 		Add(image);
 
-		this.AppIcon(image, iconObservable, 38);
+		this.AppIcon(image, iconObservable, 26);
 		this.ObserveEvent(w => w.Events().ButtonReleaseEvent).Where(e => e.Event.Button == 1).Subscribe(e =>
 		{
 			startMenuWindow.ToggleVisibility();

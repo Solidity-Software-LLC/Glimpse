@@ -88,7 +88,8 @@ public static class StartMenuSelectors
 		s_actionBarViewModelSelector,
 		s_chips,
 		s_menuItems,
-		(allApps, searchText, actionBarViewModel, chips, menuItems) =>
+		ConfigurationSelectors.Configuration,
+		(allApps, searchText, actionBarViewModel, chips, menuItems, configuration) =>
 		{
 			return new StartMenuViewModel()
 			{
@@ -97,7 +98,8 @@ public static class StartMenuSelectors
 				DisableDragAndDrop = searchText.Length > 0,
 				ActionBarViewModel = actionBarViewModel,
 				Chips = chips,
-				LaunchIconContextMenu = menuItems
+				LaunchIconContextMenu = menuItems,
+				StartMenuLaunchIconName = configuration.Taskbar.StartMenuLaunchIconName
 			};
 		});
 }

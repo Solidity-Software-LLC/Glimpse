@@ -32,4 +32,5 @@ public class StartMenuViewModel
 	public ActionBarViewModel ActionBarViewModel { get; set; }
 	public ImmutableDictionary<StartMenuChips, StartMenuAppFilteringChip> Chips { get; set; }
 	public ImmutableList<StartMenuLaunchIconContextMenuItem> LaunchIconContextMenu { get; set; }
+	public string StartMenuLaunchIconName { get; set; }
 }
