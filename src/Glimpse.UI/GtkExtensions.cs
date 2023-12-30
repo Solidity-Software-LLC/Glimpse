@@ -50,6 +50,8 @@ public static class GtkExtensions
 		image.BindViewModel(imageViewModel, size, size);
 	}
 
+	private static readonly string s_missingIconName = Guid.NewGuid().ToString();
+
 	private static void SetByName(this Image image, ImageViewModel vm, int width, int height)
 	{
 		if (vm.IconName.StartsWith("/"))
@@ -58,7 +60,8 @@ public static class GtkExtensions
 		}
 		else
 		{
-			image.SetFromIconName(vm.IconName, IconSize.LargeToolbar);
+
+			image.SetFromIconName(string.IsNullOrEmpty(vm.IconName) ? s_missingIconName : vm.IconName, IconSize.LargeToolbar);
 			image.PixelSize = width;
 		}
 	}
@@ -73,8 +76,7 @@ public static class GtkExtensions
 		imageViewModel.Subscribe(vm =>
 		{
 			if (vm.Image != null) image.SetImage(vm, width, height);
-			else if (!string.IsNullOrEmpty(vm.IconName)) image.SetByName(vm, width, height);
-			else vm.IconName = Guid.NewGuid().ToString();
+			else image.SetByName(vm, width, height);
 		});
 	}
 

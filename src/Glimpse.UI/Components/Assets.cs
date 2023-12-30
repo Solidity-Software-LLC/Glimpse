@@ -13,7 +13,6 @@ public class Assets
 	public static readonly IGlimpseImage Person;
 	public static readonly IGlimpseImage Volume;
 	public static readonly IGlimpseImage TaskManager;
-	public static readonly IGlimpseImage MissingImage;
 	public static readonly IGlimpseImage CaretUp;
 	public static readonly IGlimpseImage CaretDown;
 
@@ -28,7 +27,6 @@ public class Assets
 		Settings = LoadSvg("settings-outline.svg");
 		Volume = LoadSvg("volume-high.svg");
 		TaskManager = LoadSvg("pulse-outline.svg");
-		MissingImage = LoadSvg("missing-image.svg");
 		CaretUp = LoadSvg("caret-up.svg");
 		CaretDown = LoadSvg("caret-down.svg");
 	}
