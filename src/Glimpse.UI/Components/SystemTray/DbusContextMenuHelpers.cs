@@ -68,12 +68,14 @@ public static class DbusContextMenuHelpers
 
 		if (item.IconData != null)
 		{
-			var loader = new PixbufLoader(item.IconData);
-			box.PackStart(new Image(loader.Pixbuf.Copy()), false, false, 0);
+			using var memoryStream = new MemoryStream(item.IconData);
+			box.PackStart(new Image(memoryStream), false, false, 0);
 		}
 		else if (!string.IsNullOrEmpty(item.IconName))
 		{
-			box.PackStart(Image.NewFromIconName(item.IconName, IconSize.Menu), false, false, 0);
+			var image = new Image();
+			image.SetFromIconName(item.IconName, IconSize.Menu);
+			box.PackStart(image, false, false, 0);
 		}
 
 		box.PackStart(new Label(item.Label), false, false, 0);
