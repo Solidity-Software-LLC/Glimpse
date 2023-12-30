@@ -29,7 +29,7 @@ public class StartMenuActionBar : Box
 
 		userButton.Valign = Align.Center;
 
-		var settingsButton = new Button(new Image(Assets.Settings.Scale(24).Pixbuf));
+		var settingsButton = new Button(new Image() { IconName = "emblem-system-symbolic", PixelSize = 24 });
 		settingsButton.AddClass("start-menu__settings");
 		settingsButton.Valign = Align.Center;
 		settingsButton.Halign = Align.End;

@@ -42,7 +42,7 @@ public class StartMenuLaunchIcon : EventBox
 		CanFocus = false;
 		this.AddClass("start-menu__launch-icon");
 
-		var iconObservable = Observable.Return(new ImageViewModel() { Image = Assets.MenuIcon });
+		var iconObservable = Observable.Return(new ImageViewModel() { IconName = "start-here" });
 		var image = new Image();
 		image.SetSizeRequest(42, 42);
 		Add(image);
