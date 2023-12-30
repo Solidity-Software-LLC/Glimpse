@@ -78,7 +78,7 @@ public class TaskbarWindowPicker : Window
 
 		var closeIconBox = new Button() { Halign = Align.End }
 			.AddClass("window-picker__app-close-button")
-			.AddMany(new Image(Assets.Close.Scale(12).Pixbuf));
+			.AddMany(new Image() { IconName = "window-close-symbolic", PixelSize = 12 });
 
 		var screenshotImage = new Image() { Halign = Align.Center }
 			.AddClass("window-picker__screenshot");

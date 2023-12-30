@@ -16,7 +16,6 @@ public class TaskbarGroupContextMenu : Menu
 	private readonly Subject<AllowedWindowActions> _windowAction = new();
 	private readonly Subject<DesktopFileAction> _desktopFileAction = new();
 	private readonly Subject<DesktopFile> _launch = new();
-	private static readonly IGlimpseImage s_closeIcon = Assets.Close.Scale(ThemeConstants.MenuItemIconSize);
 	private static readonly IGlimpseImage s_unpinIcon = Assets.UnpinIcon.Scale(ThemeConstants.MenuItemIconSize);
 	private static readonly IGlimpseImage s_pinIcon = Assets.PinIcon.Scale(ThemeConstants.MenuItemIconSize);
 
@@ -83,7 +82,7 @@ public class TaskbarGroupContextMenu : Menu
 	{
 		if (viewModel.CanClose)
 		{
-			var menuItem = ContextMenuHelper.CreateMenuItem("Close Window", new ImageViewModel() { Image = s_closeIcon });
+			var menuItem = ContextMenuHelper.CreateMenuItem("Close Window", new ImageViewModel() { IconName = "window-close-symbolic" });
 			menuItem.ObserveButtonRelease().Subscribe(_ => _windowAction.OnNext(AllowedWindowActions.Close));
 			return menuItem;
 		}
