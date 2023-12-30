@@ -1,3 +1,4 @@
+using Glimpse.Common.Images;
 using Glimpse.Freedesktop.DBus.Interfaces;
 
 namespace Glimpse.Freedesktop.DBus;
@@ -5,15 +6,15 @@ namespace Glimpse.Freedesktop.DBus;
 public record StatusNotifierItemProperties
 {
 	public string AttentionIconName;
-	public StatusNotifierItemIconData[] AttentionIconPixmap;
+	public IGlimpseImage[] AttentionIconPixmap;
 	public string AttentionMovieName;
 	public string Category;
 	public string IconName;
-	public StatusNotifierItemIconData[] IconPixmap;
+	public IGlimpseImage[] IconPixmap;
 	public string Id;
 	public bool ItemIsMenu;
 	public string OverlayIconName;
-	public StatusNotifierItemIconData[] OverlayIconPixmap;
+	public IGlimpseImage[] OverlayIconPixmap;
 	public string Status;
 	public string Title;
 	public string IconThemePath;
@@ -31,19 +32,12 @@ public record StatusNotifierItemProperties
 			ItemIsMenu = item.ItemIsMenu,
 			IconName = item.IconName,
 			MenuPath = item.Menu.ToString(),
-			IconPixmap = item.IconPixmap?.Select(i => new StatusNotifierItemIconData() { Width = i.Item1, Height = i.Item2, Data = i.Item3 }).ToArray(),
+			IconPixmap = item.IconPixmap?.Select(i => GlimpseImageFactory.From(ImageHelper.ConvertArgbToRgba(i.Item3, i.Item1, i.Item2), 32, i.Item1, i.Item2)).ToArray(),
 			OverlayIconName = item.OverlayIconName,
-			OverlayIconPixmap = item.OverlayIconPixmap?.Select(i => new StatusNotifierItemIconData() { Width = i.Item1, Height = i.Item2, Data = i.Item3 }).ToArray(),
+			OverlayIconPixmap = item.OverlayIconPixmap?.Select(i => GlimpseImageFactory.From(ImageHelper.ConvertArgbToRgba(i.Item3, i.Item1, i.Item2), 32, i.Item1, i.Item2)).ToArray(),
 			AttentionIconName = item.AttentionIconName,
-			AttentionIconPixmap = item.AttentionIconPixmap?.Select(i => new StatusNotifierItemIconData() { Width = i.Item1, Height = i.Item2, Data = i.Item3 }).ToArray(),
+			AttentionIconPixmap = item.AttentionIconPixmap?.Select(i => GlimpseImageFactory.From(ImageHelper.ConvertArgbToRgba(i.Item3, i.Item1, i.Item2), 32, i.Item1, i.Item2)).ToArray(),
 			AttentionMovieName = item.AttentionMovieName
 		};
 	}
-}
-
-public struct StatusNotifierItemIconData
-{
-	public int Height;
-	public int Width;
-	public byte[] Data;
 }

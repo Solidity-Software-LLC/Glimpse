@@ -1,10 +1,5 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using Gdk;
-using Glimpse.Common.Images;
-using Glimpse.Common.System.Reactive;
-using Glimpse.Freedesktop;
-using Glimpse.Freedesktop.DBus.Interfaces;
 using Gtk;
 using Menu = Gtk.Menu;
 
@@ -16,7 +11,7 @@ public class SystemTrayIcon : Button
 	private readonly Subject<int> _menuItemActivatedSubject = new();
 	private readonly Subject<(int, int)> _applicationActivated = new();
 
-	public SystemTrayIcon(IObservable<SystemTrayItemState> viewModelObservable)
+	public SystemTrayIcon(IObservable<SystemTrayItemViewModel> viewModelObservable)
 	{
 		_contextMenu = new Menu();
 
@@ -26,66 +21,35 @@ public class SystemTrayIcon : Button
 
 		Valign = Align.Center;
 		StyleContext.AddClass("system-tray__icon");
-		var hasActivateMethod = false;
 
 		var image = new Image();
 		image.Valign = Align.Center;
+		image.BindViewModel(viewModelObservable.Select(vm => vm.Icon).DistinctUntilChanged(), 24);
 		Add(image);
 
-		var propertiesObservable = viewModelObservable
-			.TakeUntilDestroyed(this)
-			.Select(s => s.Properties)
-			.DistinctUntilChanged();
+		viewModelObservable.TakeUntilDestroyed(this).Select(s => s.Tooltip).DistinctUntilChanged().Subscribe(t =>
+		{
+			TooltipText = t;
+			HasTooltip = !string.IsNullOrEmpty(TooltipText);
+		});
 
-		propertiesObservable
-			.DistinctUntilChanged((x, y) => x.Title == y.Title)
-			.Subscribe(properties =>
-			{
-				TooltipText = properties.Title;
-				HasTooltip = !string.IsNullOrEmpty(TooltipText);
-			});
-
-		var iconTheme = IconTheme.GetForScreen(Screen);
-
-		var iconThemeChanged = iconTheme.ObserveChange()
-			.TakeUntilDestroyed(this)
-			.WithLatestFrom(propertiesObservable)
-			.Select(t => t.Second);
-
-		propertiesObservable
-			.Merge(iconThemeChanged)
-			.Subscribe(properties =>
-			{
-				image.Pixbuf = iconTheme.LoadIcon(properties).ScaleSimple(24, 24, InterpType.Bilinear);
-			});
-
-		viewModelObservable
-			.TakeUntilDestroyed(this)
-			.Select(s => s.StatusNotifierItemDescription)
-			.DistinctUntilChanged()
-			.Subscribe(desc =>
-			{
-				hasActivateMethod = desc.InterfaceHasMethod(OrgKdeStatusNotifierItem.Interface, "Activate");
-			});
-
-		viewModelObservable
-			.TakeUntilDestroyed(this)
-			.Select(s => s.RootMenuItem)
-			.DistinctUntilChanged()
-			.Subscribe(menuState =>
-			{
-				_contextMenu.RemoveAllChildren();
-				DbusContextMenuHelpers.PopulateMenu(_contextMenu, menuState);
-				var allMenuItems = DbusContextMenuHelpers.GetAllMenuItems(_contextMenu);
-				foreach (var i in allMenuItems) i.Activated += (_, _) => _menuItemActivatedSubject.OnNext(i.GetDbusMenuItem().Id);
-			});
+		viewModelObservable.TakeUntilDestroyed(this).Select(s => s.RootMenuItem).DistinctUntilChanged().Subscribe(menuState =>
+		{
+			_contextMenu.RemoveAllChildren();
+			DbusContextMenuHelpers.PopulateMenu(_contextMenu, menuState);
+			var allMenuItems = DbusContextMenuHelpers.GetAllMenuItems(_contextMenu);
+			foreach (var i in allMenuItems) i.Activated += (_, _) => _menuItemActivatedSubject.OnNext(i.GetDbusMenuItem().Id);
+		});
 
 		this.ObserveButtonRelease()
-			.Where(e => hasActivateMethod && e.Event.Button == 1)
+			.WithLatestFrom(viewModelObservable)
+			.Where(t => t.Second.CanActivate && t.First.Event.Button == 1)
+			.Select(t => t.First)
 			.Subscribe(e => _applicationActivated.OnNext(((int)e.Event.XRoot, (int)e.Event.YRoot)));
 
 		this.ObserveButtonRelease()
-			.Where(e => !hasActivateMethod && e.Event.Button == 1)
+			.WithLatestFrom(viewModelObservable)
+			.Where(t => !t.Second.CanActivate && t.First.Event.Button == 1)
 			.Subscribe(_ => _contextMenu.Popup());
 
 		ShowAll();

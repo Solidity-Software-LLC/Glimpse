@@ -5,7 +5,6 @@ using Glimpse.Configuration;
 using Glimpse.Freedesktop;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Redux;
-using Glimpse.Redux.Selectors;
 using Gtk;
 using ReactiveMarbles.ObservableEvents;
 
@@ -27,24 +26,31 @@ public class SystemTrayBox : Box
 
 		PackEnd(volumeButton, false, false, 0);
 
-		store.Select(SelectorFactory.CreateSelector(s => s.GetFeatureState<SystemTrayState>())).TakeUntilDestroyed(this).ObserveOn(new GLibSynchronizationContext()).Select(x => x.Items).DistinctUntilChanged().UnbundleMany(i => i.Key).RemoveIndex().Subscribe(obs =>
-		{
-			var itemObservable = obs.TakeUntilDestroyed(this).Select(s => s.Value).DistinctUntilChanged();
-			var systemTrayIcon = new SystemTrayIcon(itemObservable);
-			PackStart(systemTrayIcon, false, false, 0);
-			ShowAll();
-
-			systemTrayIcon.MenuItemActivated.TakeUntilDestroyed(this).WithLatestFrom(itemObservable).Subscribe(t =>
+		store
+			.Select(SystemTraySelectors.ViewModel)
+			.TakeUntilDestroyed(this)
+			.ObserveOn(new GLibSynchronizationContext())
+			.Select(x => x.Items)
+			.DistinctUntilChanged()
+			.UnbundleMany(i => i.Id)
+			.RemoveIndex()
+			.Subscribe(itemObservable =>
 			{
-				store.Dispatch(new ActivateMenuItemAction() { DbusObjectDescription = t.Second.DbusMenuDescription, MenuItemId = t.First });
-			});
+				var systemTrayIcon = new SystemTrayIcon(itemObservable);
+				PackStart(systemTrayIcon, false, false, 0);
+				ShowAll();
 
-			systemTrayIcon.ApplicationActivated.TakeUntilDestroyed(this).WithLatestFrom(itemObservable).Subscribe(t =>
-			{
-				store.Dispatch(new ActivateApplicationAction() { DbusObjectDescription = t.Second.StatusNotifierItemDescription, X = t.First.Item1, Y = t.First.Item2 });
-			});
+				systemTrayIcon.MenuItemActivated.TakeUntilDestroyed(this).WithLatestFrom(itemObservable).Subscribe(t =>
+				{
+					store.Dispatch(new ActivateMenuItemAction() { DbusObjectDescription = t.Second.DbusMenuDescription, MenuItemId = t.First });
+				});
 
-			itemObservable.Subscribe(_ => { }, _ => { }, () => systemTrayIcon.Destroy());
-		});
+				systemTrayIcon.ApplicationActivated.TakeUntilDestroyed(this).WithLatestFrom(itemObservable).Subscribe(t =>
+				{
+					store.Dispatch(new ActivateApplicationAction() { DbusObjectDescription = t.Second.StatusNotifierItemDescription, X = t.First.Item1, Y = t.First.Item2 });
+				});
+
+				itemObservable.TakeLast(1).Subscribe(_ => systemTrayIcon.Destroy());
+			});
 	}
 }
