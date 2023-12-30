@@ -35,8 +35,7 @@ public static class StartMenuSelectors
 		s_searchText,
 		ConfigurationSelectors.Configuration,
 		s_chips,
-		UISelectors.NamedIcons,
-		(allDesktopFiles, searchText, configuration, chips, desktopFileIcons) =>
+		(allDesktopFiles, searchText, configuration, chips) =>
 		{
 			var results = new LinkedList<StartMenuAppViewModel>();
 			var index = 0;
@@ -52,20 +51,17 @@ public static class StartMenuSelectors
 				var isSearchMatch = isShowingSearchResults && lowerCaseSearchText.AllCharactersIn(f.Name.ToLower());
 				var isPinned = pinnedIndex > -1;
 				var isVisible = isShowingAllApps || (isShowingSearchResults && isSearchMatch) || (isShowingPinned && isPinned);
-				var appIcon = desktopFileIcons.ById.TryGetValue(f.IconName, out var i) ? i : Assets.MissingImage;
 
 				var appViewModel = new StartMenuAppViewModel();
 				appViewModel.DesktopFile = f;
-				appViewModel.Icon = appIcon;
+				appViewModel.Icon = new ImageViewModel() { IconName = f.IconName };
 				appViewModel.IsPinnedToTaskbar = taskbarIndex > -1;
 				appViewModel.IsPinnedToStartMenu = pinnedIndex > -1;
 				appViewModel.IsVisible = isVisible;
 				appViewModel.Index = (isShowingSearchResults || isShowingAllApps) && isVisible ? index++ : pinnedIndex;
 				appViewModel.ActionIcons = f.Actions.ToDictionary(
 					a => a.ActionName,
-					a => string.IsNullOrEmpty(a.IconName) ? appIcon
-						: desktopFileIcons.ById.TryGetValue(a.IconName, out var i) ? i
-						: Assets.MissingImage);
+					a => new ImageViewModel() { IconName = !string.IsNullOrEmpty(a.IconName) ? a.IconName : f.IconName });
 
 				results.AddLast(appViewModel);
 			}

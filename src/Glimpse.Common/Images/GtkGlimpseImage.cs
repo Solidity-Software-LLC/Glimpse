@@ -4,30 +4,15 @@ namespace Glimpse.Common.Images;
 
 public class GtkGlimpseImage : IGlimpseImage
 {
-	public Pixbuf Pixbuf { get; set; }
-	public int Width => Pixbuf.Width;
-	public int Height => Pixbuf.Height;
-	public double AspectRatio => (double)Pixbuf.Width / Pixbuf.Height;
-	public void Dispose() => Pixbuf?.Dispose();
+	public Pixbuf Image { get; init; }
+	public int Width => Image.Width;
+	public int Height => Image.Height;
+	public void Dispose() => Image?.Dispose();
 
-	public IGlimpseImage ScaleToFit(int maxHeight, int maxWidth)
+	public IGlimpseImage ScaleToFit(int maxWidth, int maxHeight)
 	{
-		var scaledWidth = maxHeight * AspectRatio;
-		var scaledHeight = (double)maxHeight;
-
-		if (scaledWidth > maxWidth)
-		{
-			scaledWidth = maxWidth;
-			scaledHeight /= AspectRatio;
-		}
-
-		if (Width == (int)scaledWidth && Height == (int)scaledHeight)
-		{
-			return this;
-		}
-
-		return new GtkGlimpseImage { Pixbuf = Pixbuf.ScaleSimple((int)scaledWidth, (int)scaledHeight, InterpType.Bilinear) };
+		return new GtkGlimpseImage { Image = Image.ScaleToFit(maxWidth, maxHeight) };
 	}
 
-	public IGlimpseImage Scale(int size) => new GtkGlimpseImage() { Pixbuf = Pixbuf.ScaleSimple(size, size, InterpType.Bilinear) };
+	public IGlimpseImage Scale(int size) => new GtkGlimpseImage() { Image = Image.ScaleSimple(size, size, InterpType.Bilinear) };
 }

@@ -72,21 +72,26 @@ public static class TaskbarSelectors
 				return windows.Select(window => (Slot: slots.Refs.First(s => s.ClassHintName == window.ClassHintName), Icons: window.Icons.ToImmutableList())).ToImmutableList();
 			});
 
-	private static readonly ISelector<ImmutableList<(SlotRef Slot, IGlimpseImage Icon)>> s_slotToIcon = CreateSelector(
+	private static readonly ISelector<ImmutableList<(SlotRef Slot, ImageViewModel Icon)>> s_slotToIcon = CreateSelector(
 		Slots,
 		s_slotToDesktopFile,
 		s_slotToWindowGroupIcons,
-		UISelectors.NamedIcons,
-		(slots, desktopFiles, windowGroups, icons) =>
+		(slots, desktopFiles, windowGroups) =>
 		{
 			return slots.Refs
 				.Select(slot =>
 				{
-					var allIcons = windowGroups.FirstOrDefault(w => w.Slot == slot).Icons ?? ImmutableList<IGlimpseImage>.Empty;
 					var desktopFile = desktopFiles.FirstOrDefault(f => f.Slot == slot).DesktopFile;
-					var biggestIcon = allIcons.Any() ? allIcons.MaxBy(i => i.Width) : null;
-					icons.ById.TryGetValue(desktopFile.IconName, out var desktopFileIcon);
-					return (Slot: slot, Icon: desktopFileIcon ?? biggestIcon ?? Assets.MissingImage);
+					var iconViewModel = new ImageViewModel() { IconName = desktopFile?.IconName };
+
+					if (string.IsNullOrEmpty(iconViewModel.IconName))
+					{
+						var allIcons = windowGroups.FirstOrDefault(w => w.Slot == slot).Icons ?? ImmutableList<IGlimpseImage>.Empty;
+						var biggestIcon = allIcons.Any() ? allIcons.MaxBy(i => i.Width) : null;
+						iconViewModel.Image = biggestIcon;
+					}
+
+					return (Slot: slot, Icon: iconViewModel);
 				})
 				.ToImmutableList();
 		},
@@ -106,8 +111,7 @@ public static class TaskbarSelectors
 		s_slotToCanClose,
 		s_slotToDesktopFile,
 		s_slotToIcon,
-		UISelectors.NamedIcons,
-		(slots, canClose, desktopFiles, icons, iconCache) =>
+		(slots, canClose, desktopFiles, icons) =>
 		{
 			return slots.Refs.Select(slot =>
 			{
@@ -120,39 +124,61 @@ public static class TaskbarSelectors
 					DesktopFile = desktopFile,
 					LaunchIcon = icon,
 					CanClose = canClose.First(w => w.Slot == slot).CanClose,
-					ActionIcons = desktopFile.Actions.ToDictionary(
-						a => a.ActionName,
-						a => string.IsNullOrEmpty(a.IconName) ? icon
-							: iconCache.ById.TryGetValue(a.IconName, out var i) ? i
-							: Assets.MissingImage)
+					ActionIcons = desktopFile.Actions.ToDictionary(a => a.ActionName, a => icon)
 				});
 			}).ToImmutableList();
 		},
 		(x, y) => CollectionComparer.Sequence(x, y));
 
-	private static readonly ISelector<ImmutableList<KeyValuePair<IWindowRef, IGlimpseImage>>> s_windowToIcon = CreateSelector(
+	private static readonly ISelector<ImmutableList<KeyValuePair<IWindowRef, ImageViewModel>>> s_windowToIcon = CreateSelector(
 		s_windowPropertiesList.WithSequenceComparer((x, y) => x.WindowRef == y.WindowRef && x.Icons == y.Icons),
 		(windows) => windows
-			.Select(w => KeyValuePair.Create(w.WindowRef, w.Icons.Any() ? w.Icons.MaxBy(i => i.Width) : Assets.MissingImage))
+			.Select(w => KeyValuePair.Create(w.WindowRef, new ImageViewModel() { Image = w.Icons.MaxBy(i => i.Width), IconName = "" }))
 			.ToImmutableList());
 
-	private static readonly ISelector<ImmutableList<(string ClassHintName, ImmutableList<WindowViewModel> ViewModels)>> s_windowViewModels = CreateSelector(
+	private static readonly ISelector<ImmutableList<KeyValuePair<IWindowRef, ImageViewModel>>> s_windowToScreenshot = CreateSelector(
+		Slots,
 		XorgSelectors.Screenshots,
+		s_slotToDesktopFile,
+		s_windowPropertiesList.WithSequenceComparer((x, y) => x.WindowRef == y.WindowRef && x.Icons == y.Icons),
+		(slots, screenshots, desktopFiles, windows) =>
+		{
+			return windows
+				.Select(w =>
+				{
+					var slot = slots.Refs.FirstOrDefault(s => s.ClassHintName == w.ClassHintName);
+					var desktopFile = desktopFiles.First(f => f.Slot == slot).DesktopFile;
+					var lastScreenshot = screenshots.ById.GetValueOrDefault(w.Id);
+
+					return KeyValuePair.Create(w.WindowRef, new ImageViewModel()
+					{
+						Image = lastScreenshot ?? w.Icons.MaxBy(i => i.Width),
+						IconName = desktopFile.IconName
+					});
+				})
+				.ToImmutableList();
+		});
+
+	private static readonly ISelector<ImmutableList<(string ClassHintName, ImmutableList<WindowViewModel> ViewModels)>> s_windowViewModels = CreateSelector(
+		s_windowToScreenshot,
 		s_windowToIcon,
 		s_windowPropertiesList.WithSequenceComparer((x, y) => x.Title == y.Title && x.DemandsAttention == y.DemandsAttention && x.AllowActions == y.AllowActions && x.WindowRef == y.WindowRef && x.Icons == y.Icons),
 		(screenshots, icons, windows) => windows
 			.GroupBy(w => w.ClassHintName)
-			.Select(g => (ClassHintName: g.Key, g
-				.Select(w => new WindowViewModel
-				{
-					Icon = icons.First(kv => kv.Key.Id == w.WindowRef.Id).Value,
-					Title = w.Title,
-					WindowRef = w.WindowRef,
-					AllowedActions = w.AllowActions,
-					DemandsAttention = w.DemandsAttention,
-					Screenshot = screenshots.ById.FirstOrDefault(s => s.Key == w.WindowRef.Id).Value ?? w.DefaultScreenshot
-				})
-				.ToImmutableList()))
+			.Select(g =>
+			{
+				return (ClassHintName: g.Key, g
+					.Select(w => new WindowViewModel
+					{
+						Icon = icons.First(kv => kv.Key.Id == w.WindowRef.Id).Value,
+						Title = w.Title,
+						WindowRef = w.WindowRef,
+						AllowedActions = w.AllowActions,
+						DemandsAttention = w.DemandsAttention,
+						Screenshot = screenshots.First(s => s.Key == w.WindowRef).Value
+					})
+					.ToImmutableList());
+			})
 			.ToImmutableList());
 
 	public static readonly ISelector<TaskbarViewModel> ViewModel = CreateSelector(

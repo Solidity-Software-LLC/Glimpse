@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Glimpse.Common.Images;
 using Glimpse.Configuration;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.UI.State;
@@ -18,11 +17,11 @@ public class StartMenuAppViewModel
 {
 	public int Index { get; set; }
 	public DesktopFile DesktopFile { get; set; }
-	public IGlimpseImage Icon { get; set; }
+	public ImageViewModel Icon { get; set; }
 	public bool IsVisible { get; set; }
 	public bool IsPinnedToStartMenu { get; set; }
 	public bool IsPinnedToTaskbar { get; set; }
-	public Dictionary<string, IGlimpseImage> ActionIcons { get; set; }
+	public Dictionary<string, ImageViewModel> ActionIcons { get; set; }
 }
 
 public class StartMenuViewModel

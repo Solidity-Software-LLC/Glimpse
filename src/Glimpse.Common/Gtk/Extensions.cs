@@ -1,6 +1,5 @@
 using System.Reactive.Linq;
 using Gdk;
-using Glimpse.Common.Images;
 using Gtk;
 using ReactiveMarbles.ObservableEvents;
 using Window = Gtk.Window;
@@ -9,16 +8,6 @@ namespace Glimpse.Common.Gtk;
 
 public static class MoreGtkExtensions
 {
-	public static Pixbuf ToPixbuf(this IGlimpseImage glimpseImage)
-	{
-		if (glimpseImage is GtkGlimpseImage gtkGlimpseImage)
-		{
-			return gtkGlimpseImage.Pixbuf;
-		}
-
-		throw new InvalidCastException("Can't cast " + glimpseImage.GetType().FullName + " to " + nameof(GtkGlimpseImage));
-	}
-
 	public static IObservable<ButtonReleaseEventArgs> ObserveButtonRelease(this Widget widget)
 	{
 		return widget.ObserveEvent(w => w.Events().ButtonReleaseEvent).TakeUntilDestroyed(widget);
@@ -105,21 +94,5 @@ public static class MoreGtkExtensions
 	{
 		foreach (var c in children) widget.Add(c);
 		return widget;
-	}
-
-	public static void AppIcon(this Widget widget, Image image, IObservable<(IGlimpseImage BigIcon, IGlimpseImage SmallIcon)> iconObservable)
-	{
-		iconObservable.Subscribe(t => image.Pixbuf = t.Item1.ToPixbuf());
-		widget.AddButtonStates();
-		widget.ObserveEvent(w => w.Events().EnterNotifyEvent).Subscribe(_ => widget.QueueDraw());
-		widget.ObserveEvent(w => w.Events().LeaveNotifyEvent).Subscribe(_ => widget.QueueDraw());
-		widget.ObserveEvent(w => w.Events().ButtonPressEvent).Subscribe(_ => widget.QueueDraw());
-		widget.ObserveEvent(w => w.Events().ButtonPressEvent).WithLatestFrom(iconObservable).Subscribe(t => image.Pixbuf = t.Second.SmallIcon.ToPixbuf());
-		widget.ObserveEvent(w => w.Events().ButtonReleaseEvent).WithLatestFrom(iconObservable).Subscribe(t => image.Pixbuf = t.Second.BigIcon.ToPixbuf());
-
-		widget.ObserveEvent(w => w.Events().LeaveNotifyEvent).WithLatestFrom(iconObservable).Subscribe(t =>
-		{
-			image.Pixbuf = t.Second.BigIcon.ToPixbuf();
-		});
 	}
 }

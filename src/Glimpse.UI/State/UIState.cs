@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using Gdk;
+using Glimpse.Common.Images;
 
 namespace Glimpse.UI.State;
 
@@ -17,6 +19,12 @@ public record SlotRef
 	public string PinnedDesktopFileId { get; init; } = "";
 	public string ClassHintName { get; init; } = "";
 	public string DiscoveredDesktopFileId { get; init; } = "";
+}
+
+public record ImageViewModel
+{
+	public string IconName { get; set; }
+	public IGlimpseImage Image { get; set; }
 }
 
 public record UIState

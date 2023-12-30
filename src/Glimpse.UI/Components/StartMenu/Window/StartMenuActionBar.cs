@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using Gdk;
 using Glimpse.Common.Gtk;
 using Glimpse.Common.Images;
 using Gtk;
@@ -19,7 +20,7 @@ public class StartMenuActionBar : Box
 			.DistinctUntilChanged()
 			.TakeUntilDestroyed(this)
 			.Select(path => string.IsNullOrEmpty(path) || !File.Exists(path) ? Assets.Person.Scale(42) : GlimpseImageFactory.From(path))
-			.Select(p => p.Scale(42).ToPixbuf())
+			.Select(p => p.Scale(42).Image)
 			.Subscribe(p => userImage.Pixbuf = p);
 
 		var userButton = new Button()
@@ -30,12 +31,12 @@ public class StartMenuActionBar : Box
 
 		userButton.Valign = Align.Center;
 
-		var settingsButton = new Button(new Image(Assets.Settings.Scale(24).ToPixbuf()));
+		var settingsButton = new Button(new Image(Assets.Settings.Scale(24).Image));
 		settingsButton.AddClass("start-menu__settings");
 		settingsButton.Valign = Align.Center;
 		settingsButton.Halign = Align.End;
 
-		var powerButton = new Button(new Image(Assets.Power.Scale(24).ToPixbuf()));
+		var powerButton = new Button(new Image(Assets.Power.Scale(24).Image));
 		powerButton.AddClass("start-menu__power");
 		powerButton.Valign = Align.Center;
 		powerButton.Halign = Align.End;

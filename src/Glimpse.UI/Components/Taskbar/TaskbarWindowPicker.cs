@@ -79,7 +79,7 @@ public class TaskbarWindowPicker : Window
 
 		var closeIconBox = new Button() { Halign = Align.End }
 			.AddClass("window-picker__app-close-button")
-			.AddMany(new Image(Assets.Close.Scale(12).ToPixbuf()));
+			.AddMany(new Image(Assets.Close.Scale(12).Image));
 
 		var screenshotImage = new Image() { Halign = Align.Center }
 			.AddClass("window-picker__screenshot");
@@ -97,9 +97,9 @@ public class TaskbarWindowPicker : Window
 			.AddButtonStates();
 
 		taskObservable.Select(t => t.Title).DistinctUntilChanged().Subscribe(t => appName.Text = t);
-		taskObservable.Subscribe(t => appIcon.Pixbuf = t.Icon.Scale(ThemeConstants.MenuItemIconSize).ToPixbuf());
+		appIcon.BindViewModel(taskObservable.Select(t => t.Icon).DistinctUntilChanged(), ThemeConstants.MenuItemIconSize);
 		closeIconBox.ObserveButtonRelease().WithLatestFrom(taskObservable).Subscribe(t => _closeWindow.OnNext(t.Second.WindowRef));
-		taskObservable.Select(t => t.Screenshot).DistinctUntilChanged().Subscribe(s => screenshotImage.Pixbuf = s.ToPixbuf());
+		screenshotImage.BindViewModel(taskObservable.Select(s => s.Screenshot).DistinctUntilChanged(), 200, 100);
 		appPreview.ObserveButtonRelease().WithLatestFrom(taskObservable).Subscribe(t => _previewWindowClicked.OnNext(t.Second.WindowRef));
 
 		return appPreview;

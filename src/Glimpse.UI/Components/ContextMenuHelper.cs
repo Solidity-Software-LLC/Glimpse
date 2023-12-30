@@ -1,16 +1,14 @@
 using System.Reactive.Linq;
-using Glimpse.Common.Gtk;
-using Glimpse.Common.Images;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.UI.Components.Shared;
+using Glimpse.UI.State;
 using Gtk;
-using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.UI.Components;
 
 public static class ContextMenuHelper
 {
-	public static List<MenuItem> CreateDesktopFileActions(DesktopFile desktopFile, Dictionary<string, IGlimpseImage> icons)
+	public static List<MenuItem> CreateDesktopFileActions(DesktopFile desktopFile)
 	{
 		var results = new List<MenuItem>();
 
@@ -28,9 +26,7 @@ public static class ContextMenuHelper
 
 			foreach (var action in desktopFile.Actions)
 			{
-				var actionIcon = icons[action.ActionName].Scale(ThemeConstants.MenuItemIconSize);
-				var menuItem = CreateMenuItem(action.ActionName, actionIcon);
-				menuItem.Events().Destroyed.Take(1).Subscribe(_ => actionIcon.Dispose());
+				var menuItem = CreateMenuItem(action.ActionName, new ImageViewModel() { IconName = !string.IsNullOrEmpty(action.IconName) ? action.IconName : desktopFile.IconName });
 				menuItem.Data.Add("DesktopFileAction", action);
 				results.Add(menuItem);
 			}
@@ -39,10 +35,10 @@ public static class ContextMenuHelper
 		return results;
 	}
 
-	public static MenuItem CreateMenuItem(string label, IGlimpseImage icon)
+	public static MenuItem CreateMenuItem(string label, ImageViewModel imageViewModel)
 	{
 		var image = new Image();
-		image.Pixbuf = icon.ToPixbuf();
+		image.BindViewModel(Observable.Return(imageViewModel), ThemeConstants.MenuItemIconSize);
 
 		var box = new Box(Orientation.Horizontal, 6);
 		box.Add(image);

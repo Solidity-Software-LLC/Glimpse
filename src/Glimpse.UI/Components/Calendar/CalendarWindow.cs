@@ -57,12 +57,12 @@ public class CalendarWindow : Window
 
 		var monthUpButton = new Button();
 		monthUpButton.AddButtonStates();
-		monthUpButton.Image = new Image(Assets.CaretUp.Scale(16).ToPixbuf());
+		monthUpButton.Image = new Image(Assets.CaretUp.Scale(16).Image);
 		monthUpButton.ObserveButtonRelease().WithLatestFrom(displayedDateTimeObs).Subscribe(t => displayedDateTimeObs.OnNext(t.Second.AddMonths(-1)));
 
 		var monthDownButton = new Button();
 		monthDownButton.AddButtonStates();
-		monthDownButton.Image = new Image(Assets.CaretDown.Scale(16).ToPixbuf());
+		monthDownButton.Image = new Image(Assets.CaretDown.Scale(16).Image);
 		monthDownButton.ObserveButtonRelease().WithLatestFrom(displayedDateTimeObs).Subscribe(t => displayedDateTimeObs.OnNext(t.Second.AddMonths(1)));
 
 		var monthSelectorLayout = new Box(Orientation.Horizontal, 0);

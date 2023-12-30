@@ -2,9 +2,11 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using GLib;
 using Glimpse.Common.Gtk;
+using Glimpse.Common.Images;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Redux;
 using Glimpse.UI.Components.StartMenu.Window;
+using Glimpse.UI.State;
 using Gtk;
 using ReactiveMarbles.ObservableEvents;
 using Menu = Gtk.Menu;
@@ -42,12 +44,12 @@ public class StartMenuLaunchIcon : EventBox
 		CanFocus = false;
 		this.AddClass("start-menu__launch-icon");
 
+		var iconObservable = Observable.Return(new ImageViewModel() { Image = Assets.MenuIcon });
 		var image = new Image();
 		image.SetSizeRequest(42, 42);
 		Add(image);
 
-		var iconObservable = Observable.Return((Assets.MenuIcon.Scale(38), Assets.MenuIcon.Scale(32))).Replay(1);
-		this.AppIcon(image, iconObservable);
+		this.AppIcon(image, iconObservable, 38);
 		this.ObserveEvent(w => w.Events().ButtonReleaseEvent).Where(e => e.Event.Button == 1).Subscribe(e =>
 		{
 			startMenuWindow.ToggleVisibility();
@@ -80,6 +82,5 @@ public class StartMenuLaunchIcon : EventBox
 		this.CreateContextMenuObservable().Subscribe(_ => launchIconMenu.Popup());
 
 		viewModelObservable.Connect();
-		iconObservable.Connect();
 	}
 }

@@ -53,7 +53,6 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 		Application.Init();
 		application.Register(Cancellable.Current);
 		LoadCss();
-		WatchIcons();
 		WatchNotifications();
 
 		var openStartMenuAction = (SimpleAction) application.LookupAction("OpenStartMenu");
@@ -164,40 +163,6 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 					Console.WriteLine(e);
 				}
 			});
-	}
-
-	private void WatchIcons()
-	{
-		var display = Display.Default;
-		var screen = display.DefaultScreen;
-		var iconTheme = IconTheme.GetForScreen(screen);
-		var iconThemeChangedObs = iconTheme.Events().Changed;
-		var desktopFilesObs = store.Select(FreedesktopSelectors.DesktopFiles).DistinctUntilChanged();
-
-		desktopFilesObs.Merge(iconThemeChangedObs.WithLatestFrom(desktopFilesObs).Select(t => t.Second)).Subscribe(desktopFiles =>
-		{
-			var icons = desktopFiles.ById.Values
-				.SelectMany(f => f.Actions.Select(a => a.IconName).Concat(new[] { f.IconName }))
-				.Where(i => !string.IsNullOrEmpty(i))
-				.Distinct()
-				.Select(n => (n, new GtkGlimpseImage() { Pixbuf = iconTheme.LoadIcon(n, 64) }))
-				.Where(t => t.Item2.Pixbuf != null)
-				.ToDictionary(t => t.n, t => (IGlimpseImage) t.Item2);
-
-			store.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = icons });
-		});
-
-		// Handle complete
-		store.Select(XorgSelectors.Windows).Select(r => r.ById.Values).DistinctUntilChanged().UnbundleMany(g => g.WindowRef.Id).Subscribe(windowObs =>
-		{
-			windowObs.Select(g => g.Item1.IconName).DistinctUntilChanged().Subscribe(iconName =>
-			{
-				if (iconName == null) return;
-				var icon = iconTheme.LoadIcon(iconName, 64);
-				var image = icon == null ? null : new GtkGlimpseImage() { Pixbuf = iconTheme.LoadIcon(iconName, 64) };
-				store.Dispatch(new AddOrUpdateNamedIconsAction() { Icons = new Dictionary<string, IGlimpseImage>() { { iconName, image } } });
-			});
-		});
 	}
 
 	private void LoadPanels(Display display)

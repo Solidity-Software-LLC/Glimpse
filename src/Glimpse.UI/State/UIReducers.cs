@@ -1,5 +1,3 @@
-using Glimpse.Common.Images;
-using Glimpse.Redux;
 using Glimpse.Redux.Reducers;
 
 namespace Glimpse.UI.State;
@@ -8,25 +6,6 @@ internal class UIReducers
 {
 	public static readonly FeatureReducerCollection AllReducers = new()
 	{
-		FeatureReducer.Build(new DataTable<string, IGlimpseImage>())
-			.On<AddOrUpdateNamedIconsAction>((s, a) =>
-			{
-				var result = s;
-
-				foreach (var kv in a.Icons)
-				{
-					if (result.ContainsKey(kv.Key) && kv.Value == null)
-					{
-						result = result.Remove(kv.Key);
-					}
-					else if (kv.Value != null)
-					{
-						result = result.UpsertOne(kv.Key, kv.Value);
-					}
-				}
-
-				return result;
-			}),
 		FeatureReducer.Build(new StartMenuState())
 			.On<UpdateAppFilteringChip>((s, a) =>
 			{

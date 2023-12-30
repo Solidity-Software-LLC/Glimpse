@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Glimpse.Common.Images;
 
 namespace Glimpse.UI.State;
 
@@ -14,12 +13,6 @@ public class UpdateTaskbarSlotOrderingBulkAction
 }
 
 public record ToggleTaskbarPinningAction(string DesktopFileId);
-
-public class AddOrUpdateNamedIconsAction
-{
-	public Dictionary<string, IGlimpseImage> Icons { get; set; }
-}
-
 public record ToggleStartMenuPinningAction(string DesktopFileId);
 public record UpdateStartMenuSearchTextAction(string SearchText);
 public record UpdateStartMenuPinnedAppOrderingAction(ImmutableList<string> DesktopFileKeys);

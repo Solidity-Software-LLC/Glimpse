@@ -4,6 +4,7 @@ using Glimpse.Common.Gtk;
 using Glimpse.Common.Images;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.UI.Components.Shared;
+using Glimpse.UI.State;
 using Glimpse.Xorg;
 using Gtk;
 using ReactiveMarbles.ObservableEvents;
@@ -46,13 +47,11 @@ public class TaskbarGroupContextMenu : Menu
 
 	private void CreateContextMenu(TaskbarGroupContextMenuViewModel viewModel)
 	{
-		CreateDesktopFileActions(viewModel.DesktopFile, viewModel.ActionIcons).ForEach(Add);
+		CreateDesktopFileActions(viewModel.DesktopFile).ForEach(Add);
 
 		if (viewModel.DesktopFile.IniFile != null)
 		{
-			var launchIcon = viewModel.LaunchIcon.Scale(ThemeConstants.MenuItemIconSize);
-			var launchMenuItem = CreateLaunchMenuItem(viewModel, launchIcon);
-			launchMenuItem.Events().Destroyed.Take(1).Subscribe(_ => launchIcon.Dispose());
+			var launchMenuItem = CreateLaunchMenuItem(viewModel, viewModel.LaunchIcon);
 			Add(launchMenuItem);
 			Add(CreatePinMenuItem(viewModel));
 		}
@@ -69,12 +68,12 @@ public class TaskbarGroupContextMenu : Menu
 	{
 		var pinLabel = viewModel.IsPinned ? "Unpin from taskbar" : "Pin to taskbar";
 		var icon = viewModel.IsPinned ? s_unpinIcon : s_pinIcon;
-		var pinMenuItem = ContextMenuHelper.CreateMenuItem(pinLabel, icon);
+		var pinMenuItem = ContextMenuHelper.CreateMenuItem(pinLabel, new ImageViewModel() { Image = icon });
 		pinMenuItem.ObserveButtonRelease().Subscribe(_ => _pinSubject.OnNext(true));
 		return pinMenuItem;
 	}
 
-	private MenuItem CreateLaunchMenuItem(TaskbarGroupContextMenuViewModel viewModel, IGlimpseImage icon)
+	private MenuItem CreateLaunchMenuItem(TaskbarGroupContextMenuViewModel viewModel, ImageViewModel icon)
 	{
 		var pinMenuItem = ContextMenuHelper.CreateMenuItem(viewModel.DesktopFile.Name, icon);
 		pinMenuItem.ObserveButtonRelease().Subscribe(_ => _launch.OnNext(viewModel.DesktopFile));
@@ -85,7 +84,7 @@ public class TaskbarGroupContextMenu : Menu
 	{
 		if (viewModel.CanClose)
 		{
-			var menuItem = ContextMenuHelper.CreateMenuItem("Close Window", s_closeIcon);
+			var menuItem = ContextMenuHelper.CreateMenuItem("Close Window", new ImageViewModel() { Image = s_closeIcon });
 			menuItem.ObserveButtonRelease().Subscribe(_ => _windowAction.OnNext(AllowedWindowActions.Close));
 			return menuItem;
 		}
@@ -93,9 +92,9 @@ public class TaskbarGroupContextMenu : Menu
 		return null;
 	}
 
-	private List<MenuItem> CreateDesktopFileActions(DesktopFile desktopFile, Dictionary<string, IGlimpseImage> actionIcons)
+	private List<MenuItem> CreateDesktopFileActions(DesktopFile desktopFile)
 	{
-		var menuItems = ContextMenuHelper.CreateDesktopFileActions(desktopFile, actionIcons);
+		var menuItems = ContextMenuHelper.CreateDesktopFileActions(desktopFile);
 
 		if (menuItems.Any())
 		{

@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Glimpse.Common.Images;
 using Glimpse.Freedesktop;
 using Glimpse.Redux.Selectors;
 using Glimpse.UI.State;
@@ -12,8 +11,8 @@ public record NotificationViewModel
 	public string Body { get; set; }
 	public string Summary { get; set; }
 	public string AppName { get; set; }
-	public IGlimpseImage Image { get; set; }
-	public IGlimpseImage AppIcon { get; set; }
+	public ImageViewModel Image { get; set; }
+	public ImageViewModel AppIcon { get; set; }
 	public TimeSpan Duration { get; set; }
 	public string[] Actions { get; set; }
 }
@@ -28,8 +27,7 @@ public static class NotificationSelectors
 	public static readonly ISelector<NotificationsViewModel> ViewModel = SelectorFactory.CreateSelector(
 		FreedesktopSelectors.NotificationsState,
 		FreedesktopSelectors.AllDesktopFiles,
-		UISelectors.NamedIcons,
-		(notifications, desktopFiles, namedIcons) =>
+		(notifications, desktopFiles) =>
 		{
 			return new NotificationsViewModel()
 			{
@@ -43,9 +41,9 @@ public static class NotificationSelectors
 						AppName = n.FreedesktopNotification.AppName,
 						Body = n.FreedesktopNotification.Body,
 						Summary = n.FreedesktopNotification.Summary,
-						Image = n.FreedesktopNotification.Image,
+						Image = new ImageViewModel() { Image = n.FreedesktopNotification.Image },
 						Duration = n.FreedesktopNotification.Duration,
-						AppIcon = desktopFile != null ? namedIcons.Get(desktopFile.IconName) : null,
+						AppIcon = new ImageViewModel() { IconName = desktopFile?.IconName },
 						Actions = n.FreedesktopNotification.Actions,
 					};
 				}).ToImmutableList()

@@ -2,6 +2,7 @@ using System.Reactive.Linq;
 using Glimpse.Common.Gtk;
 using Glimpse.Common.Images;
 using Glimpse.UI.Components.Shared.ForEach;
+using Glimpse.UI.State;
 using Gtk;
 using Pango;
 using WrapMode = Pango.WrapMode;
@@ -24,6 +25,7 @@ public class StartMenuAppIcon : EventBox, IForEachDraggable
 		name.MaxWidthChars = 1;
 		name.Justify = Justification.Center;
 
+		var iconObservable = viewModelObservable.Select(vm => vm.Icon).DistinctUntilChanged().Replay(1);
 		var image = new Image();
 		image.SetSizeRequest(36, 36);
 
@@ -43,18 +45,11 @@ public class StartMenuAppIcon : EventBox, IForEachDraggable
 			.TakeUntilDestroyed(this)
 			.Subscribe(f => name.Text = f.DesktopFile.Name);
 
-		var iconObservable = viewModelObservable
-			.Select(vm => vm.Icon)
-			.DistinctUntilChanged()
-			.Select(i => (i.Scale(36), i.Scale(30)))
-			.Replay(1);
-
-		this.AppIcon(image, iconObservable);
+		this.AppIcon(image, iconObservable, 36);
 		iconObservable.Connect();
-
-		IconWhileDragging = iconObservable.Select(t => t.Item1);
+		IconWhileDragging = iconObservable;
 	}
 
 	public IObservable<StartMenuAppViewModel> ContextMenuRequested { get; }
-	public IObservable<IGlimpseImage> IconWhileDragging { get; }
+	public IObservable<ImageViewModel> IconWhileDragging { get; }
 }

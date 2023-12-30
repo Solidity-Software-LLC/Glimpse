@@ -1,8 +1,8 @@
-using Glimpse.Common.Images;
+using Glimpse.UI.State;
 
 namespace Glimpse.UI.Components.Shared.ForEach;
 
 public interface IForEachDraggable
 {
-	IObservable<IGlimpseImage> IconWhileDragging { get; }
+	IObservable<ImageViewModel> IconWhileDragging { get; }
 }

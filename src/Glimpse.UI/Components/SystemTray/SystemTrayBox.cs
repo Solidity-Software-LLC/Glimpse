@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using Gdk;
 using GLib;
 using Glimpse.Common.Gtk;
 using Glimpse.Common.System.Reactive;
@@ -20,7 +21,7 @@ public class SystemTrayBox : Box
 
 		var volumeButton = new Button()
 			.AddClass("system-tray__icon")
-			.AddMany(new Image(Assets.Volume.Scale(24).ToPixbuf()));
+			.AddMany(new Image(Assets.Volume.Scale(24).Image));
 
 		volumeButton.ObserveEvent(w => w.Events().ButtonReleaseEvent)
 			.WithLatestFrom(store.Select(ConfigurationSelectors.VolumeCommand))

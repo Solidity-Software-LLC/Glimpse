@@ -1,8 +1,8 @@
 using System.Reactive.Linq;
 using Cairo;
 using Glimpse.Common.Gtk;
-using Glimpse.Common.Images;
 using Glimpse.UI.Components.Shared.ForEach;
+using Glimpse.UI.State;
 using Gtk;
 using ReactiveMarbles.ObservableEvents;
 using Color = Cairo.Color;
@@ -14,7 +14,7 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 	private readonly TaskbarWindowPicker _taskbarWindowPicker;
 	private SlotViewModel _currentViewModel;
 
-	public IObservable<IGlimpseImage> IconWhileDragging { get; }
+	public IObservable<ImageViewModel> IconWhileDragging { get; }
 
 	public TaskbarGroupIcon(IObservable<SlotViewModel> viewModel, TaskbarWindowPicker taskbarWindowPicker)
 	{
@@ -27,6 +27,14 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 		Visual = Screen.RgbaVisual;
 		this.AddClass("taskbar__group-icon");
 
+		var iconObservable = viewModel
+			.Select(vm => vm.Icon)
+			.DistinctUntilChanged()
+			.CombineLatest(this.ObserveEvent(w => w.Events().SizeAllocated).DistinctUntilChanged(a => a.Allocation.Width))
+			.Select(t => t.First)
+			.TakeUntil(viewModel.TakeLast(1))
+			.Replay(1);
+
 		var image = new Image();
 		Add(image);
 		ShowAll();
@@ -34,18 +42,9 @@ public class TaskbarGroupIcon : EventBox, IForEachDraggable
 		viewModel.Subscribe(vm => _currentViewModel = vm);
 		viewModel.Select(vm => vm.DemandsAttention).DistinctUntilChanged().Subscribe(_ => QueueDraw());
 
-		var iconObservable = viewModel
-			.Select(vm => vm.Icon)
-			.DistinctUntilChanged()
-			.CombineLatest(this.ObserveEvent(w => w.Events().SizeAllocated).DistinctUntilChanged(a => a.Allocation.Width))
-			.Select(t => (t.First.Scale(26), t.First.Scale(20)))
-			.Where(i => i.Item1 != null)
-			.TakeUntil(viewModel.TakeLast(1))
-			.Publish();
-
-		this.AppIcon(image, iconObservable);
+		this.AppIcon(image, iconObservable, 26);
 		this.ObserveEvent(w => w.Events().ButtonReleaseEvent).Subscribe(e => e.RetVal = true);
-		IconWhileDragging = iconObservable.Select(t => t.Item1);
+		IconWhileDragging = iconObservable;
 
 		iconObservable.Connect();
 	}

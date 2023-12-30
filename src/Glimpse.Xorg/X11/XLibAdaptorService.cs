@@ -258,7 +258,7 @@ internal class XLibAdaptorService(IHostApplicationLifetime applicationLifetime) 
 
 		var image = Marshal.PtrToStructure<XImage>(imagePointer);
 		var fullSizeImage = GlimpseImageFactory.From(image.data, image.depth, image.width, image.height, image.bytes_per_line);
-		var scaledImage = fullSizeImage.ScaleToFit(100, 200);
+		var scaledImage = fullSizeImage.ScaleToFit(300, 300);
 		fullSizeImage.Dispose();
 		XLib.XDestroyImage(imagePointer);
 
