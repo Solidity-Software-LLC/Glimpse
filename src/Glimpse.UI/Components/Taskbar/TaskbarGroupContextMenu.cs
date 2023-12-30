@@ -16,8 +16,6 @@ public class TaskbarGroupContextMenu : Menu
 	private readonly Subject<AllowedWindowActions> _windowAction = new();
 	private readonly Subject<DesktopFileAction> _desktopFileAction = new();
 	private readonly Subject<DesktopFile> _launch = new();
-	private static readonly IGlimpseImage s_unpinIcon = Assets.UnpinIcon.Scale(ThemeConstants.MenuItemIconSize);
-	private static readonly IGlimpseImage s_pinIcon = Assets.PinIcon.Scale(ThemeConstants.MenuItemIconSize);
 
 	public TaskbarGroupContextMenu(IObservable<TaskbarGroupContextMenuViewModel> viewModel)
 	{
@@ -65,8 +63,7 @@ public class TaskbarGroupContextMenu : Menu
 	private MenuItem CreatePinMenuItem(TaskbarGroupContextMenuViewModel viewModel)
 	{
 		var pinLabel = viewModel.IsPinned ? "Unpin from taskbar" : "Pin to taskbar";
-		var icon = viewModel.IsPinned ? s_unpinIcon : s_pinIcon;
-		var pinMenuItem = ContextMenuHelper.CreateMenuItem(pinLabel, new ImageViewModel() { Image = icon });
+		var pinMenuItem = ContextMenuHelper.CreateMenuItem(pinLabel, new ImageViewModel() { IconName = viewModel.IsPinned ? "list-remove-symbolic" : "list-add-symbolic" });
 		pinMenuItem.ObserveButtonRelease().Subscribe(_ => _pinSubject.OnNext(true));
 		return pinMenuItem;
 	}

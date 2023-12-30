@@ -145,11 +145,11 @@ public class StartMenuContent : Bin
 
 		var isPinnedToStart = startMenuViewModel.AllApps.Any(f => f.IsPinnedToStartMenu && f.DesktopFile == appViewModel.DesktopFile);
 		var isPinnedToTaskbar = startMenuViewModel.AllApps.Any(f => f.IsPinnedToTaskbar && f.DesktopFile == appViewModel.DesktopFile);
-		var pinStartIcon = isPinnedToStart ? Assets.UnpinIcon : Assets.PinIcon;
-		var pinTaskbarIcon = isPinnedToTaskbar ? Assets.UnpinIcon : Assets.PinIcon;
-		var pinStart = ContextMenuHelper.CreateMenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start", new ImageViewModel() { Image = pinStartIcon.Scale(ThemeConstants.MenuItemIconSize) });
+		var pinStartIcon = isPinnedToStart ? "list-remove-symbolic" : "list-add-symbolic";
+		var pinTaskbarIcon = isPinnedToTaskbar ? "list-remove-symbolic" : "list-add-symbolic";
+		var pinStart = ContextMenuHelper.CreateMenuItem(isPinnedToStart ? "Unpin from Start" : "Pin to Start", new ImageViewModel() { IconName = pinStartIcon });
 		pinStart.ObserveButtonRelease().Subscribe(_ => _toggleStartMenuPinningSubject.OnNext(appViewModel.DesktopFile.Id));
-		var pinTaskbar = ContextMenuHelper.CreateMenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar", new ImageViewModel() { Image = pinTaskbarIcon.Scale(ThemeConstants.MenuItemIconSize) });
+		var pinTaskbar = ContextMenuHelper.CreateMenuItem(isPinnedToTaskbar ? "Unpin from taskbar" : "Pin to taskbar", new ImageViewModel() { IconName = pinTaskbarIcon });
 		pinTaskbar.ObserveButtonRelease().Subscribe(_ => _toggleTaskbarPinningSubject.OnNext(appViewModel.DesktopFile.Id));
 
 		_contextMenu.RemoveAllChildren();

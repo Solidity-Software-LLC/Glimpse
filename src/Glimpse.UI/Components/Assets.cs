@@ -4,8 +4,6 @@ namespace Glimpse.UI.Components;
 
 public class Assets
 {
-	public static readonly IGlimpseImage UnpinIcon;
-	public static readonly IGlimpseImage PinIcon;
 	public static readonly IGlimpseImage MenuIcon;
 	public static readonly IGlimpseImage Power;
 	public static readonly IGlimpseImage Settings;
@@ -13,8 +11,6 @@ public class Assets
 
 	static Assets()
 	{
-		UnpinIcon = LoadSvg("unpin.svg");
-		PinIcon = LoadSvg("pin.svg");
 		MenuIcon = GlimpseImageFactory.FromResource("tux.png");
 		Power = LoadSvg("power-outline.svg");
 		Person = LoadSvg("person-circle-outline.svg");
