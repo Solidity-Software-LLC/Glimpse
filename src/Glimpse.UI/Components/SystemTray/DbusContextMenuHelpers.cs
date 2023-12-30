@@ -29,7 +29,16 @@ public static class DbusContextMenuHelpers
 	}
 	public static void PopulateMenu(Menu rootMenu, DbusMenuItem rootItem)
 	{
-		foreach (var childMenuItem in rootItem.Children) PopulateMenuInternal(rootMenu, childMenuItem);
+		var items = new List<DbusMenuItem>();
+
+		foreach (var element in rootItem.Children)
+		{
+			if (items.Count > 0 && items.Last().Type == "separator" && element.Type == "separator") continue;
+			items.Add(element);
+		}
+
+		if (items.Count > 0 && items.Last().Type == "separator") items = items.SkipLast(1).ToList();
+		foreach (var item in items) PopulateMenuInternal(rootMenu, item);
 		rootMenu.ShowAll();
 	}
 
