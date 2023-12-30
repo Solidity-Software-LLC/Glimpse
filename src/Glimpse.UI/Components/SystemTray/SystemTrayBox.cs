@@ -16,9 +16,13 @@ public class SystemTrayBox : Box
 	{
 		StyleContext.AddClass("system-tray__taskbar-container");
 
+		var volumeIcon = new Image();
+		volumeIcon.SetFromIconName("audio-volume-medium", IconSize.Dialog);
+		volumeIcon.PixelSize = 24;
+
 		var volumeButton = new Button()
 			.AddClass("system-tray__icon")
-			.AddMany(new Image(Assets.Volume.Scale(24).Pixbuf));
+			.AddMany(volumeIcon);
 
 		volumeButton.ObserveEvent(w => w.Events().ButtonReleaseEvent)
 			.WithLatestFrom(store.Select(ConfigurationSelectors.VolumeCommand))
