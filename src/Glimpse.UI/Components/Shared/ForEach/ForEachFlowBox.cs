@@ -51,7 +51,7 @@ public class ForEachFlowBox<TViewModel, TWidget, TKey> : FlowBox where TWidget :
 				.Subscribe(t =>
 				{
 					if (t.Second.Image != null) Drag.SourceSetIconPixbuf(flowBoxChild, t.Second.Image.Pixbuf);
-					else Drag.SourceSetIconName(flowBoxChild, t.Second.IconName);
+					else Drag.SourceSetIconName(flowBoxChild, t.Second.IconNameOrPath);
 				});
 
 			flowBoxChild

@@ -4,6 +4,12 @@ public static class StringExtensions
 {
 	public static string RemoveObjectPath(this string s) => s.Split('/', StringSplitOptions.RemoveEmptyEntries).First();
 
+	public static string Or(this string s, params string[] others)
+	{
+		if (!string.IsNullOrEmpty(s)) return s;
+		return others.FirstOrDefault(x => !string.IsNullOrEmpty(x)) ?? "";
+	}
+
 	public static bool AllCharactersIn(this string source, string other)
 	{
 		var otherIndex = 0;

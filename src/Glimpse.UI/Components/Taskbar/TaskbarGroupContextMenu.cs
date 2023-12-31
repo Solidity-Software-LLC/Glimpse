@@ -63,7 +63,7 @@ public class TaskbarGroupContextMenu : Menu
 	private MenuItem CreatePinMenuItem(TaskbarGroupContextMenuViewModel viewModel)
 	{
 		var pinLabel = viewModel.IsPinned ? "Unpin from taskbar" : "Pin to taskbar";
-		var pinMenuItem = ContextMenuHelper.CreateMenuItem(pinLabel, new ImageViewModel() { IconName = viewModel.IsPinned ? "list-remove-symbolic" : "list-add-symbolic" });
+		var pinMenuItem = ContextMenuHelper.CreateMenuItem(pinLabel, new ImageViewModel() { IconNameOrPath = viewModel.IsPinned ? "list-remove-symbolic" : "list-add-symbolic" });
 		pinMenuItem.ObserveButtonRelease().Subscribe(_ => _pinSubject.OnNext(true));
 		return pinMenuItem;
 	}
@@ -79,7 +79,7 @@ public class TaskbarGroupContextMenu : Menu
 	{
 		if (viewModel.CanClose)
 		{
-			var menuItem = ContextMenuHelper.CreateMenuItem("Close Window", new ImageViewModel() { IconName = "window-close-symbolic" });
+			var menuItem = ContextMenuHelper.CreateMenuItem("Close Window", new ImageViewModel() { IconNameOrPath = "window-close-symbolic" });
 			menuItem.ObserveButtonRelease().Subscribe(_ => _windowAction.OnNext(AllowedWindowActions.Close));
 			return menuItem;
 		}

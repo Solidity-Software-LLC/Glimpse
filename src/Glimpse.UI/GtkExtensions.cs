@@ -50,33 +50,25 @@ public static class GtkExtensions
 		image.BindViewModel(imageViewModel, size, size);
 	}
 
-	private static readonly string s_missingIconName = Guid.NewGuid().ToString();
-
-	private static void SetByName(this Image image, ImageViewModel vm, int width, int height)
-	{
-		if (vm.IconName.StartsWith("/"))
-		{
-			image.Pixbuf = new Pixbuf(vm.IconName).ScaleToFit(width, height);
-		}
-		else
-		{
-
-			image.SetFromIconName(string.IsNullOrEmpty(vm.IconName) ? s_missingIconName : vm.IconName, IconSize.LargeToolbar);
-			image.PixelSize = width;
-		}
-	}
-
-	private static void SetImage(this Image image, ImageViewModel vm, int width, int height)
-	{
-		image.Pixbuf = vm.Image.ScaleToFit(width, height).Pixbuf;
-	}
+	public static readonly string MissingIconName = Guid.NewGuid().ToString();
 
 	public static void BindViewModel(this Image image, IObservable<ImageViewModel> imageViewModel, int width, int height)
 	{
 		imageViewModel.Subscribe(vm =>
 		{
-			if (vm.Image != null) image.SetImage(vm, width, height);
-			else image.SetByName(vm, width, height);
+			if (vm.Image != null)
+			{
+				image.Pixbuf = vm.Image.ScaleToFit(width, height).Pixbuf;
+			}
+			else if (vm.IconNameOrPath.StartsWith("/"))
+			{
+				image.Pixbuf = new Pixbuf(vm.IconNameOrPath).ScaleToFit(width, height);
+			}
+			else
+			{
+				image.SetFromIconName(string.IsNullOrEmpty(vm.IconNameOrPath) ? MissingIconName : vm.IconNameOrPath, IconSize.LargeToolbar);
+				image.PixelSize = width;
+			}
 		});
 	}
 
@@ -89,9 +81,9 @@ public static class GtkExtensions
 				image.Data["Small"] = vm.Image.Scale(size - 6);
 				image.Data["Big"] = vm.Image.Scale(size);
 			}
-			else if (vm.IconName.StartsWith("/"))
+			else if (vm.IconNameOrPath.StartsWith("/"))
 			{
-				var glimpseImage = GlimpseImageFactory.From(new Pixbuf(vm.IconName, size, size));
+				var glimpseImage = GlimpseImageFactory.From(new Pixbuf(vm.IconNameOrPath, size, size));
 				image.Pixbuf = glimpseImage.Pixbuf;
 				image.Data["Small"] = glimpseImage.Scale(size - 6);
 				image.Data["Big"] = glimpseImage;

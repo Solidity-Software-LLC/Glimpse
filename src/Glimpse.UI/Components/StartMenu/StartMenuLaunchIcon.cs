@@ -42,7 +42,7 @@ public class StartMenuLaunchIcon : EventBox
 		CanFocus = false;
 		this.AddClass("start-menu__launch-icon");
 
-		var iconObservable = viewModelObservable.Select(v => v.StartMenuLaunchIconName).DistinctUntilChanged().Select(n => new ImageViewModel() { IconName = n });
+		var iconObservable = viewModelObservable.Select(v => v.StartMenuLaunchIconName).DistinctUntilChanged().Select(n => new ImageViewModel() { IconNameOrPath = n });
 		var image = new Image();
 		image.SetSizeRequest(42, 42);
 		Add(image);

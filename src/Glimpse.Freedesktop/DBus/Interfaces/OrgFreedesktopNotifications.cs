@@ -4,7 +4,6 @@ using Glimpse.Freedesktop.DBus.Core;
 using Tmds.DBus.Protocol;
 
 #pragma warning disable
-#nullable enable
 namespace Glimpse.Freedesktop.DBus.Interfaces;
 
 public enum NotificationUrgency : byte

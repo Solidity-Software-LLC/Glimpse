@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Glimpse.Common.System;
 using Glimpse.Freedesktop;
 using Glimpse.Redux.Selectors;
 using Glimpse.UI.State;
@@ -13,7 +14,6 @@ public record NotificationViewModel
 	public string AppName { get; set; }
 	public ImageViewModel Image { get; set; }
 	public ImageViewModel AppIcon { get; set; }
-	public TimeSpan Duration { get; set; }
 	public string[] Actions { get; set; }
 }
 
@@ -33,19 +33,21 @@ public static class NotificationSelectors
 			{
 				Notifications = notifications.ById.Values.Select(n =>
 				{
-					var desktopFile = desktopFiles.FirstOrDefault(d => d.Name == n.FreedesktopNotification.AppName);
+					var appIcon = desktopFiles.FirstOrDefault(d => d.Name == n.FreedesktopNotification.AppName)?.IconName;
+					appIcon = appIcon.Or(n.FreedesktopNotification.AppIcon, GtkExtensions.MissingIconName);
 
-					return new NotificationViewModel()
+					var notification = new NotificationViewModel()
 					{
 						Id = n.FreedesktopNotification.Id,
 						AppName = n.FreedesktopNotification.AppName,
 						Body = n.FreedesktopNotification.Body,
 						Summary = n.FreedesktopNotification.Summary,
-						Image = new ImageViewModel() { Image = n.FreedesktopNotification.Image },
-						Duration = n.FreedesktopNotification.Duration,
-						AppIcon = new ImageViewModel() { IconName = desktopFile?.IconName },
+						Image = new ImageViewModel() { Image = n.FreedesktopNotification.Image, IconNameOrPath = n.FreedesktopNotification.Image == null ? n.FreedesktopNotification.AppIcon.Or("dialog-information-symbolic") : "" },
+						AppIcon = new ImageViewModel() { IconNameOrPath = appIcon },
 						Actions = n.FreedesktopNotification.Actions,
 					};
+
+					return notification;
 				}).ToImmutableList()
 			};
 		});

@@ -82,9 +82,9 @@ public static class TaskbarSelectors
 				.Select(slot =>
 				{
 					var desktopFile = desktopFiles.FirstOrDefault(f => f.Slot == slot).DesktopFile;
-					var iconViewModel = new ImageViewModel() { IconName = desktopFile?.IconName };
+					var iconViewModel = new ImageViewModel() { IconNameOrPath = desktopFile?.IconName };
 
-					if (string.IsNullOrEmpty(iconViewModel.IconName))
+					if (string.IsNullOrEmpty(iconViewModel.IconNameOrPath))
 					{
 						var allIcons = windowGroups.FirstOrDefault(w => w.Slot == slot).Icons ?? ImmutableList<IGlimpseImage>.Empty;
 						var biggestIcon = allIcons.Any() ? allIcons.MaxBy(i => i.Width) : null;
@@ -133,7 +133,7 @@ public static class TaskbarSelectors
 	private static readonly ISelector<ImmutableList<KeyValuePair<IWindowRef, ImageViewModel>>> s_windowToIcon = CreateSelector(
 		s_windowPropertiesList.WithSequenceComparer((x, y) => x.WindowRef == y.WindowRef && x.Icons == y.Icons),
 		(windows) => windows
-			.Select(w => KeyValuePair.Create(w.WindowRef, new ImageViewModel() { Image = w.Icons.MaxBy(i => i.Width), IconName = "" }))
+			.Select(w => KeyValuePair.Create(w.WindowRef, new ImageViewModel() { Image = w.Icons.MaxBy(i => i.Width), IconNameOrPath = "" }))
 			.ToImmutableList());
 
 	private static readonly ISelector<ImmutableList<KeyValuePair<IWindowRef, ImageViewModel>>> s_windowToScreenshot = CreateSelector(
@@ -153,7 +153,7 @@ public static class TaskbarSelectors
 					return KeyValuePair.Create(w.WindowRef, new ImageViewModel()
 					{
 						Image = lastScreenshot ?? w.Icons.MaxBy(i => i.Width),
-						IconName = desktopFile.IconName
+						IconNameOrPath = desktopFile.IconName
 					});
 				})
 				.ToImmutableList();

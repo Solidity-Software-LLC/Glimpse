@@ -30,7 +30,7 @@ public class SystemTraySelectors
 					return new SystemTrayItemViewModel()
 					{
 						Id = x.Properties.Id,
-						Icon = new ImageViewModel() { IconName = iconName, Image = x.Properties.IconPixmap?.MaxBy(i => i.Width * i.Height) },
+						Icon = new ImageViewModel() { IconNameOrPath = iconName, Image = x.Properties.IconPixmap?.MaxBy(i => i.Width * i.Height) },
 						Tooltip = x.Properties.Title,
 						CanActivate = x.StatusNotifierItemDescription.InterfaceHasMethod(OrgKdeStatusNotifierItem.Interface, "Activate"),
 						StatusNotifierItemDescription = x.StatusNotifierItemDescription,

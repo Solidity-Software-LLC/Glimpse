@@ -54,12 +54,12 @@ public static class StartMenuSelectors
 
 				var appViewModel = new StartMenuAppViewModel();
 				appViewModel.DesktopFile = f;
-				appViewModel.Icon = new ImageViewModel() { IconName = f.IconName };
+				appViewModel.Icon = new ImageViewModel() { IconNameOrPath = f.IconName };
 				appViewModel.IsPinnedToTaskbar = taskbarIndex > -1;
 				appViewModel.IsPinnedToStartMenu = pinnedIndex > -1;
 				appViewModel.IsVisible = isVisible;
 				appViewModel.Index = (isShowingSearchResults || isShowingAllApps) && isVisible ? index++ : pinnedIndex;
-				appViewModel.ActionIcons = f.Actions.ToDictionary(a => a.ActionName, a => new ImageViewModel() { IconName = f.IconName });
+				appViewModel.ActionIcons = f.Actions.ToDictionary(a => a.ActionName, a => new ImageViewModel() { IconNameOrPath = f.IconName });
 
 				results.AddLast(appViewModel);
 			}

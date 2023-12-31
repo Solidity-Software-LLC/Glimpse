@@ -23,7 +23,7 @@ public record SlotRef
 
 public record ImageViewModel
 {
-	public string IconName { get; set; }
+	public string IconNameOrPath { get; set; } = "";
 	public IGlimpseImage Image { get; set; }
 }
 

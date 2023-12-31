@@ -54,8 +54,9 @@ public class NotificationContent : Bin
 		appIcon.BindViewModel(notificationStateObs.Select(s => s.AppIcon).DistinctUntilChanged(), 16);
 
 		var image = new Image().AddClass("notifications__image");
-		image.BindViewModel(notificationStateObs.Select(s => s.Image).DistinctUntilChanged(), 48);
+		image.BindViewModel(notificationStateObs.Select(s => s.Image).DistinctUntilChanged(), 34);
 		image.Xalign = 0;
+		image.Yalign = 0;
 
 		var appNameRow = new Box(Orientation.Horizontal, 4);
 		appNameRow.AddMany(appIcon, appName, closeButton);
