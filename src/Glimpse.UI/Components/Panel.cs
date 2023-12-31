@@ -13,6 +13,7 @@ using Glimpse.UI.Components.SystemTray;
 using Glimpse.UI.Components.Taskbar;
 using Glimpse.UI.State;
 using Gtk;
+using Optional;
 using ReactiveMarbles.ObservableEvents;
 using DateTime = System.DateTime;
 using Menu = Gtk.Menu;
@@ -98,7 +99,7 @@ public class Panel : Window
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));
 
-		var taskManagerMenuItem = ContextMenuHelper.CreateMenuItem("Task Manager", new ImageViewModel() { IconName = "utilities-system-monitor" });
+		var taskManagerMenuItem = ContextMenuHelper.CreateMenuItem("Task Manager", new ImageViewModel() { IconName = "utilities-system-monitor-symbolic" });
 		taskManagerMenuItem.ObserveButtonRelease().WithLatestFrom(taskManagerObs).Subscribe(t => freeDesktopService.Run(t.Second));
 
 		_menu = new Menu();
