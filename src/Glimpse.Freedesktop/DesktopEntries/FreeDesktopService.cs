@@ -1,7 +1,8 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reactive.Linq;
-using Glimpse.Common.System.IO;
+using GLib;
+using Glimpse.Common.System.Runtime.InteropServices;
 using Glimpse.Freedesktop.DBus;
 using Glimpse.Freedesktop.DBus.Interfaces;
 using Glimpse.Interop.Gdk;
@@ -15,42 +16,11 @@ namespace Glimpse.Freedesktop.DesktopEntries;
 public class FreeDesktopService(ReduxStore store, OrgFreedesktopAccounts freedesktopAccounts)
 {
 	private ImmutableList<DesktopFile> _desktopFiles;
-	private IObservable<object> _desktopFileChanged = Observable.Empty<object>();
 
 	public async Task InitializeAsync(DBusConnections dBusConnections)
 	{
-		var environmentVariables = Environment.GetEnvironmentVariables();
-
-		if (!environmentVariables.Contains("XDG_DATA_DIRS"))
-		{
-			throw new Exception("XDG_DATA_DIRS environment variables not found");
-		}
-
-		var dataDirectories = environmentVariables["XDG_DATA_DIRS"].ToString().Split(":", StringSplitOptions.RemoveEmptyEntries).ToList();
-		dataDirectories.Add(Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local/share"));
-		dataDirectories = dataDirectories.Distinct().Select(d => Path.Join(d, "applications")).Where(Directory.Exists).ToList();
-
-		foreach (var d in dataDirectories)
-		{
-			var watcher = new FileSystemWatcher();
-			watcher.Filter = "*.desktop";
-			watcher.Path = d;
-			watcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
-			watcher.EnableRaisingEvents = true;
-
-			_desktopFileChanged = _desktopFileChanged
-				.Merge(watcher.Events().Changed)
-				.Merge(watcher.Events().Deleted)
-				.Merge(watcher.Events().Created)
-				.Merge(watcher.Events().Renamed);
-		}
-
-		_desktopFileChanged.Throttle(TimeSpan.FromSeconds(1)).Subscribe(_ =>
-		{
-			LoadDesktopFiles(dataDirectories);
-		});
-
-		LoadDesktopFiles(dataDirectories);
+		await LoadDesktopFiles();
+		AppInfoMonitor.Get().Events().Changed.Subscribe(_ => LoadDesktopFiles());
 
 		var userObjectPath = await freedesktopAccounts.FindUserByNameAsync(Environment.UserName);
 		var userService = new OrgFreedesktopAccountsUser(dBusConnections.System, "org.freedesktop.Accounts", userObjectPath);
@@ -64,37 +34,15 @@ public class FreeDesktopService(ReduxStore store, OrgFreedesktopAccounts freedes
 			});
 	}
 
-	private void LoadDesktopFiles(IEnumerable<string> dataDirectories)
+	private async Task LoadDesktopFiles()
 	{
-		_desktopFiles = dataDirectories
-			.SelectMany(d => Directory.EnumerateFiles(d, "*.desktop", SearchOption.AllDirectories))
-			.Select(d => DesktopFile.From(ReadIniFile(d)))
-			.Where(t => t != null)
-			.ToImmutableList();
-
-		store.Dispatch(new UpdateDesktopFilesAction() { DesktopFiles = _desktopFiles });
-	}
-
-	private IniFile ReadIniFile(string filePath)
-	{
-		try
-		{
-			var iniFile = File.OpenRead(filePath);
-			var iniConfig = IniFile.Read(iniFile);
-			iniConfig.FilePath = filePath;
-			return iniConfig;
-		}
-		catch (Exception e)
-		{
-			Console.WriteLine("Failed to read desktop file: " + filePath + Environment.NewLine + e.Message);
-		}
-
-		return null;
+		_desktopFiles = AppInfoAdapter.GetAll().Where(a => a.ShouldShow).Select(CreateDesktopFile).ToImmutableList();
+		await store.Dispatch(new UpdateDesktopFilesAction() { DesktopFiles = _desktopFiles });
 	}
 
 	public void Run(DesktopFile desktopFile)
 	{
-		var startInfo = new ProcessStartInfo("setsid", "xdg-open " + desktopFile.IniFile.FilePath);
+		var startInfo = new ProcessStartInfo("setsid", "xdg-open " + desktopFile.FilePath);
 		startInfo.WorkingDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
 		Process.Start(startInfo);
 	}
@@ -110,5 +58,43 @@ public class FreeDesktopService(ReduxStore store, OrgFreedesktopAccounts freedes
 		var startInfo = new ProcessStartInfo("setsid", command);
 		startInfo.WorkingDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
 		Process.Start(startInfo);
+	}
+
+	private static DesktopFile CreateDesktopFile(IAppInfo a)
+	{
+		var filePath = LibGdk3Interop.g_desktop_app_info_get_filename(a.Handle);
+		var actionNames = MarshalExtensions.PtrToStringArray(LibGdk3Interop.g_desktop_app_info_list_actions(a.Handle));
+
+		var actions = actionNames
+			.Select(actionId =>
+			{
+				var actionIdPtr = Marshaller.StringToPtrGStrdup(actionId);
+				var actionNamePtr = LibGdk3Interop.g_desktop_app_info_get_action_name(a.Handle, actionIdPtr);
+				var actionName = Marshaller.PtrToStringGFree(actionNamePtr);
+				Marshaller.Free(actionIdPtr);
+				return new DesktopFileAction() { Id = actionId, ActionName = actionName, DesktopFilePath = filePath };
+			})
+			.ToList();
+
+		var desktopFile = new DesktopFile()
+		{
+			Id = filePath,
+			FileName = Path.GetFileNameWithoutExtension(filePath),
+			Name = a.Name,
+			IconName = LibGdk3Interop.g_desktop_app_info_get_string(a.Handle, "Icon") ?? "",
+			Executable = a.Executable,
+			CommandLine = a.Commandline,
+			StartupWmClass = LibGdk3Interop.g_desktop_app_info_get_startup_wm_class(a.Handle) ?? "",
+			Actions = actions,
+			Categories = ParseCategories(LibGdk3Interop.g_desktop_app_info_get_categories(a.Handle))
+		};
+
+		return desktopFile;
+	}
+
+	private static List<string> ParseCategories(string categories)
+	{
+		if (string.IsNullOrEmpty(categories)) return null;
+		return categories.Split(";", StringSplitOptions.RemoveEmptyEntries).ToList();
 	}
 }

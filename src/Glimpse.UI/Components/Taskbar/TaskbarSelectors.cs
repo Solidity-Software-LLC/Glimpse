@@ -58,7 +58,7 @@ public static class TaskbarSelectors
 					Slot: slot,
 					DesktopFile: desktopFiles.ContainsKey(slot.PinnedDesktopFileId) ? desktopFiles.ById[slot.PinnedDesktopFileId]
 					: desktopFiles.ContainsKey(slot.DiscoveredDesktopFileId) ? desktopFiles.ById[slot.DiscoveredDesktopFileId]
-					: new DesktopFile()))
+					: new DesktopFile() { Id = "" }))
 				.ToImmutableList();
 		},
 		(x, y) => CollectionComparer.Sequence(x, y, (i, j) => i.Slot == j.Slot && i.DesktopFile.Id == j.DesktopFile.Id));
@@ -210,9 +210,9 @@ public static class TaskbarSelectors
 	private static DesktopFile FindAppDesktopFileByName(IEnumerable<DesktopFile> desktopFiles, string classHintName)
 	{
 		return desktopFiles.FirstOrDefault(f => f.Name.Contains(classHintName, StringComparison.OrdinalIgnoreCase))
-			?? desktopFiles.FirstOrDefault(f => Path.GetFileNameWithoutExtension(f.IniFile.FilePath).Equals(classHintName, StringComparison.OrdinalIgnoreCase))
+			?? desktopFiles.FirstOrDefault(f => f.FileName.Equals(classHintName, StringComparison.OrdinalIgnoreCase))
 			?? desktopFiles.FirstOrDefault(f => f.StartupWmClass.Contains(classHintName, StringComparison.OrdinalIgnoreCase))
-			?? desktopFiles.FirstOrDefault(f => f.Exec.Executable.Contains(classHintName, StringComparison.OrdinalIgnoreCase) && f.Exec.Arguments.Length == 0)
-			?? desktopFiles.FirstOrDefault(f => f.Exec.Executable.Contains(classHintName, StringComparison.OrdinalIgnoreCase));
+			?? desktopFiles.FirstOrDefault(f => f.Executable.Contains(classHintName, StringComparison.OrdinalIgnoreCase) && f.Executable.Length == f.CommandLine.Length)
+			?? desktopFiles.FirstOrDefault(f => f.Executable.Contains(classHintName, StringComparison.OrdinalIgnoreCase));
 	}
 }

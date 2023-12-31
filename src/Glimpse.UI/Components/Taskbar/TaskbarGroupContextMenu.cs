@@ -45,7 +45,7 @@ public class TaskbarGroupContextMenu : Menu
 	{
 		CreateDesktopFileActions(viewModel.DesktopFile).ForEach(Add);
 
-		if (viewModel.DesktopFile.IniFile != null)
+		if (!string.IsNullOrEmpty(viewModel.DesktopFile.FilePath))
 		{
 			var launchMenuItem = CreateLaunchMenuItem(viewModel, viewModel.LaunchIcon);
 			Add(launchMenuItem);

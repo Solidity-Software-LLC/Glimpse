@@ -77,7 +77,7 @@ public class StartMenuContent : Bin
 		chipBox.Add(searchResultsChip);
 		chipBox.AddClass("start-menu__chips");
 
-		_apps = ForEachExtensions.Create(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged(), i => i.DesktopFile.IniFile.FilePath, appObs =>
+		_apps = ForEachExtensions.Create(viewModelObservable.Select(vm => vm.AllApps).DistinctUntilChanged(), i => i.DesktopFile.FilePath, appObs =>
 		{
 			var appIcon = new StartMenuAppIcon(appObs);
 

@@ -26,7 +26,7 @@ public static class ContextMenuHelper
 
 			foreach (var action in desktopFile.Actions)
 			{
-				var menuItem = CreateMenuItem(action.ActionName, new ImageViewModel() { IconName = !string.IsNullOrEmpty(action.IconName) ? action.IconName : desktopFile.IconName });
+				var menuItem = CreateMenuItem(action.ActionName, new ImageViewModel() { IconName = desktopFile.IconName });
 				menuItem.Data.Add("DesktopFileAction", action);
 				results.Add(menuItem);
 			}

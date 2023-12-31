@@ -16,6 +16,5 @@ public class FreedesktopSelectors
 	public static readonly ISelector<ImmutableList<DesktopFile>> AllDesktopFiles =
 		CreateSelector(DesktopFiles, s => s.ById.Values
 			.OrderBy(f => f.Name)
-			.Where(f => !string.IsNullOrEmpty(f.Name) && !string.IsNullOrEmpty(f.Exec.FullExec))
 			.ToImmutableList());
 }

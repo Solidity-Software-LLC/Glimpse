@@ -46,8 +46,8 @@ public static class StartMenuSelectors
 
 			foreach (var f in allDesktopFiles)
 			{
-				var pinnedIndex = configuration.StartMenu.PinnedLaunchers.IndexOf(f.IniFile.FilePath);
-				var taskbarIndex = configuration.Taskbar.PinnedLaunchers.IndexOf(f.IniFile.FilePath);
+				var pinnedIndex = configuration.StartMenu.PinnedLaunchers.IndexOf(f.FilePath);
+				var taskbarIndex = configuration.Taskbar.PinnedLaunchers.IndexOf(f.FilePath);
 				var isSearchMatch = isShowingSearchResults && lowerCaseSearchText.AllCharactersIn(f.Name.ToLower());
 				var isPinned = pinnedIndex > -1;
 				var isVisible = isShowingAllApps || (isShowingSearchResults && isSearchMatch) || (isShowingPinned && isPinned);
@@ -59,9 +59,7 @@ public static class StartMenuSelectors
 				appViewModel.IsPinnedToStartMenu = pinnedIndex > -1;
 				appViewModel.IsVisible = isVisible;
 				appViewModel.Index = (isShowingSearchResults || isShowingAllApps) && isVisible ? index++ : pinnedIndex;
-				appViewModel.ActionIcons = f.Actions.ToDictionary(
-					a => a.ActionName,
-					a => new ImageViewModel() { IconName = !string.IsNullOrEmpty(a.IconName) ? a.IconName : f.IconName });
+				appViewModel.ActionIcons = f.Actions.ToDictionary(a => a.ActionName, a => new ImageViewModel() { IconName = f.IconName });
 
 				results.AddLast(appViewModel);
 			}
