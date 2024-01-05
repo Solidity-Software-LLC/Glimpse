@@ -46,6 +46,14 @@ public static class TaskbarSelectors
 				}
 			}
 
+			foreach (var unpinnedSlot in result.Where(s => string.IsNullOrEmpty(s.PinnedDesktopFileId)).ToList())
+			{
+				if (windows.All(w => w.ClassHintName != unpinnedSlot.ClassHintName))
+				{
+					result = result.Remove(unpinnedSlot);
+				}
+			}
+
 			return new SlotReferences { Refs = result };
 		});
 
