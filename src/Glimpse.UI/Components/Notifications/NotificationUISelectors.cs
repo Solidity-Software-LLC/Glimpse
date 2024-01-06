@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Glimpse.Common.System;
 using Glimpse.Freedesktop;
+using Glimpse.Freedesktop.Notifications;
 using Glimpse.Redux.Selectors;
 using Glimpse.UI.State;
 
@@ -22,10 +23,10 @@ public class NotificationsViewModel
 	public ImmutableList<NotificationViewModel> Notifications { get; set; }
 }
 
-public static class NotificationSelectors
+public static class NotificationUISelectors
 {
 	public static readonly ISelector<NotificationsViewModel> ViewModel = SelectorFactory.CreateSelector(
-		FreedesktopSelectors.NotificationsState,
+		NotificationSelectors.NotificationsState,
 		FreedesktopSelectors.AllDesktopFiles,
 		(notifications, desktopFiles) =>
 		{
@@ -33,18 +34,18 @@ public static class NotificationSelectors
 			{
 				Notifications = notifications.ById.Values.Select(n =>
 				{
-					var appIcon = desktopFiles.FirstOrDefault(d => d.Name == n.FreedesktopNotification.AppName)?.IconName;
-					appIcon = appIcon.Or(n.FreedesktopNotification.AppIcon, GtkExtensions.MissingIconName);
+					var appIcon = desktopFiles.FirstOrDefault(d => d.Name == n.AppName)?.IconName;
+					appIcon = appIcon.Or(n.AppIcon, GtkExtensions.MissingIconName);
 
 					var notification = new NotificationViewModel()
 					{
-						Id = n.FreedesktopNotification.Id,
-						AppName = n.FreedesktopNotification.AppName,
-						Body = n.FreedesktopNotification.Body,
-						Summary = n.FreedesktopNotification.Summary,
-						Image = new ImageViewModel() { Image = n.FreedesktopNotification.Image, IconNameOrPath = n.FreedesktopNotification.Image == null ? n.FreedesktopNotification.AppIcon.Or("dialog-information-symbolic") : "" },
+						Id = n.Id,
+						AppName = n.AppName,
+						Body = n.Body,
+						Summary = n.Summary,
+						Image = new ImageViewModel() { Image = n.Image, IconNameOrPath = n.Image == null ? n.AppIcon.Or("dialog-information-symbolic") : "" },
 						AppIcon = new ImageViewModel() { IconNameOrPath = appIcon },
-						Actions = n.FreedesktopNotification.Actions,
+						Actions = n.Actions,
 					};
 
 					return notification;

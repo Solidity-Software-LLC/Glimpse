@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using System.Text.Json;
 using Glimpse.Common.System.Reactive;
 using Glimpse.Freedesktop.DBus;
 using Glimpse.Freedesktop.DBus.Interfaces;
@@ -37,7 +38,7 @@ public class NotificationsService(
 		});
 
 		store
-			.Select(FreedesktopSelectors.NotificationsState)
+			.Select(NotificationSelectors.NotificationsState)
 			.Select(s => s.ById.Values)
 			.UnbundleMany(n => n.Id)
 			.RemoveIndex()
@@ -45,7 +46,7 @@ public class NotificationsService(
 			{
 				obs.Take(1).Subscribe(n =>
 				{
-					Observable.Timer(n.FreedesktopNotification.Duration)
+					Observable.Timer(n.Duration)
 						.TakeUntil(obs.TakeLast(1))
 						.Take(1)
 						.Subscribe(_ =>
@@ -55,6 +56,31 @@ public class NotificationsService(
 						});
 				});
 		});
+
+		var glimpseDataDirectory = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "glimpse");
+		var historyPath = Path.Join(glimpseDataDirectory, "notification-history.json");
+
+		if (File.Exists(historyPath))
+		{
+			var historyJson = await File.ReadAllTextAsync(historyPath);
+			var history = JsonSerializer.Deserialize(historyJson, typeof(NotificationHistory), NotificationsJsonSerializer.Instance) as NotificationHistory;
+			await store.Dispatch(new LoadNotificationHistoryAction(history));
+		}
+
+		store
+			.Select(NotificationSelectors.NotificationHistory)
+			.Subscribe(history =>
+			{
+				try
+				{
+					if (!Directory.Exists(glimpseDataDirectory)) Directory.CreateDirectory(glimpseDataDirectory);
+					File.WriteAllText(historyPath, JsonSerializer.Serialize(history, typeof(NotificationHistory), NotificationsJsonSerializer.Instance));
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine(e);
+				}
+			});
 	}
 
 	public void ActionInvoked(uint notificationId, string action)

@@ -1,10 +1,12 @@
 ﻿using System.Reactive.Subjects;
 using Glimpse.Common.Images;
+using Glimpse.Freedesktop.DBus;
 using Glimpse.Freedesktop.DBus.Core;
+using Glimpse.Redux;
 using Tmds.DBus.Protocol;
 
 #pragma warning disable
-namespace Glimpse.Freedesktop.DBus.Interfaces;
+namespace Glimpse.Freedesktop.Notifications;
 
 public enum NotificationUrgency : byte
 {
@@ -13,14 +15,14 @@ public enum NotificationUrgency : byte
 	Critical = 2
 }
 
-public record FreedesktopNotification
+public record FreedesktopNotification : IKeyed<uint>
 {
 	public string AppName { get; set; }
 	public uint ReplacesId { get; set; }
 	public string AppIcon { get; set; }
 	public string Summary { get; set; }
 	public string Body { get; set; }
-	public string[] Actions { get; set; }
+	public string[] Actions { get; set; } = Array.Empty<string>();
 	public TimeSpan Duration { get; set; }
 	public uint Id { get; set; }
 	public NotificationUrgency Urgency { get; set; }
@@ -36,6 +38,7 @@ public record FreedesktopNotification
 	public string SoundName { get; set; }
 	public bool SuppressSound { get; set; }
 	public bool Transient { get; set; }
+	public DateTime CreationDate { get; set; }
 }
 
 public class OrgFreedesktopNotifications(DBusConnections dBusConnections) : IMethodHandler
@@ -297,6 +300,7 @@ public class OrgFreedesktopNotifications(DBusConnections dBusConnections) : IMet
 			X = hints.TryGetValue("x", out var x) ? (x.Value as DBusInt32Item).Value : null,
 			Y = hints.TryGetValue("y", out var y) ? (y.Value as DBusInt32Item).Value : null,
 			Urgency = hints.TryGetValue("urgency", out var urgencyHint) ? (NotificationUrgency) (urgencyHint.Value as DBusByteItem).Value : NotificationUrgency.Normal,
+			CreationDate = DateTime.UtcNow
 		};
 
 		_notificationSubject.OnNext(notification);

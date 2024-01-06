@@ -104,7 +104,7 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 		var notificationsService = serviceProvider.Resolve<NotificationsService>();
 
 		store
-			.Select(NotificationSelectors.ViewModel)
+			.Select(NotificationUISelectors.ViewModel)
 			.ObserveOn(new GLibSynchronizationContext())
 			.Select(vm => vm.Notifications)
 			.UnbundleMany(n => n.Id)
