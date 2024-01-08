@@ -1,5 +1,7 @@
 using System.Reactive.Linq;
+using GLib;
 using Glimpse.Common.System.Reactive;
+using Glimpse.Freedesktop.Notifications;
 using Glimpse.Redux;
 using Glimpse.UI.Components.Shared.Accordion;
 using Gtk;
@@ -10,14 +12,22 @@ namespace Glimpse.UI.Components.CalendarNotifications.NotificationHistory;
 
 public class NotificationHistoryWindow : Bin
 {
-	public NotificationHistoryWindow(ReduxStore store)
+	private readonly NotificationsService _notificationsService;
+
+	public NotificationHistoryWindow(ReduxStore store, NotificationsService notificationsService)
 	{
+		_notificationsService = notificationsService;
+
 		var accordion = new Accordion();
 		accordion.Expand = true;
 
-		store
+		var viewModelObs = store
 			.Select(NotificationCalendarSelectors.ViewModel)
-			.Select(vm => vm.NotificationHistory.OrderBy(n => n.CreationDate))
+			.Select(vm => vm.NotificationHistory.OrderBy(n => n.AppName).ThenBy(n => n.CreationDate))
+			.ObserveOn(new GLibSynchronizationContext())
+			.Replay(1);
+
+		viewModelObs
 			.UnbundleMany(e => e.AppName)
 			.RemoveIndex()
 			.Subscribe(obs =>
@@ -28,20 +38,17 @@ public class NotificationHistoryWindow : Bin
 						.Prop(b => b.Halign = Align.Fill)
 						.AddMany(new Image().BindViewModel(obs.Select(x => x.AppIcon), 16))
 						.AddMany(new Label(obs.Key.AppName)));
+			});
 
-				store
-					.Select(NotificationCalendarSelectors.ViewModel)
-					.Select(vm => vm.NotificationHistory.OrderBy(n => n.CreationDate))
-					.Select(x => x.Where(n => n.AppName == obs.Key.AppName))
-					.UnbundleMany(e => e.Id)
-					.RemoveIndex()
-					.TakeUntil(obs.TakeLast(1))
-					.Subscribe(o =>
-					{
-						var item = CreateNotificationEntry(o);
-						accordion.AddItemToSection(o.Key.AppName, item);
-						o.TakeLast(1).Subscribe(_ => item.Destroy());
-					});
+		viewModelObs
+			.UnbundleMany(e => e.Id)
+			.RemoveIndex()
+			.Subscribe(o =>
+			{
+				var item = CreateNotificationEntry(o);
+				accordion.AddItemToSection(o.Key.AppName, item);
+				o.TakeLast(1).Subscribe(_ => item.Destroy());
+				ShowAll();
 			});
 
 		Add(new Box(Orientation.Vertical, 8)
@@ -56,6 +63,9 @@ public class NotificationHistoryWindow : Bin
 				.Prop(w => w.HscrollbarPolicy = PolicyType.Never)
 				.Prop(w => w.Expand = true)
 				.AddMany(accordion)));
+
+		viewModelObs.Connect();
+		ShowAll();
 	}
 
 	public Widget CreateNotificationEntry(IGroupedObservable<NotificationEntryViewModel, NotificationEntryViewModel> obs)
@@ -90,12 +100,14 @@ public class NotificationHistoryWindow : Bin
 		var eventBox = new EventBox()
 			.AddButtonStates()
 			.AddClass("button")
+			.Prop(w => w.ObserveButtonRelease().Subscribe(_ => _notificationsService.RemoveHistoryItem(obs.Key.Id)))
 			.AddMany(new Box(Orientation.Vertical, 0)
 				.AddClass("notifications-history-item__container")
 				.AddMany(new Box(Orientation.Horizontal, 4)
 					.AddMany(displayedTime)
 					.AddMany(new Button()
 						.AddButtonStates()
+						.Prop(w => w.ObserveButtonRelease().Subscribe(_ => _notificationsService.RemoveHistoryItem(obs.Key.Id)))
 						.Prop(w => w.Image = new Image { IconName = "window-close-symbolic", PixelSize = 16 })
 						.Prop(w => w.Halign = Align.End)))
 				.AddMany(new Box(Orientation.Horizontal, 0)
@@ -115,6 +127,8 @@ public class NotificationHistoryWindow : Bin
 			body.Text = n.Body;
 			body.Visible = !string.IsNullOrEmpty(n.Body);
 		});
+
+		eventBox.ShowAll();
 
 		return eventBox;
 	}

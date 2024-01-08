@@ -83,6 +83,11 @@ public class NotificationsService(
 			});
 	}
 
+	public void RemoveHistoryItem(Guid id)
+	{
+		store.Dispatch(new RemoveHistoryItemAction(id));
+	}
+
 	public void ActionInvoked(uint notificationId, string action)
 	{
 		freedesktopNotifications.EmitActionInvoked(notificationId, action);
