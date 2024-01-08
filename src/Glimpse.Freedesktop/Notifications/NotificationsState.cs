@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
-using Glimpse.Freedesktop.DBus.Interfaces;
+using System.Text.Json.Serialization;
+using Glimpse.Common.Images;
 using Glimpse.Redux;
 using Glimpse.Redux.Reducers;
 using Glimpse.Redux.Selectors;
@@ -24,6 +25,7 @@ public record NotificationHistory
 
 public record NotificationHistoryEntry
 {
+	public Guid Id { get; set; } = Guid.NewGuid();
 	public string AppName { get; set; }
 	public string AppIcon { get; set; }
 	public string Summary { get; set; }
@@ -31,7 +33,9 @@ public record NotificationHistoryEntry
 	public DateTime CreationDate { get; set; }
 	public string DesktopEntry { get; set; }
 	public string ImagePath { get; set; }
-	public string BinaryImage { get; set; }
+
+	[JsonConverter(typeof(GlimpseImageJsonConverter))]
+	public IGlimpseImage Image { get; set; }
 }
 
 public static class NotificationSelectors
@@ -40,7 +44,7 @@ public static class NotificationSelectors
 	public static readonly ISelector<DataTable<uint, FreedesktopNotification>> NotificationsState = SelectorFactory.CreateFeatureSelector<DataTable<uint, FreedesktopNotification>>();
 }
 
-internal class NotificationsReducers
+internal static class NotificationsReducers
 {
 	public static readonly FeatureReducerCollection AllReducers =
 	[
@@ -49,7 +53,6 @@ internal class NotificationsReducers
 			.On<AddNotificationAction>((s, a) =>
 			{
 				var result = s;
-				var scaledImage = a.Notification.Image?.ScaleToFit(34, 34);
 
 				var notificationHistoryEntry = new NotificationHistoryEntry()
 				{
@@ -60,7 +63,7 @@ internal class NotificationsReducers
 					Summary = a.Notification.Summary,
 					DesktopEntry = a.Notification.DesktopEntry,
 					ImagePath = a.Notification.ImagePath,
-					BinaryImage = Convert.ToBase64String(scaledImage?.Pixbuf?.SaveToBuffer("png") ?? Array.Empty<byte>())
+					Image = a.Notification.Image?.ScaleToFit(34, 34)
 				};
 
 				if (result.KnownApplications.All(app => app.Name != a.Notification.AppName))

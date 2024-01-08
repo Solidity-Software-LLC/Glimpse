@@ -1,43 +1,19 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Autofac.Features.AttributeFilters;
-using Gdk;
 using GLib;
-using Glimpse.Interop.Gdk;
-using Glimpse.Redux;
-using Glimpse.Xorg;
-using Glimpse.Xorg.State;
 using Gtk;
-using ReactiveMarbles.ObservableEvents;
 using DateTime = System.DateTime;
-using Window = Gtk.Window;
-using WindowType = Gtk.WindowType;
 
-namespace Glimpse.UI.Components.Calendar;
+namespace Glimpse.UI.Components.CalendarNotifications.Calendar;
 
-public class CalendarWindow : Window
+public class CalendarWindow : Bin
 {
-	public CalendarWindow(
-		IDisplayServer displayServer,
-		ReduxStore store,
-		[KeyFilter(Timers.OneSecond)] IObservable<DateTime> oneSecondTimer)
-			: base(WindowType.Toplevel)
+	public CalendarWindow([KeyFilter(Timers.OneSecond)] IObservable<DateTime> oneSecondTimer)
 	{
+		Expand = false;
+
 		var displayedDateTimeObs = new BehaviorSubject<DateTime>(DateTime.Now);
-
-		SkipPagerHint = true;
-		SkipTaskbarHint = true;
-		Decorated = false;
-		Resizable = false;
-		CanFocus = true;
-		TypeHint = WindowTypeHint.Dialog;
-		Visual = Screen.RgbaVisual;
-		Visible = false;
-		KeepAbove = true;
-		WidthRequest = 335;
-		AppPaintable = true;
-
-		this.Events().DeleteEvent.Subscribe(e => e.RetVal = true);
 
 		var todayLabel = new Label();
 		todayLabel.Halign = Align.Fill;
@@ -88,15 +64,6 @@ public class CalendarWindow : Window
 			currentDateTimeGrid = CreateDateGrid(dt);
 			layout.Add(currentDateTimeGrid);
 		});
-
-		store.ObserveAction<WindowFocusedChangedAction>()
-			.ObserveOn(new GLibSynchronizationContext())
-			.TakeUntilDestroyed(this)
-			.Where(action => IsVisible && action.WindowRef.Id != LibGdk3Interop.gdk_x11_window_get_xid(Window.Handle))
-			.Subscribe(_ => Hide());
-
-		ShowAll();
-		Hide();
 	}
 
 	private Grid CreateDateGrid(DateTime currentDateTime)
@@ -134,23 +101,5 @@ public class CalendarWindow : Window
 
 		dateGrid.ShowAll();
 		return dateGrid;
-	}
-
-	public void ToggleVisibility()
-	{
-		Display.GetPointer(out var x, out var y);
-		var eventMonitor = Display.GetMonitorAtPoint(x, y);
-
-		if (IsVisible && eventMonitor.Contains(Window))
-		{
-			Hide();
-		}
-		else
-		{
-			Show();
-			var eventPanel = Application.Windows.OfType<Panel>().First(p => eventMonitor.Contains(p.Window));
-			Window.GetGeometry(out _, out _, out var width, out var height);
-			Move(eventMonitor.Geometry.Right - width - 8, eventMonitor.Geometry.Bottom - height - eventPanel.Window.Height - 8);
-		}
 	}
 }

@@ -52,7 +52,6 @@ public static class Program
 	{
 		try
 		{
-			Console.WriteLine("Glimpse starting...");
 			AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) => Console.WriteLine(eventArgs.ExceptionObject);
 			var builder = Host.CreateApplicationBuilder(Array.Empty<string>());
 

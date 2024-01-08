@@ -6,7 +6,7 @@ using GLib;
 using Glimpse.Configuration;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Redux;
-using Glimpse.UI.Components.Calendar;
+using Glimpse.UI.Components.CalendarNotifications;
 using Glimpse.UI.Components.StartMenu;
 using Glimpse.UI.Components.SystemTray;
 using Glimpse.UI.Components.Taskbar;
@@ -24,6 +24,8 @@ namespace Glimpse.UI.Components;
 public class Panel : Window
 {
 	private readonly Monitor _monitor;
+	private readonly IObservable<DateTime> _oneSecondTimer;
+	private readonly NotificationCalendarWindow _notificationCalendarWindow;
 	private readonly Menu _menu;
 	private const string ClockFormat = "h:mm tt\nM/d/yyyy";
 
@@ -35,9 +37,11 @@ public class Panel : Window
 		FreeDesktopService freeDesktopService,
 		Monitor monitor,
 		[KeyFilter(Timers.OneSecond)] IObservable<DateTime> oneSecondTimer,
-		CalendarWindow calendarWindow) : base(WindowType.Toplevel)
+		NotificationCalendarWindow notificationCalendarWindow) : base(WindowType.Toplevel)
 	{
 		_monitor = monitor;
+		_oneSecondTimer = oneSecondTimer;
+		_notificationCalendarWindow = notificationCalendarWindow;
 		Decorated = false;
 		Resizable = false;
 		TypeHint = WindowTypeHint.Dock;
@@ -53,12 +57,6 @@ public class Panel : Window
 		centerBox.Halign = Align.Start;
 
 		var clock = CreateClock();
-		var clockLabel = clock.Image as Label;
-		clock.ObserveButtonRelease().Where(e => e.Event.Button == 1).Subscribe(e =>
-		{
-			calendarWindow.ToggleVisibility();
-			e.RetVal = true;
-		});
 
 		var rightBox = new Box(Orientation.Horizontal, 0);
 		rightBox.PackStart(systemTrayBox, false, false, 4);
@@ -84,13 +82,6 @@ public class Panel : Window
 			.Select(g => g.Refs.Count)
 			.DistinctUntilChanged()
 			.Subscribe(numGroups => { centerBox.MarginStart = ComputeCenterBoxMarginLeft(numGroups); });
-
-		oneSecondTimer
-			.TakeUntilDestroyed(this)
-			.ObserveOn(new GLibSynchronizationContext())
-			.Select(dt => dt.ToString(ClockFormat))
-			.DistinctUntilChanged()
-			.Subscribe(t => clockLabel.Text = t);
 
 		var taskManagerObs = store
 			.Select(ConfigurationSelectors.TaskManagerCommand)
@@ -120,16 +111,39 @@ public class Panel : Window
 		return WidthRequest / 2 - taskbarWidth / 2;
 	}
 
-	private Button CreateClock()
+	private Widget CreateClock()
 	{
-		var clock = new Label(DateTime.Now.ToString(ClockFormat));
-		clock.Justify = Justification.Right;
+		var notificationImage = new Image();
+		notificationImage.IconName = "notification-symbolic";
+		notificationImage.PixelSize = 16;
 
-		var clockButton = new Button();
+		var clockLabel = new Label(DateTime.Now.ToString(ClockFormat));
+		clockLabel.Justify = Justification.Right;
+
+		var clockButton = new Box(Orientation.Horizontal, 0);
 		clockButton.AddClass("clock");
-		clockButton.AddButtonStates();
-		clockButton.Image = clock;
-		return clockButton;
+		clockButton.Halign = Align.Center;
+		clockButton.AddMany(clockLabel, notificationImage);
+
+		var clockButtonEventBox = new EventBox();
+		clockButtonEventBox.AddClass("button");
+		clockButtonEventBox.AddButtonStates();
+		clockButtonEventBox.Add(clockButton);
+
+		_oneSecondTimer
+			.TakeUntilDestroyed(this)
+			.ObserveOn(new GLibSynchronizationContext())
+			.Select(dt => dt.ToString(ClockFormat))
+			.DistinctUntilChanged()
+			.Subscribe(t => clockLabel.Text = t);
+
+		clockButtonEventBox.ObserveButtonRelease().Where(e => e.Event.Button == 1).Subscribe(e =>
+		{
+			_notificationCalendarWindow.ToggleVisibility();
+			e.RetVal = true;
+		});
+
+		return clockButtonEventBox;
 	}
 
 	public void DockToBottom()

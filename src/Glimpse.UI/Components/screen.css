@@ -34,7 +34,7 @@ button {
 	all: unset;
 }
 
-button {
+button, .button {
 	margin: 0;
 	padding: 0;
 	outline: 0;
@@ -43,15 +43,15 @@ button {
 	background-color: transparent;
 }
 
-button:hover {
+button:hover, .button:hover {
 	background-color: rgba(255, 255, 255, .1);
 }
 
-button:active {
+button:active, .button:active {
 	background-color: rgba(255, 255, 255, .3);
 }
 
-button:focus {
+button:focus, .button:focus {
 	border: 0;
 	outline: 0;
 	background-color: transparent;
@@ -96,7 +96,11 @@ flowboxchild {
 	color: black;
 }
 
-.clock label {
+.clock {
 	padding-left: 8px;
 	padding-right: 8px;
+}
+
+.clock image {
+	margin-left: 8px;
 }

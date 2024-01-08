@@ -14,6 +14,12 @@ public static class GlimpseImageFactory
 		return image;
 	}
 
+	public static IGlimpseImage From(byte[] data)
+	{
+		using var memoryStream = new MemoryStream(data);
+		return new GtkGlimpseImage { Pixbuf = new Pixbuf(memoryStream) };
+	}
+
 	public static IGlimpseImage From(byte[] data, int depth, int width, int height)
 	{
 		var surface = new ImageSurface(data, depth == 24 ? Format.RGB24 : Format.Argb32, width, height, 4 * width);

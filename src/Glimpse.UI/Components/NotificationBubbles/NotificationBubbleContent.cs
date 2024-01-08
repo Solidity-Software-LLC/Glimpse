@@ -5,9 +5,9 @@ using Pango;
 using Unit = System.Reactive.Unit;
 using WrapMode = Pango.WrapMode;
 
-namespace Glimpse.UI.Components.Notifications;
+namespace Glimpse.UI.Components.NotificationBubbles;
 
-public class NotificationContent : Bin
+public class NotificationBubbleContent : Bin
 {
 	private readonly Subject<string> _actionInvokedSubject = new();
 	public IObservable<string> ActionInvoked => _actionInvokedSubject;
@@ -15,7 +15,7 @@ public class NotificationContent : Bin
 	private readonly Subject<Unit> _closeNotificationSubject = new();
 	public IObservable<Unit> CloseNotification => _closeNotificationSubject;
 
-	public NotificationContent(IObservable<NotificationViewModel> notificationStateObs)
+	public NotificationBubbleContent(IObservable<NotificationBubbleViewModel> notificationStateObs)
 	{
 		var appName = new Label();
 		appName.AddClass("notifications__app-name");

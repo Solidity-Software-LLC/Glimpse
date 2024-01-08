@@ -5,9 +5,9 @@ using Glimpse.Freedesktop.Notifications;
 using Glimpse.Redux.Selectors;
 using Glimpse.UI.State;
 
-namespace Glimpse.UI.Components.Notifications;
+namespace Glimpse.UI.Components.NotificationBubbles;
 
-public record NotificationViewModel
+public record NotificationBubbleViewModel
 {
 	public uint Id { get; set; }
 	public string Body { get; set; }
@@ -18,26 +18,26 @@ public record NotificationViewModel
 	public string[] Actions { get; set; }
 }
 
-public class NotificationsViewModel
+public class NotificationBubblesViewModel
 {
-	public ImmutableList<NotificationViewModel> Notifications { get; set; }
+	public ImmutableList<NotificationBubbleViewModel> Notifications { get; set; }
 }
 
-public static class NotificationUISelectors
+public static class NotificationBubbleSelectors
 {
-	public static readonly ISelector<NotificationsViewModel> ViewModel = SelectorFactory.CreateSelector(
+	public static readonly ISelector<NotificationBubblesViewModel> ViewModel = SelectorFactory.CreateSelector(
 		NotificationSelectors.NotificationsState,
 		FreedesktopSelectors.AllDesktopFiles,
 		(notifications, desktopFiles) =>
 		{
-			return new NotificationsViewModel()
+			return new NotificationBubblesViewModel
 			{
 				Notifications = notifications.ById.Values.Select(n =>
 				{
 					var appIcon = desktopFiles.FirstOrDefault(d => d.Name == n.AppName)?.IconName;
 					appIcon = appIcon.Or(n.AppIcon, GtkExtensions.MissingIconName);
 
-					var notification = new NotificationViewModel()
+					var notification = new NotificationBubbleViewModel
 					{
 						Id = n.Id,
 						AppName = n.AppName,

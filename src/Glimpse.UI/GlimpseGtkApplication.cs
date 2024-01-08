@@ -8,8 +8,8 @@ using Glimpse.Common.System.Reactive;
 using Glimpse.Freedesktop.Notifications;
 using Glimpse.Redux;
 using Glimpse.UI.Components;
-using Glimpse.UI.Components.Calendar;
-using Glimpse.UI.Components.Notifications;
+using Glimpse.UI.Components.CalendarNotifications;
+using Glimpse.UI.Components.NotificationBubbles;
 using Glimpse.UI.Components.StartMenu.Window;
 using Glimpse.UI.State;
 using Gtk;
@@ -61,7 +61,7 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 		screen.Events().SizeChanged.Subscribe(_ => LoadPanels(display));
 		screen.Events().MonitorsChanged.Subscribe(_ => LoadPanels(display));
 		application.AddWindow(serviceProvider.Resolve<StartMenuWindow>());
-		application.AddWindow(serviceProvider.Resolve<CalendarWindow>());
+		application.AddWindow(serviceProvider.Resolve<NotificationCalendarWindow>());
 		LoadPanels(display);
 		Application.Run();
 	}
@@ -84,7 +84,7 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 		StyleContext.AddProviderForScreen(screen, screenCss, uint.MaxValue);
 	}
 
-	private void StackNotificationsOnMonitor(Monitor monitor, int panelHeight, ImmutableList<NotificationWindow> notificationWindows)
+	private void StackNotificationsOnMonitor(Monitor monitor, int panelHeight, ImmutableList<NotificationBubbleWindow> notificationWindows)
 	{
 		var currentTopOfWidgetBelowNotification = monitor.Geometry.Height - panelHeight;
 
@@ -100,11 +100,11 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 	}
 	private void WatchNotifications()
 	{
-		var notificationsPerMonitor = new Dictionary<Monitor, ImmutableList<NotificationWindow>>();
+		var notificationsPerMonitor = new Dictionary<Monitor, ImmutableList<NotificationBubbleWindow>>();
 		var notificationsService = serviceProvider.Resolve<NotificationsService>();
 
 		store
-			.Select(NotificationUISelectors.ViewModel)
+			.Select(NotificationBubbleSelectors.ViewModel)
 			.ObserveOn(new GLibSynchronizationContext())
 			.Select(vm => vm.Notifications)
 			.UnbundleMany(n => n.Id)
@@ -115,7 +115,7 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 					var display = Display.Default;
 					display.GetPointer(out var x, out var y);
 					var eventMonitor = display.GetMonitorAtPoint(x, y);
-					var newWindow = new NotificationWindow(notificationObservable.Select(x => x.Item1));
+					var newWindow = new NotificationBubbleWindow(notificationObservable.Select(x => x.Item1));
 					application.AddWindow(newWindow);
 
 					var panel = _panels.FirstOrDefault(p => p.IsOnMonitor(eventMonitor));
@@ -123,11 +123,11 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 
 					newWindow.CloseNotification
 						.TakeUntil(notificationObservable.TakeLast(1))
-						.Subscribe(_ => notificationsService.DismissNotification(notificationObservable.Key));
+						.Subscribe(_ => notificationsService.DismissNotification(notificationObservable.Key.Id));
 
 					newWindow.ActionInvoked
 						.TakeUntil(notificationObservable.TakeLast(1))
-						.Subscribe(action => notificationsService.ActionInvoked(notificationObservable.Key, action));
+						.Subscribe(action => notificationsService.ActionInvoked(notificationObservable.Key.Id, action));
 
 					newWindow.Events().SizeAllocated.Take(1).TakeUntilDestroyed(newWindow).Subscribe(_ =>
 					{
@@ -140,7 +140,7 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 						}
 					});
 
-					notificationsPerMonitor.TryAdd(eventMonitor, ImmutableList<NotificationWindow>.Empty);
+					notificationsPerMonitor.TryAdd(eventMonitor, ImmutableList<NotificationBubbleWindow>.Empty);
 					notificationsPerMonitor[eventMonitor] = notificationsPerMonitor[eventMonitor].Add(newWindow);
 
 					notificationObservable.TakeLast(1).ObserveOn(new GLibSynchronizationContext()).Subscribe(_ =>

@@ -15,9 +15,9 @@ public static class ReactiveExtensions
 		return source.Select(s => new GroupedObservable<TKey, TValue>(s.Key, s.Select(i => i.Item1)));
 	}
 
-	public static IObservable<IGroupedObservable<TKey, (TValue, int)>> UnbundleMany<TValue, TKey>(this IObservable<IEnumerable<TValue>> source, Func<TValue, TKey> keySelector) where TKey : IEquatable<TKey>
+	public static IObservable<IGroupedObservable<TValue, (TValue, int)>> UnbundleMany<TValue, TKey>(this IObservable<IEnumerable<TValue>> source, Func<TValue, TKey> keySelector) where TKey : IEquatable<TKey>
 	{
-		return Observable.Create<IGroupedObservable<TKey, (TValue, int)>>(obs =>
+		return Observable.Create<IGroupedObservable<TValue, (TValue, int)>>(obs =>
 		{
 			var groupSubjects = new Dictionary<TKey, Subject<(TValue, int)>>();
 
@@ -34,7 +34,7 @@ public static class ReactiveExtensions
 						if (!groupSubjects.ContainsKey(key))
 						{
 							groupSubjects.Add(key, new Subject<(TValue, int)>());
-							obs.OnNext(new GroupedObservable<TKey, (TValue, int)>(key, groupSubjects[key]));
+							obs.OnNext(new GroupedObservable<TValue, (TValue, int)>(e, groupSubjects[key]));
 						}
 
 						groupSubjects[key].OnNext((e, i));

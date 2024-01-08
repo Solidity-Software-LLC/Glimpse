@@ -45,9 +45,10 @@ public static class GtkExtensions
 		return widget.ContainsPoint(px, py);
 	}
 
-	public static void BindViewModel(this Image image, IObservable<ImageViewModel> imageViewModel, int size)
+	public static Image BindViewModel(this Image image, IObservable<ImageViewModel> imageViewModel, int size)
 	{
 		image.BindViewModel(imageViewModel, size, size);
+		return image;
 	}
 
 	public static readonly string MissingIconName = Guid.NewGuid().ToString();
@@ -70,6 +71,12 @@ public static class GtkExtensions
 				image.PixelSize = width;
 			}
 		});
+	}
+
+	public static T Prop<T>(this T widget, Action<T> action) where T : Widget
+	{
+		action(widget);
+		return widget;
 	}
 
 	public static void AppIcon(this Widget widget, Image image, IObservable<ImageViewModel> iconObservable, int size)
@@ -117,13 +124,14 @@ public static class GtkExtensions
 		return widget.ObserveEvent(w => w.Events().ButtonReleaseEvent).TakeUntilDestroyed(widget);
 	}
 
-	public static Widget AddButtonStates(this Widget widget)
+	public static TWidget AddButtonStates<TWidget>(this TWidget widget) where TWidget : Widget
 	{
+		var genericWidget = widget as Widget;
 		widget.AddEvents((int)(EventMask.ButtonPressMask | EventMask.ButtonReleaseMask | EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
-		widget.ObserveEvent(w => w.Events().EnterNotifyEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Prelight, true));
-		widget.ObserveEvent(w => w.Events().LeaveNotifyEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Normal, true));
-		widget.ObserveEvent(w => w.Events().ButtonPressEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Active, true));
-		widget.ObserveEvent(w => w.Events().ButtonReleaseEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Prelight, true));
+		genericWidget.ObserveEvent(w => w.Events().EnterNotifyEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Prelight, true));
+		genericWidget.ObserveEvent(w => w.Events().LeaveNotifyEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Normal, true));
+		genericWidget.ObserveEvent(w => w.Events().ButtonPressEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Active, true));
+		genericWidget.ObserveEvent(w => w.Events().ButtonReleaseEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Prelight, true));
 		return widget;
 	}
 
