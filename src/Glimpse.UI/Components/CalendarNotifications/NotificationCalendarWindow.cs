@@ -41,7 +41,7 @@ public class NotificationCalendarWindow : Window
 		_layoutRevealer = new Revealer();
 		_layoutRevealer.Child = layout;
 		_layoutRevealer.TransitionType = RevealerTransitionType.SlideLeft;
-		_layoutRevealer.TransitionDuration = 500;
+		_layoutRevealer.TransitionDuration = 250;
 		_layoutRevealer.RevealChild = false;
 		_layoutRevealer.Halign = Align.End;
 		_layoutRevealer.Valign = Align.End;
@@ -67,7 +67,7 @@ public class NotificationCalendarWindow : Window
 		if (IsVisible)
 		{
 			_layoutRevealer.RevealChild = false;
-			Observable.Timer(TimeSpan.FromMilliseconds(400)).ObserveOn(new GLibSynchronizationContext()).Subscribe(_ => Hide());
+			Observable.Timer(TimeSpan.FromMilliseconds(250)).ObserveOn(new GLibSynchronizationContext()).Subscribe(_ => Hide());
 		}
 		else
 		{

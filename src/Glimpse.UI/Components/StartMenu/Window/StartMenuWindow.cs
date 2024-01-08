@@ -9,6 +9,7 @@ using Glimpse.Interop.Gdk;
 using Glimpse.Redux;
 using Glimpse.UI.State;
 using Glimpse.Xorg.State;
+using Gtk;
 using ReactiveMarbles.ObservableEvents;
 using Key = Gdk.Key;
 using WindowType = Gtk.WindowType;
@@ -19,6 +20,7 @@ public class StartMenuWindow : Gtk.Window
 {
 	private readonly Subject<EventConfigure> _configureEventSubject = new();
 	private readonly StartMenuContent _startMenuContent;
+	private readonly Revealer _revealer;
 
 	public IObservable<Point> WindowMoved { get; }
 
@@ -52,7 +54,7 @@ public class StartMenuWindow : Gtk.Window
 
 		this.ObserveEvent(actionBar.CommandInvoked).Subscribe(command =>
 		{
-			Hide();
+			ToggleVisibility();
 			freeDesktopService.Run(command);
 		});
 
@@ -66,22 +68,31 @@ public class StartMenuWindow : Gtk.Window
 		this.ObserveEvent(_startMenuContent.SearchTextUpdated).Subscribe(text => store.Dispatch(new UpdateStartMenuSearchTextAction(text)));
 		this.ObserveEvent(_startMenuContent.AppLaunch).Subscribe(desktopFile =>
 		{
-			Hide();
+			ToggleVisibility();
 			freeDesktopService.Run(desktopFile);
 		});
 
 		store.ObserveAction<WindowFocusedChangedAction>()
 			.ObserveOn(new GLibSynchronizationContext())
 			.TakeUntilDestroyed(this)
-			.Where(action => IsVisible && action.WindowRef.Id != LibGdk3Interop.gdk_x11_window_get_xid(_startMenuContent.Window.Handle))
-			.Subscribe(_ => Hide());
+			.Where(action => IsVisible && action.WindowRef.Id != LibGdk3Interop.gdk_x11_window_get_xid(Window.Handle))
+			.Subscribe(_ => ToggleVisibility());
 
 		store.ObserveAction<StartMenuOpenedAction>()
 			.ObserveOn(new GLibSynchronizationContext())
 			.TakeUntilDestroyed(this)
 			.Subscribe(_ => ToggleVisibility());
 
-		Add(_startMenuContent);
+		_revealer = new Revealer();
+		_revealer.AddMany(_startMenuContent);
+		_revealer.TransitionDuration = 250;
+		_revealer.TransitionType = RevealerTransitionType.SlideUp;
+		_revealer.Show();
+		_revealer.Valign = Align.End;
+
+		SetSizeRequest(640, 725);
+
+		Add(_revealer);
 		viewModelObservable.Connect();
 	}
 
@@ -92,13 +103,15 @@ public class StartMenuWindow : Gtk.Window
 
 		if (IsVisible && eventMonitor.Contains(Window))
 		{
-			Hide();
+			_revealer.RevealChild = false;
+			Observable.Timer(TimeSpan.FromMilliseconds(250)).ObserveOn(new GLibSynchronizationContext()).Subscribe(_ => Hide());
 		}
 		else
 		{
 			Show();
 			var eventPanel = Application.Windows.OfType<Panel>().First(p => eventMonitor.Contains(p.Window));
 			this.CenterOnScreenAboveWidget(eventPanel);
+			_revealer.RevealChild = true;
 		}
 	}
 
@@ -119,7 +132,7 @@ public class StartMenuWindow : Gtk.Window
 	{
 		if (evnt.Key == Key.Escape)
 		{
-			Visible = false;
+			ToggleVisibility();
 			return true;
 		}
 
