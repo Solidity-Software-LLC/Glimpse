@@ -32,12 +32,14 @@ public class NotificationHistoryWindow : Bin
 			.RemoveIndex()
 			.Subscribe(obs =>
 			{
-				accordion.AddSection(obs.Key.AppName,
-					new Box(Orientation.Horizontal, 4)
-						.AddClass("notification-history__section-header")
-						.Prop(b => b.Halign = Align.Fill)
-						.AddMany(new Image().BindViewModel(obs.Select(x => x.AppIcon), 16))
-						.AddMany(new Label(obs.Key.AppName)));
+				var sectionHeader = new Box(Orientation.Horizontal, 4)
+					.AddClass("notification-history__section-header")
+					.Prop(b => b.Halign = Align.Fill)
+					.AddMany(new Image().BindViewModel(obs.Select(x => x.AppIcon), 16))
+					.AddMany(new Label(obs.Key.AppName));
+
+				accordion.AddSection(obs.Key.AppName, sectionHeader);
+				obs.TakeLast(1).Subscribe(_ => sectionHeader.Destroy());
 			});
 
 		viewModelObs
