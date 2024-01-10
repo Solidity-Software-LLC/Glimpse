@@ -28,6 +28,10 @@
 	padding: 8px;
 }
 
+.notifications-history-item__displayed-time {
+	min-height: 16px;
+}
+
 .notifications-history-item__summary {
 	font-weight: bold;
 	margin-top: 8px;

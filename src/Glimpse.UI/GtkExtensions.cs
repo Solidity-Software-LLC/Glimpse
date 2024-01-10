@@ -35,12 +35,14 @@ public static class GtkExtensions
 	public static bool ContainsPoint(this Widget widget, int px, int py)
 	{
 		if (!widget.IsVisible) return false;
-		widget.Window.GetGeometry(out var x, out var y, out var width, out var height);
-		return px >= x && py >= y && px < x + width && py < y + height;
+		widget.Window.GetGeometry(out _, out _, out var width, out var height);
+		widget.Window.GetRootCoords(0, 0, out var widgetRootX, out var widgetRootY);
+		return px >= widgetRootX && py >= widgetRootY && px < widgetRootX + width && py < widgetRootY + height;
 	}
 
 	public static bool IsPointerInside(this Widget widget)
 	{
+
 		widget.Display.GetPointer(out var px, out var py);
 		return widget.ContainsPoint(px, py);
 	}
@@ -129,7 +131,7 @@ public static class GtkExtensions
 		var genericWidget = widget as Widget;
 		widget.AddEvents((int)(EventMask.ButtonPressMask | EventMask.ButtonReleaseMask | EventMask.EnterNotifyMask | EventMask.LeaveNotifyMask));
 		genericWidget.ObserveEvent(w => w.Events().EnterNotifyEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Prelight, true));
-		genericWidget.ObserveEvent(w => w.Events().LeaveNotifyEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Normal, true));
+		genericWidget.ObserveEvent(w => w.Events().LeaveNotifyEvent).Where(_ => !widget.IsPointerInside()).Subscribe(_ => widget.SetStateFlags(StateFlags.Normal, true));
 		genericWidget.ObserveEvent(w => w.Events().ButtonPressEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Active, true));
 		genericWidget.ObserveEvent(w => w.Events().ButtonReleaseEvent).Subscribe(_ => widget.SetStateFlags(StateFlags.Prelight, true));
 		return widget;

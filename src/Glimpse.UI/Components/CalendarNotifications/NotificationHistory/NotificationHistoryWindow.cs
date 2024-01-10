@@ -7,6 +7,7 @@ using Glimpse.UI.Components.Shared.Accordion;
 using Gtk;
 using Pango;
 using WrapMode = Pango.WrapMode;
+using ReactiveMarbles.ObservableEvents;
 
 namespace Glimpse.UI.Components.CalendarNotifications.NotificationHistory;
 
@@ -66,6 +67,7 @@ public class NotificationHistoryWindow : Bin
 				.Prop(w => w.Expand = true)
 				.AddMany(accordion)));
 
+		this.ObserveEvent(e => e.Events().Mapped).Subscribe(_ => accordion.ShowFirstSection());
 		viewModelObs.Connect();
 		ShowAll();
 	}
@@ -99,9 +101,13 @@ public class NotificationHistoryWindow : Bin
 		body.Xalign = 0;
 		body.Yalign = 0;
 
+		var closeButton = new Image { IconName = "window-close-symbolic", PixelSize = 16 };
+
 		var eventBox = new EventBox()
 			.AddButtonStates()
 			.AddClass("button")
+			.Prop(w => w.ObserveEvent(x => x.Events().EnterNotifyEvent).Subscribe(_ => closeButton.Visible = true))
+			.Prop(w => w.ObserveEvent(x => x.Events().LeaveNotifyEvent).Subscribe(e => closeButton.Visible = w.IsPointerInside()))
 			.Prop(w => w.ObserveButtonRelease().Subscribe(_ => _notificationsService.RemoveHistoryItem(obs.Key.Id)))
 			.AddMany(new Box(Orientation.Vertical, 0)
 				.AddClass("notifications-history-item__container")
@@ -110,7 +116,7 @@ public class NotificationHistoryWindow : Bin
 					.AddMany(new Button()
 						.AddButtonStates()
 						.Prop(w => w.ObserveButtonRelease().Subscribe(_ => _notificationsService.RemoveHistoryItem(obs.Key.Id)))
-						.Prop(w => w.Image = new Image { IconName = "window-close-symbolic", PixelSize = 16 })
+						.Prop(w => w.Image = closeButton)
 						.Prop(w => w.Halign = Align.End)))
 				.AddMany(new Box(Orientation.Horizontal, 0)
 					.AddMany(new Image()
@@ -131,7 +137,7 @@ public class NotificationHistoryWindow : Bin
 		});
 
 		eventBox.ShowAll();
-
+		closeButton.Hide();
 		return eventBox;
 	}
 }

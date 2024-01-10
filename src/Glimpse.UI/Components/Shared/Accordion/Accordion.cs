@@ -46,4 +46,19 @@ public class Accordion : Bin
 		var section = _sections.First(s => s.Name == sectionName);
 		section.ItemContainer.Add(item);
 	}
+
+	public void ShowFirstSection()
+	{
+		foreach (var section in _sections)
+		{
+			section.ItemContainer.Visible = false;
+		}
+
+		var firstItemContainer = _sections.FirstOrDefault()?.ItemContainer;
+
+		if (firstItemContainer != null)
+		{
+			firstItemContainer.Visible = true;
+		}
+	}
 }
