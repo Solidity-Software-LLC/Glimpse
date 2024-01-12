@@ -13,7 +13,7 @@ public record NotificationTimerExpiredAction(uint NotificationId);
 public record CloseNotificationAction(uint NotificationId);
 public record RemoveHistoryItemAction(Guid Id);
 public record ClearNotificationHistory();
-
+public record RemoveHistoryForApplicationAction(string AppName);
 public record NotificationHistoryApplication
 {
 	public string Name { get; set; }
@@ -52,6 +52,7 @@ internal static class NotificationsReducers
 	[
 		FeatureReducer.Build(new NotificationHistory())
 			.On<LoadNotificationHistoryAction>((s, a) => a.History)
+			.On<RemoveHistoryForApplicationAction>((s, a) => s with { Notifications = s.Notifications.Where(n => n.AppName != a.AppName).ToImmutableList() })
 			.On<ClearNotificationHistory>((s, a) => s with { Notifications = ImmutableList<NotificationHistoryEntry>.Empty })
 			.On<RemoveHistoryItemAction>((s, a) => s with { Notifications = s.Notifications.Where(n => n.Id != a.Id).ToImmutableList() })
 			.On<AddNotificationAction>((s, a) =>

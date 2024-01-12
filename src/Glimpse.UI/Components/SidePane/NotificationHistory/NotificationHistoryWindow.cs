@@ -33,14 +33,34 @@ public class NotificationHistoryWindow : Bin
 			.RemoveIndex()
 			.Subscribe(obs =>
 			{
-				var sectionHeader = new Box(Orientation.Horizontal, 4)
-					.AddClass("notification-history__section-header")
-					.Prop(b => b.Halign = Align.Fill)
-					.AddMany(new Image().BindViewModel(obs.Select(x => x.AppIcon), 16))
-					.AddMany(new Label(obs.Key.AppName));
+				var closeButton = new Image();
+
+				var sectionHeader = new EventBox()
+					.AddButtonStates()
+					.AddClass("button")
+					.Prop(w => w.ObserveEvent(x => x.Events().EnterNotifyEvent).Subscribe(_ => closeButton.Visible = true))
+					.Prop(w => w.ObserveEvent(x => x.Events().LeaveNotifyEvent).Subscribe(_ => closeButton.Visible = w.IsPointerInside()))
+					.AddMany(new Box(Orientation.Horizontal, 4)
+						.AddClass("notification-history__section-header")
+						.Prop(b => b.Halign = Align.Fill)
+						.AddMany(new Image()
+							.BindViewModel(obs.Select(x => x.AppIcon), 16))
+						.AddMany(new Label(obs.Key.AppName)
+							.Prop(w => w.Xalign = 0)
+							.Prop(w => w.Hexpand = true))
+						.AddMany(new Button()
+							.Prop(b => b.ObserveButtonRelease().Subscribe(e =>
+							{
+								e.RetVal = true;
+								_notificationsService.RemoveHistoryForApplication(obs.Key.AppName);
+							}))
+							.Prop(b => b.Image = closeButton
+								.Prop(i => i.IconName = "window-close-symbolic")
+								.Prop(i => i.PixelSize = 16))));
 
 				accordion.AddSection(obs.Key.AppName, sectionHeader);
 				obs.TakeLast(1).Subscribe(_ => accordion.RemoveSection(obs.Key.AppName));
+				closeButton.Visible = false;
 			});
 
 		viewModelObs

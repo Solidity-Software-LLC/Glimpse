@@ -103,4 +103,9 @@ public class NotificationsService(
 	{
 		store.Dispatch(new ClearNotificationHistory());
 	}
+
+	public void RemoveHistoryForApplication(string appName)
+	{
+		store.Dispatch(new RemoveHistoryForApplicationAction(appName));
+	}
 }
