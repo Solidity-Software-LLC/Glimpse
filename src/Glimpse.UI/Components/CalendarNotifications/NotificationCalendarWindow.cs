@@ -36,6 +36,7 @@ public class NotificationCalendarWindow : Window
 		var layout = new Box(Orientation.Vertical, 8);
 		layout.Add(notificationHistoryWindow);
 		layout.Add(calendarWindow);
+		layout.SetSizeRequest(340, 734);
 		layout.MarginEnd = 8;
 
 		_layoutRevealer = new Revealer();
@@ -47,7 +48,7 @@ public class NotificationCalendarWindow : Window
 		_layoutRevealer.Valign = Align.End;
 
 		Add(_layoutRevealer);
-		SetSizeRequest(420, 734);
+		SetSizeRequest(348, 734);
 
 		store.ObserveAction<WindowFocusedChangedAction>()
 			.ObserveOn(new GLibSynchronizationContext())

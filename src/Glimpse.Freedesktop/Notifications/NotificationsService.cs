@@ -98,4 +98,9 @@ public class NotificationsService(
 		freedesktopNotifications.EmitNotificationClosed(notificationId, (int) NotificationCloseReason.Dismissed);
 		store.Dispatch(new CloseNotificationAction(notificationId));
 	}
+
+	public void ClearHistory()
+	{
+		store.Dispatch(new ClearNotificationHistory());
+	}
 }

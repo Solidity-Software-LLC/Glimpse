@@ -43,18 +43,12 @@ button, .button {
 	background-color: transparent;
 }
 
-button:hover, .button:hover {
+button:hover, .button:hover, button:focus, .button:focus {
 	background-color: rgba(255, 255, 255, .1);
 }
 
 button:active, .button:active {
 	background-color: rgba(255, 255, 255, .3);
-}
-
-button:focus, .button:focus {
-	border: 0;
-	outline: 0;
-	background-color: transparent;
 }
 
 .foreach__dragging-placeholder {

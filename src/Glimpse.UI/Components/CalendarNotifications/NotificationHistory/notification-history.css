@@ -4,13 +4,10 @@
 	background-color: rgba(48, 48, 48, 0.95);
 	padding: 16px;
 	min-height: 300px;
-	min-width: 370px;
 }
 
 .notifications-history__header {
-	font-weight: bold;
 	font-size: 12px;
-	margin-bottom: 8px;
 }
 
 .notification-history__section-header {
@@ -18,12 +15,11 @@
 }
 
 .notification-history__section-header label {
-	font-size: 13px;
+	font-size: 12px;
 }
 
 .notifications-history-item__container {
 	border-radius: 6px;
-	min-width: 300px;
 	min-height: 52px;
 	padding: 8px;
 }
@@ -46,4 +42,10 @@
 .notifications-history-item__image {
 	margin-top: 8px;
 	margin-right: 8px;
+}
+
+.notifications-history__clear-all-button {
+	padding: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	background-color: rgba(255, 255, 255, 0.075);
 }

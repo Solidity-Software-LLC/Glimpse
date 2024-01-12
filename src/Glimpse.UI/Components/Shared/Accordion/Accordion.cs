@@ -39,12 +39,29 @@ public class Accordion : Bin
 
 		_sections.Add(new AccordionSection() { Name = sectionName, Root = sectionContainer, ItemContainer = sectionItemsContainer });
 		_sectionsContainer.Add(sectionContainer);
+		sectionContainer.ShowAll();
+	}
+
+	public void RemoveSection(string sectionName)
+	{
+		if (_sections.FirstOrDefault(s => s.Name == sectionName) is { } section)
+		{
+			section.Root.Destroy();
+			_sections.Remove(section);
+		}
 	}
 
 	public void AddItemToSection(string sectionName, Widget item)
 	{
-		var section = _sections.First(s => s.Name == sectionName);
-		section.ItemContainer.Add(item);
+		if (_sections.FirstOrDefault(s => s.Name == sectionName) is { } section)
+		{
+			section.ItemContainer.Add(item);
+		}
+	}
+
+	public void RemoveItemFromSection(string sectionName, Widget item)
+	{
+		item.Destroy();
 	}
 
 	public void ShowFirstSection()
@@ -54,9 +71,7 @@ public class Accordion : Bin
 			section.ItemContainer.Visible = false;
 		}
 
-		var firstItemContainer = _sections.FirstOrDefault()?.ItemContainer;
-
-		if (firstItemContainer != null)
+		if (_sections.FirstOrDefault()?.ItemContainer is { } firstItemContainer)
 		{
 			firstItemContainer.Visible = true;
 		}

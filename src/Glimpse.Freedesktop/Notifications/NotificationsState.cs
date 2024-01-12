@@ -12,6 +12,7 @@ public record AddNotificationAction(FreedesktopNotification Notification);
 public record NotificationTimerExpiredAction(uint NotificationId);
 public record CloseNotificationAction(uint NotificationId);
 public record RemoveHistoryItemAction(Guid Id);
+public record ClearNotificationHistory();
 
 public record NotificationHistoryApplication
 {
@@ -51,10 +52,8 @@ internal static class NotificationsReducers
 	[
 		FeatureReducer.Build(new NotificationHistory())
 			.On<LoadNotificationHistoryAction>((s, a) => a.History)
-			.On<RemoveHistoryItemAction>((s, a) =>
-			{
-				return s with { Notifications = s.Notifications.Where(n => n.Id != a.Id).ToImmutableList() };
-			})
+			.On<ClearNotificationHistory>((s, a) => s with { Notifications = ImmutableList<NotificationHistoryEntry>.Empty })
+			.On<RemoveHistoryItemAction>((s, a) => s with { Notifications = s.Notifications.Where(n => n.Id != a.Id).ToImmutableList() })
 			.On<AddNotificationAction>((s, a) =>
 			{
 				var result = s;

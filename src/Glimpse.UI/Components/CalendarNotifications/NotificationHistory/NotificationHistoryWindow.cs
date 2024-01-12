@@ -40,7 +40,7 @@ public class NotificationHistoryWindow : Bin
 					.AddMany(new Label(obs.Key.AppName));
 
 				accordion.AddSection(obs.Key.AppName, sectionHeader);
-				obs.TakeLast(1).Subscribe(_ => sectionHeader.Destroy());
+				obs.TakeLast(1).Subscribe(_ => accordion.RemoveSection(obs.Key.AppName));
 			});
 
 		viewModelObs
@@ -50,8 +50,7 @@ public class NotificationHistoryWindow : Bin
 			{
 				var item = CreateNotificationEntry(o);
 				accordion.AddItemToSection(o.Key.AppName, item);
-				o.TakeLast(1).Subscribe(_ => item.Destroy());
-				ShowAll();
+				o.TakeLast(1).Subscribe(_ => accordion.RemoveItemFromSection(o.Key.AppName, item));
 			});
 
 		Add(new Box(Orientation.Vertical, 8)
@@ -59,9 +58,16 @@ public class NotificationHistoryWindow : Bin
 			.Prop(w => w.Halign = Align.Fill)
 			.Prop(w => w.Valign = Align.Fill)
 			.AddClass("notifications-history__container")
-			.AddMany(new Label("Notifications")
-				.Prop(w => w.Halign = Align.Start)
-				.AddClass("notifications-history__header"))
+			.AddMany(new Box(Orientation.Horizontal, 0)
+				.Prop(w => w.Expand = false)
+				.AddMany(new Label("Notifications")
+					.AddClass("notifications-history__header")
+					.Prop(w => w.Expand = true)
+					.Prop(w => w.Xalign = 0))
+				.AddMany(new Button("Clear all")
+					.AddButtonStates()
+					.Prop(w => w.ObserveButtonRelease().Subscribe(_ => _notificationsService.ClearHistory()))
+					.AddClass("notifications-history__clear-all-button")))
 			.AddMany(new ScrolledWindow()
 				.Prop(w => w.HscrollbarPolicy = PolicyType.Never)
 				.Prop(w => w.Expand = true)
