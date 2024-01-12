@@ -6,7 +6,7 @@ using GLib;
 using Glimpse.Configuration;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Redux;
-using Glimpse.UI.Components.CalendarNotifications;
+using Glimpse.UI.Components.SidePane;
 using Glimpse.UI.Components.StartMenu;
 using Glimpse.UI.Components.SystemTray;
 using Glimpse.UI.Components.Taskbar;
@@ -25,7 +25,7 @@ public class Panel : Window
 {
 	private readonly Monitor _monitor;
 	private readonly IObservable<DateTime> _oneSecondTimer;
-	private readonly NotificationCalendarWindow _notificationCalendarWindow;
+	private readonly SidePaneWindow _sidePaneWindow;
 	private readonly Menu _menu;
 	private const string ClockFormat = "h:mm tt\nM/d/yyyy";
 
@@ -37,11 +37,11 @@ public class Panel : Window
 		FreeDesktopService freeDesktopService,
 		Monitor monitor,
 		[KeyFilter(Timers.OneSecond)] IObservable<DateTime> oneSecondTimer,
-		NotificationCalendarWindow notificationCalendarWindow) : base(WindowType.Toplevel)
+		SidePaneWindow sidePaneWindow) : base(WindowType.Toplevel)
 	{
 		_monitor = monitor;
 		_oneSecondTimer = oneSecondTimer;
-		_notificationCalendarWindow = notificationCalendarWindow;
+		_sidePaneWindow = sidePaneWindow;
 		Decorated = false;
 		Resizable = false;
 		TypeHint = WindowTypeHint.Dock;
@@ -139,7 +139,7 @@ public class Panel : Window
 
 		clockButtonEventBox.ObserveButtonRelease().Where(e => e.Event.Button == 1).Subscribe(e =>
 		{
-			_notificationCalendarWindow.ToggleVisibility();
+			_sidePaneWindow.ToggleVisibility();
 			e.RetVal = true;
 		});
 

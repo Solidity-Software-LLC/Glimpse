@@ -8,8 +8,8 @@ using Glimpse.Common.System.Reactive;
 using Glimpse.Freedesktop.Notifications;
 using Glimpse.Redux;
 using Glimpse.UI.Components;
-using Glimpse.UI.Components.CalendarNotifications;
 using Glimpse.UI.Components.NotificationBubbles;
+using Glimpse.UI.Components.SidePane;
 using Glimpse.UI.Components.StartMenu.Window;
 using Glimpse.UI.State;
 using Gtk;
@@ -61,7 +61,7 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 		screen.Events().SizeChanged.Subscribe(_ => LoadPanels(display));
 		screen.Events().MonitorsChanged.Subscribe(_ => LoadPanels(display));
 		application.AddWindow(serviceProvider.Resolve<StartMenuWindow>());
-		application.AddWindow(serviceProvider.Resolve<NotificationCalendarWindow>());
+		application.AddWindow(serviceProvider.Resolve<SidePaneWindow>());
 		LoadPanels(display);
 		Application.Run();
 	}

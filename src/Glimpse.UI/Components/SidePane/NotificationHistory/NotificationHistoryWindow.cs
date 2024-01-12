@@ -6,10 +6,10 @@ using Glimpse.Redux;
 using Glimpse.UI.Components.Shared.Accordion;
 using Gtk;
 using Pango;
-using WrapMode = Pango.WrapMode;
 using ReactiveMarbles.ObservableEvents;
+using WrapMode = Pango.WrapMode;
 
-namespace Glimpse.UI.Components.CalendarNotifications.NotificationHistory;
+namespace Glimpse.UI.Components.SidePane.NotificationHistory;
 
 public class NotificationHistoryWindow : Bin
 {
@@ -23,7 +23,7 @@ public class NotificationHistoryWindow : Bin
 		accordion.Expand = true;
 
 		var viewModelObs = store
-			.Select(NotificationCalendarSelectors.ViewModel)
+			.Select(SidePaneSelectors.ViewModel)
 			.Select(vm => vm.NotificationHistory.OrderBy(n => n.AppName).ThenBy(n => n.CreationDate))
 			.ObserveOn(new GLibSynchronizationContext())
 			.Replay(1);

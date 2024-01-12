@@ -5,7 +5,7 @@ using GLib;
 using Gtk;
 using DateTime = System.DateTime;
 
-namespace Glimpse.UI.Components.CalendarNotifications.Calendar;
+namespace Glimpse.UI.Components.SidePane.Calendar;
 
 public class CalendarWindow : Bin
 {

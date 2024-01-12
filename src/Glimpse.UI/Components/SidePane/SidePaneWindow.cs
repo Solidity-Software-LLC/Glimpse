@@ -3,21 +3,21 @@ using Gdk;
 using GLib;
 using Glimpse.Interop.Gdk;
 using Glimpse.Redux;
-using Glimpse.UI.Components.CalendarNotifications.Calendar;
-using Glimpse.UI.Components.CalendarNotifications.NotificationHistory;
+using Glimpse.UI.Components.SidePane.Calendar;
+using Glimpse.UI.Components.SidePane.NotificationHistory;
 using Glimpse.Xorg.State;
 using Gtk;
 using ReactiveMarbles.ObservableEvents;
 using Window = Gtk.Window;
 using WindowType = Gtk.WindowType;
 
-namespace Glimpse.UI.Components.CalendarNotifications;
+namespace Glimpse.UI.Components.SidePane;
 
-public class NotificationCalendarWindow : Window
+public class SidePaneWindow : Window
 {
 	private Revealer _layoutRevealer;
 
-	public NotificationCalendarWindow(CalendarWindow calendarWindow, NotificationHistoryWindow notificationHistoryWindow, ReduxStore store) : base(WindowType.Toplevel)
+	public SidePaneWindow(CalendarWindow calendarWindow, NotificationHistoryWindow notificationHistoryWindow, ReduxStore store) : base(WindowType.Toplevel)
 	{
 		this.Events().DeleteEvent.Subscribe(e => e.RetVal = true);
 

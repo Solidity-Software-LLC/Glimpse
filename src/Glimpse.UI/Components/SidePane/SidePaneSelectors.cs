@@ -5,7 +5,7 @@ using Glimpse.Freedesktop.Notifications;
 using Glimpse.Redux.Selectors;
 using Glimpse.UI.State;
 
-namespace Glimpse.UI.Components.CalendarNotifications;
+namespace Glimpse.UI.Components.SidePane;
 
 public record NotificationsViewModel
 {
@@ -24,7 +24,7 @@ public record NotificationEntryViewModel
 	public ImageViewModel Image { get; set; }
 }
 
-public static class NotificationCalendarSelectors
+public static class SidePaneSelectors
 {
 	public static readonly ISelector<NotificationsViewModel> ViewModel = SelectorFactory.CreateSelector(
 		NotificationSelectors.NotificationHistory,
