@@ -8,6 +8,7 @@ using Glimpse.Configuration;
 using Glimpse.Redux;
 using Glimpse.Redux.Effects;
 using Glimpse.UI.Components;
+using Glimpse.UI.Components.NotificationsConfig;
 using Glimpse.UI.Components.SidePane;
 using Glimpse.UI.Components.SidePane.Calendar;
 using Glimpse.UI.Components.SidePane.NotificationHistory;
@@ -56,6 +57,8 @@ public static class UIStartupExtensions
 		containerBuilder.RegisterType<StartMenuWindow>().SingleInstance();
 		containerBuilder.RegisterType<CalendarWindow>().SingleInstance().WithAttributeFiltering();
 		containerBuilder.RegisterType<NotificationHistoryWindow>().SingleInstance();
+		containerBuilder.RegisterType<NotificationsConfigWindow>().SingleInstance();
+		containerBuilder.RegisterType<NotificationsConfigWidget>().SingleInstance();
 		containerBuilder.RegisterType<SidePaneWindow>().SingleInstance().WithAttributeFiltering();
 		containerBuilder.RegisterInstance(UIReducers.AllReducers);
 		containerBuilder.RegisterType<UIEffects>().As<IEffectsFactory>();

@@ -44,6 +44,7 @@ public static class NotificationSelectors
 {
 	public static readonly ISelector<NotificationHistory> NotificationHistory = SelectorFactory.CreateFeatureSelector<NotificationHistory>();
 	public static readonly ISelector<DataTable<uint, FreedesktopNotification>> NotificationsState = SelectorFactory.CreateFeatureSelector<DataTable<uint, FreedesktopNotification>>();
+	public static readonly ISelector<ImmutableList<NotificationHistoryApplication>> KnownApplications = SelectorFactory.CreateSelector(NotificationHistory, history => history.KnownApplications);
 }
 
 internal static class NotificationsReducers

@@ -3,6 +3,7 @@ using GLib;
 using Glimpse.Common.System.Reactive;
 using Glimpse.Freedesktop.Notifications;
 using Glimpse.Redux;
+using Glimpse.UI.Components.NotificationsConfig;
 using Glimpse.UI.Components.Shared.Accordion;
 using Gtk;
 using Pango;
@@ -15,7 +16,7 @@ public class NotificationHistoryWindow : Bin
 {
 	private readonly NotificationsService _notificationsService;
 
-	public NotificationHistoryWindow(ReduxStore store, NotificationsService notificationsService)
+	public NotificationHistoryWindow(ReduxStore store, NotificationsConfigWindow notificationsConfigWindow, NotificationsService notificationsService)
 	{
 		_notificationsService = notificationsService;
 
@@ -84,6 +85,14 @@ public class NotificationHistoryWindow : Bin
 					.AddClass("notifications-history__header")
 					.Prop(w => w.Expand = true)
 					.Prop(w => w.Xalign = 0))
+				.AddMany(new Button()
+					.AddButtonStates()
+					.Prop(w => w.ObserveButtonRelease().Subscribe(_ => notificationsConfigWindow.ShowAndCenterOnScreen()))
+					.Prop(b => b.Image = new Image()
+						.Prop(i => i.IconName = "emblem-system-symbolic")
+						.Prop(i => i.PixelSize = 16))
+					.Prop(w => w.ObserveButtonRelease().Subscribe(_ => _notificationsService.ClearHistory()))
+					.AddClass("notifications-history__clear-all-button"))
 				.AddMany(new Button("Clear all")
 					.AddButtonStates()
 					.Prop(w => w.ObserveButtonRelease().Subscribe(_ => _notificationsService.ClearHistory()))

@@ -6,6 +6,7 @@ public record ConfigurationFile
 {
 	public TaskbarConfiguration Taskbar { get; set; } = new();
 	public StartMenuConfiguration StartMenu { get; set; } = new();
+	public Notifications Notifications { get; set; } = new();
 	public string PowerButtonCommand { get; set; } = "xfce4-session-logout";
 	public string SettingsButtonCommand { get; set; } = "xfce4-settings-manager";
 	public string UserSettingsCommand { get; set; } = "mugshot";
@@ -21,6 +22,19 @@ public record ConfigurationFile
 		new () { DisplayText = "Hardware Information", Executable = "hardinfo" },
 		new () { DisplayText = "Network Connections", Executable = "nm-connection-editor" },
 		new () { DisplayText = "Session & Startup", Executable = "xfce4-settings-manager", Arguments = "-d xfce-session-settings" });
+}
+
+public record Notifications
+{
+	public ImmutableList<NotificationApplicationConfig> Applications { get; set; } = ImmutableList<NotificationApplicationConfig>.Empty;
+}
+
+public record NotificationApplicationConfig
+{
+	public string Name { get; set; }
+	public bool ShowPopupBubbles { get; set; }
+	public bool ShowInHistory { get; set; }
+
 }
 
 public record StartMenuLaunchIconContextMenuItem
