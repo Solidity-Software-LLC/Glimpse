@@ -1,5 +1,3 @@
-using Glimpse.Freedesktop.DesktopEntries;
-using Glimpse.Redux;
 using Glimpse.Redux.Reducers;
 
 namespace Glimpse.Freedesktop;
@@ -15,8 +13,6 @@ internal class Reducers
 {
 	public static readonly FeatureReducerCollection AllReducers =
 	[
-		FeatureReducer.Build(new DataTable<string, DesktopFile>())
-			.On<UpdateDesktopFilesAction>((s, a) => s.UpsertMany(a.DesktopFiles)),
 		FeatureReducer.Build(new AccountState())
 			.On<UpdateUserAction>((s, a) => new AccountState { UserName = a.UserName, IconPath = a.IconPath })
 	];

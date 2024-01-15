@@ -89,7 +89,7 @@ public class Panel : Window
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false));
 
 		var taskManagerMenuItem = ContextMenuHelper.CreateMenuItem("Task Manager", new ImageViewModel() { IconNameOrPath = "utilities-system-monitor-symbolic" });
-		taskManagerMenuItem.ObserveButtonRelease().WithLatestFrom(taskManagerObs).Subscribe(t => freeDesktopService.Run(t.Second));
+		taskManagerMenuItem.ObserveButtonRelease().WithLatestFrom(taskManagerObs).Subscribe(t => DesktopFileRunner.Run(t.Second));
 
 		_menu = new Menu();
 		_menu.ReserveToggleSize = false;

@@ -69,7 +69,7 @@ public class StartMenuLaunchIcon : EventBox
 				else
 				{
 					var menuItem = new MenuItem(i.DisplayText);
-					menuItem.ObserveEvent(w => w.Events().Activated).Subscribe(_ => freeDesktopService.Run(i.Executable + " " + i.Arguments));
+					menuItem.ObserveEvent(w => w.Events().Activated).Subscribe(_ => DesktopFileRunner.Run(i.Executable + " " + i.Arguments));
 					launchIconMenu.Add(menuItem);
 				}
 			}

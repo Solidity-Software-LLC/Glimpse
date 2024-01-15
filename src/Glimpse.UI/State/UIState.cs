@@ -1,6 +1,4 @@
 using System.Collections.Immutable;
-using Gdk;
-using Glimpse.Common.Images;
 
 namespace Glimpse.UI.State;
 
@@ -19,12 +17,6 @@ public record SlotRef
 	public string PinnedDesktopFileId { get; init; } = "";
 	public string ClassHintName { get; init; } = "";
 	public string DiscoveredDesktopFileId { get; init; } = "";
-}
-
-public record ImageViewModel
-{
-	public string IconNameOrPath { get; set; } = "";
-	public IGlimpseImage Image { get; set; }
 }
 
 public record UIState
@@ -52,10 +44,4 @@ public enum StartMenuChips
 	Pinned,
 	AllApps,
 	SearchResults
-}
-
-public record StartMenuAppFilteringChip
-{
-	public bool IsVisible { get; set; }
-	public bool IsSelected { get; set; }
 }

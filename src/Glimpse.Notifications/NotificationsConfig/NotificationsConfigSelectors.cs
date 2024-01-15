@@ -1,6 +1,5 @@
 using System.Collections.Immutable;
-using Glimpse.Configuration;
-using Glimpse.Freedesktop;
+using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Freedesktop.Notifications;
 using Glimpse.Redux.Selectors;
 using Glimpse.UI.State;
@@ -23,9 +22,8 @@ public static class NotificationsConfigSelectors
 {
 	public static readonly ISelector<NotificationsConfigViewModel> ViewModel = SelectorFactory.CreateSelector(
 		NotificationSelectors.KnownApplications,
-		FreedesktopSelectors.AllDesktopFiles,
-		ConfigurationSelectors.Configuration,
-		(knownApplications, desktopFiles, config) =>
+		DesktopFileSelectors.AllDesktopFiles,
+		(knownApplications, desktopFiles) =>
 		{
 			return new NotificationsConfigViewModel()
 			{

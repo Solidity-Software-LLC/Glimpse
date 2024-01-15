@@ -55,12 +55,12 @@ public class StartMenuWindow : Gtk.Window
 		this.ObserveEvent(actionBar.CommandInvoked).Subscribe(command =>
 		{
 			ToggleVisibility();
-			freeDesktopService.Run(command);
+			DesktopFileRunner.Run(command);
 		});
 
 		_startMenuContent = new StartMenuContent(viewModelObservable, actionBar);
 
-		this.ObserveEvent(_startMenuContent.DesktopFileAction).Subscribe(a => freeDesktopService.Run(a));
+		this.ObserveEvent(_startMenuContent.DesktopFileAction).Subscribe(a => DesktopFileRunner.Run(a));
 		this.ObserveEvent(_startMenuContent.ChipActivated).Subscribe(c => store.Dispatch(new UpdateAppFilteringChip(c)));
 		this.ObserveEvent(_startMenuContent.AppOrderingChanged).Subscribe(t => store.Dispatch(new UpdateStartMenuPinnedAppOrderingAction(t)));
 		this.ObserveEvent(_startMenuContent.ToggleStartMenuPinning).Subscribe(f => store.Dispatch(new ToggleStartMenuPinningAction(f)));
@@ -69,7 +69,7 @@ public class StartMenuWindow : Gtk.Window
 		this.ObserveEvent(_startMenuContent.AppLaunch).Subscribe(desktopFile =>
 		{
 			ToggleVisibility();
-			freeDesktopService.Run(desktopFile);
+			DesktopFileRunner.Run(desktopFile);
 		});
 
 		store.ObserveAction<WindowFocusedChangedAction>()

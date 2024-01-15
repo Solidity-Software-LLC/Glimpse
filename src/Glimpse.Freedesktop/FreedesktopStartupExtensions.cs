@@ -24,6 +24,7 @@ public static class FreedesktopStartupExtensions
 		await container.GetRequiredService<DBusSystemTrayService>().InitializeAsync();
 		await container.GetRequiredService<XSessionManager>().Register(installationPath);
 		await host.UseNotifications();
+		await host.UseDesktopFiles();
 	}
 
 	public static void AddFreedesktop(this ContainerBuilder containerBuilder)
@@ -41,6 +42,7 @@ public static class FreedesktopStartupExtensions
 		containerBuilder.Register(c => new OrgFreedesktopDBus(c.Resolve<DBusConnections>().Session, Connection.DBusServiceName, Connection.DBusObjectPath)).SingleInstance();
 		containerBuilder.Register(c => new OrgXfceSessionManager(c.Resolve<DBusConnections>().Session)).SingleInstance();
 		containerBuilder.RegisterInstance(new DBusConnections() { Session = new Connection(Address.Session!), System = new Connection(Address.System!), }).ExternallyOwned();
+		containerBuilder.AddDesktopFiles();
 		containerBuilder.AddNotifications();
 	}
 }

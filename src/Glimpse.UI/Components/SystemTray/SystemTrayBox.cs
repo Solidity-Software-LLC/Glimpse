@@ -26,7 +26,7 @@ public class SystemTrayBox : Box
 
 		volumeButton.ObserveEvent(w => w.Events().ButtonReleaseEvent)
 			.WithLatestFrom(store.Select(ConfigurationSelectors.VolumeCommand))
-			.Subscribe(t => freeDesktopService.Run(t.Second));
+			.Subscribe(t => DesktopFileRunner.Run(t.Second));
 
 		PackEnd(volumeButton, false, false, 0);
 

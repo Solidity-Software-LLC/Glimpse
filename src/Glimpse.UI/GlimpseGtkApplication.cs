@@ -68,13 +68,15 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 
 	private void LoadCss()
 	{
-		var assembly = typeof(GlimpseGtkApplication).Assembly;
 		var allCss = new StringBuilder();
 
-		foreach (var cssFile in assembly.GetManifestResourceNames().Where(n => n.EndsWith(".css")))
+		foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
 		{
-			using var cssFileStream = new StreamReader(assembly.GetManifestResourceStream(cssFile));
-			allCss.AppendLine(cssFileStream.ReadToEnd());
+			foreach (var cssFile in assembly.GetManifestResourceNames().Where(n => n.EndsWith(".css")))
+			{
+				using var cssFileStream = new StreamReader(assembly.GetManifestResourceStream(cssFile));
+				allCss.AppendLine(cssFileStream.ReadToEnd());
+			}
 		}
 
 		var display = Display.Default;

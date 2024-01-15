@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Glimpse.Common.System;
 using Glimpse.Freedesktop;
+using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Freedesktop.Notifications;
 using Glimpse.Redux.Selectors;
 using Glimpse.UI.State;
@@ -27,7 +28,7 @@ public static class NotificationBubbleSelectors
 {
 	public static readonly ISelector<NotificationBubblesViewModel> ViewModel = SelectorFactory.CreateSelector(
 		NotificationSelectors.NotificationsState,
-		FreedesktopSelectors.AllDesktopFiles,
+		DesktopFileSelectors.AllDesktopFiles,
 		(notifications, desktopFiles) =>
 		{
 			return new NotificationBubblesViewModel

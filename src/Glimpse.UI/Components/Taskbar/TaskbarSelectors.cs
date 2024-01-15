@@ -18,7 +18,7 @@ public static class TaskbarSelectors
 		windows => windows.ById.Values.ToImmutableList());
 
 	public static readonly ISelector<SlotReferences> Slots = CreateSelector(
-		FreedesktopSelectors.DesktopFiles,
+		DesktopFileSelectors.DesktopFiles,
 		s_windowPropertiesList.WithSequenceComparer((x, y) => x.WindowRef.Id == y.WindowRef.Id && x.ClassHintName == y.ClassHintName),
 		UISelectors.UserSortedSlots,
 		(desktopFiles, windows, userSortedSlotCollection) =>
@@ -59,7 +59,7 @@ public static class TaskbarSelectors
 
 	private static readonly ISelector<ImmutableList<(SlotRef Slot, DesktopFile DesktopFile)>> s_slotToDesktopFile = CreateSelector(
 		Slots,
-		FreedesktopSelectors.DesktopFiles,
+		DesktopFileSelectors.DesktopFiles,
 		(slots, desktopFiles) =>
 		{
 			return slots.Refs.Select(slot => (

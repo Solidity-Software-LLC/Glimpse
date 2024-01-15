@@ -91,7 +91,7 @@ public class TaskbarView : Box
 			groupIcon.ObserveButtonRelease()
 				.WithLatestFrom(viewModelObservable)
 				.Where(t => t.First.Event.Button == 1 && t.Second.Tasks.Count == 0)
-				.Subscribe(t => freeDesktopService.Run(t.Second.DesktopFile));
+				.Subscribe(t => DesktopFileRunner.Run(t.Second.DesktopFile));
 
 			groupIcon.ObserveButtonRelease()
 				.WithLatestFrom(viewModelObservable)
@@ -113,7 +113,7 @@ public class TaskbarView : Box
 
 			 contextMenu.DesktopFileAction
 			 	.WithLatestFrom(viewModelObservable)
-			 	.Subscribe(t => freeDesktopService.Run(t.First));
+			 	.Subscribe(t => DesktopFileRunner.Run(t.First));
 
 			 contextMenu.Pin
 			 	.WithLatestFrom(viewModelObservable)
@@ -121,7 +121,7 @@ public class TaskbarView : Box
 
 			 contextMenu.Launch
 			 	.WithLatestFrom(viewModelObservable)
-			 	.Subscribe(t => freeDesktopService.Run(t.Second.DesktopFile));
+			 	.Subscribe(t => DesktopFileRunner.Run(t.Second.DesktopFile));
 
 			replayLatestViewModelObservable.Connect();
 			return groupIcon;

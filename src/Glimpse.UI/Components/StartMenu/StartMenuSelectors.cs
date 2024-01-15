@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Glimpse.Common.System;
 using Glimpse.Configuration;
 using Glimpse.Freedesktop;
+using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Redux.Selectors;
 using Glimpse.UI.State;
 using static Glimpse.Redux.Selectors.SelectorFactory;
@@ -31,7 +32,7 @@ public static class StartMenuSelectors
 		});
 
 	private static readonly ISelector<ImmutableList<StartMenuAppViewModel>> s_allAppsSelector = CreateSelector(
-		FreedesktopSelectors.AllDesktopFiles,
+		DesktopFileSelectors.AllDesktopFiles,
 		s_searchText,
 		ConfigurationSelectors.Configuration,
 		s_chips,
