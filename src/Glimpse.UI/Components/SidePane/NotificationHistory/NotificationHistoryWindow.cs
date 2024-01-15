@@ -91,7 +91,6 @@ public class NotificationHistoryWindow : Bin
 					.Prop(b => b.Image = new Image()
 						.Prop(i => i.IconName = "emblem-system-symbolic")
 						.Prop(i => i.PixelSize = 16))
-					.Prop(w => w.ObserveButtonRelease().Subscribe(_ => _notificationsService.ClearHistory()))
 					.AddClass("notifications-history__clear-all-button"))
 				.AddMany(new Button("Clear all")
 					.AddButtonStates()

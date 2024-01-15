@@ -17,6 +17,7 @@ public record RemoveHistoryForApplicationAction(string AppName);
 public record NotificationHistoryApplication
 {
 	public string Name { get; set; }
+	public string DesktopEntry { get; set; }
 }
 
 public record NotificationHistory
@@ -74,7 +75,7 @@ internal static class NotificationsReducers
 
 				if (result.KnownApplications.All(app => app.Name != a.Notification.AppName))
 				{
-					var app = new NotificationHistoryApplication() { Name = a.Notification.AppName };
+					var app = new NotificationHistoryApplication() { Name = a.Notification.AppName, DesktopEntry = a.Notification.DesktopEntry };
 					result = result with { KnownApplications = s.KnownApplications.Add(app) };
 				}
 

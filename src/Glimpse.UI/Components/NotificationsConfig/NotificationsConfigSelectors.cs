@@ -32,7 +32,7 @@ public static class NotificationsConfigSelectors
 				KnownApplications = knownApplications
 					.Select(a =>
 					{
-						var desktopFile = desktopFiles.FirstOrDefault(d => d.Name == a.Name);
+						var desktopFile = desktopFiles.FirstOrDefault(d => d.FileName == a.DesktopEntry);
 						var appIcon = desktopFile?.IconName ?? "";
 
 						return new NotificationHistoryApplicationViewModel()
