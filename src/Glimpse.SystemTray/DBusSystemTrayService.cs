@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using Glimpse.Common.Images;
 using Glimpse.Common.System;
 using Glimpse.Freedesktop.DBus;
 using Glimpse.Freedesktop.DBus.Core;
@@ -65,7 +66,7 @@ public class DBusSystemTrayService(
 			{
 				store.Dispatch(new UpdateStatusNotifierItemPropertiesAction()
 				{
-					Properties = StatusNotifierItemProperties.From(props),
+					Properties = CreateProperties(props),
 					ServiceName = serviceName
 				});
 			});
@@ -86,10 +87,31 @@ public class DBusSystemTrayService(
 
 		return new SystemTrayItemState()
 		{
-			Properties = StatusNotifierItemProperties.From(await statusNotifierItemProxy.GetAllPropertiesAsync()),
+			Properties = CreateProperties(await statusNotifierItemProxy.GetAllPropertiesAsync()),
 			StatusNotifierItemDescription = statusNotifierItemDesc,
 			DbusMenuDescription = dbusMenuDescription,
 			RootMenuItem = DbusMenuItem.From(dbusMenuLayout.layout)
+		};
+	}
+
+	private static StatusNotifierItemProperties CreateProperties(OrgKdeStatusNotifierItem.Properties item)
+	{
+		return new StatusNotifierItemProperties()
+		{
+			Category = item.Category,
+			Id = item.Id,
+			Title = item.Title,
+			Status = item.Status,
+			IconThemePath = item.IconThemePath,
+			ItemIsMenu = item.ItemIsMenu,
+			IconName = item.IconName,
+			MenuPath = item.Menu.ToString(),
+			IconPixmap = item.IconPixmap?.Select(i => GlimpseImageFactory.From(ImageHelper.ConvertArgbToRgba(i.Item3, i.Item1, i.Item2), 32, i.Item1, i.Item2)).ToArray(),
+			OverlayIconName = item.OverlayIconName,
+			OverlayIconPixmap = item.OverlayIconPixmap?.Select(i => GlimpseImageFactory.From(ImageHelper.ConvertArgbToRgba(i.Item3, i.Item1, i.Item2), 32, i.Item1, i.Item2)).ToArray(),
+			AttentionIconName = item.AttentionIconName,
+			AttentionIconPixmap = item.AttentionIconPixmap?.Select(i => GlimpseImageFactory.From(ImageHelper.ConvertArgbToRgba(i.Item3, i.Item1, i.Item2), 32, i.Item1, i.Item2)).ToArray(),
+			AttentionMovieName = item.AttentionMovieName
 		};
 	}
 

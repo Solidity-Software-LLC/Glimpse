@@ -12,7 +12,7 @@ namespace Glimpse.UI.Components.SystemTray;
 
 public class SystemTrayBox : Box
 {
-	public SystemTrayBox(ReduxStore store, FreeDesktopService freeDesktopService) : base(Orientation.Horizontal, 0)
+	public SystemTrayBox(ReduxStore store) : base(Orientation.Horizontal, 0)
 	{
 		StyleContext.AddClass("system-tray__taskbar-container");
 

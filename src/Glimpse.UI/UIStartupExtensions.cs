@@ -1,11 +1,8 @@
-using System.Collections.Immutable;
 using System.Reactive.Linq;
 using Autofac;
 using Autofac.Features.AttributeFilters;
 using GLib;
 using Glimpse.Common.System.Reactive;
-using Glimpse.Configuration;
-using Glimpse.Redux;
 using Glimpse.Redux.Effects;
 using Glimpse.Taskbar;
 using Glimpse.UI.Components;
@@ -16,7 +13,6 @@ using Glimpse.UI.Components.SidePane.NotificationHistory;
 using Glimpse.UI.Components.StartMenu;
 using Glimpse.UI.Components.StartMenu.Window;
 using Glimpse.UI.Components.SystemTray;
-using Glimpse.UI.Components.Taskbar;
 using Glimpse.UI.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -29,10 +25,10 @@ namespace Glimpse.UI;
 
 public static class UIStartupExtensions
 {
-	public static Task UseGlimpseUI(this IHost host)
+	public static async Task UseGlimpseUI(this IHost host)
 	{
-		host.UseTaskbar();
-		return Task.CompletedTask;
+		await host.UseTaskbar();
+		await host.UseSystemTray();
 	}
 
 	public static void AddGlimpseUI(this IHostApplicationBuilder builder)
@@ -44,7 +40,6 @@ public static class UIStartupExtensions
 	{
 		containerBuilder.RegisterType<Panel>().WithAttributeFiltering();
 		containerBuilder.RegisterType<GlimpseGtkApplication>().SingleInstance();
-		containerBuilder.RegisterType<SystemTrayBox>();
 		containerBuilder.RegisterType<StartMenuLaunchIcon>();
 		containerBuilder.RegisterType<StartMenuWindow>().SingleInstance();
 		containerBuilder.RegisterType<CalendarWindow>().SingleInstance().WithAttributeFiltering();
@@ -56,6 +51,7 @@ public static class UIStartupExtensions
 		containerBuilder.RegisterType<UIEffects>().As<IEffectsFactory>();
 		containerBuilder.RegisterType<GlimpseGtkApplication>().SingleInstance();
 		containerBuilder.AddTaskbar();
+		containerBuilder.AddSystemTray();
 
 		containerBuilder
 			.Register(c =>

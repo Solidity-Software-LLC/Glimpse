@@ -4,8 +4,6 @@ using Glimpse.Freedesktop.DBus.Interfaces;
 using Glimpse.Freedesktop.DBus.Introspection;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Freedesktop.Notifications;
-using Glimpse.Freedesktop.SystemTray;
-using Glimpse.Redux.Effects;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tmds.DBus.Protocol;
@@ -21,7 +19,6 @@ public static class FreedesktopStartupExtensions
 		await dbusConnections.Session.ConnectAsync();
 		await dbusConnections.System.ConnectAsync();
 		await container.GetRequiredService<FreeDesktopService>().InitializeAsync(dbusConnections);
-		await container.GetRequiredService<DBusSystemTrayService>().InitializeAsync();
 		await container.GetRequiredService<XSessionManager>().Register(installationPath);
 		await host.UseNotifications();
 		await host.UseDesktopFiles();
@@ -29,11 +26,8 @@ public static class FreedesktopStartupExtensions
 
 	public static void AddFreedesktop(this ContainerBuilder containerBuilder)
 	{
-		containerBuilder.RegisterInstance(SystemTrayItemStateReducers.Reducers);
 		containerBuilder.RegisterInstance(Reducers.AllReducers);
-		containerBuilder.RegisterType<SystemTrayItemStateEffects>().As<IEffectsFactory>();
 		containerBuilder.RegisterType<FreeDesktopService>().SingleInstance();
-		containerBuilder.RegisterType<DBusSystemTrayService>();
 		containerBuilder.RegisterType<IntrospectionService>();
 		containerBuilder.RegisterType<OrgFreedesktopAccounts>().SingleInstance();
 		containerBuilder.RegisterType<OrgKdeStatusNotifierWatcher>().SingleInstance();
