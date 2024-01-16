@@ -75,7 +75,7 @@ public class Panel : Window
 		Add(grid);
 		ShowAll();
 
-		store.Select(TaskbarSelectors.Slots)
+		store.Select(TaskbarViewModelSelectors.Slots)
 			.DistinctUntilChanged()
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new SynchronizationContextScheduler(new GLibSynchronizationContext(), false))

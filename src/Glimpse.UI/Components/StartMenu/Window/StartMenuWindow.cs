@@ -7,6 +7,7 @@ using Glimpse.Common.System.Reactive;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Interop.Gdk;
 using Glimpse.Redux;
+using Glimpse.Taskbar;
 using Glimpse.UI.State;
 using Glimpse.Xorg.State;
 using Gtk;

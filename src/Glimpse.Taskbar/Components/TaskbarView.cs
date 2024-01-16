@@ -4,6 +4,7 @@ using System.Reactive.Linq;
 using GLib;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Redux;
+using Glimpse.Taskbar;
 using Glimpse.UI.Components.Shared.ForEach;
 using Glimpse.UI.State;
 using Glimpse.Xorg;
@@ -18,7 +19,7 @@ public class TaskbarView : Box
 	public TaskbarView(ReduxStore store, IDisplayServer displayServer, FreeDesktopService freeDesktopService)
 	{
 		var viewModelSelector = store
-			.Select(TaskbarSelectors.ViewModel)
+			.Select(TaskbarViewModelSelectors.ViewModel)
 			.TakeUntilDestroyed(this)
 			.ObserveOn(new GLibSynchronizationContext())
 			.Replay(1);

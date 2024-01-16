@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using Glimpse.Common.System.Collections.Immutable;
 using Glimpse.Configuration;
 using Glimpse.Redux.Effects;
@@ -10,12 +9,6 @@ public class UIEffects(ConfigurationService configurationService) : IEffectsFact
 {
 	public IEnumerable<Effect> Create() => new[]
 	{
-		CreateEffect<ToggleTaskbarPinningAction, ConfigurationFile>(
-			ConfigurationSelectors.Configuration,
-			(a, s) =>
-			{
-				configurationService.UpdateConfiguration(s with { Taskbar = s.Taskbar with { PinnedLaunchers = s.Taskbar.PinnedLaunchers.Toggle(a.DesktopFileId) } });
-			}),
 		CreateEffect<ToggleStartMenuPinningAction, ConfigurationFile>(
 			ConfigurationSelectors.Configuration,
 			(a, s) =>
@@ -28,14 +21,6 @@ public class UIEffects(ConfigurationService configurationService) : IEffectsFact
 			{
 				if (s.StartMenu.PinnedLaunchers.SequenceEqual(a.DesktopFileKeys)) return;
 				configurationService.UpdateConfiguration(s with { StartMenu = s.StartMenu with { PinnedLaunchers = a.DesktopFileKeys } });
-			}),
-		CreateEffect<UpdateTaskbarSlotOrderingBulkAction, ConfigurationFile>(
-			ConfigurationSelectors.Configuration,
-			(a, s) =>
-			{
-				var pinnedSlots = a.Slots.Select(r => r.PinnedDesktopFileId).Where(slot => !string.IsNullOrEmpty(slot)).ToImmutableList();
-				if (pinnedSlots.SequenceEqual(s.Taskbar.PinnedLaunchers)) return;
-				configurationService.UpdateConfiguration(s with { Taskbar = s.Taskbar with { PinnedLaunchers = pinnedSlots } });
 			})
 	};
 }

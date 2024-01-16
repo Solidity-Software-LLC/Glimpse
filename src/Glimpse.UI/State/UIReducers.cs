@@ -33,8 +33,6 @@ internal class UIReducers
 				}
 
 				return s with { SearchText = a.SearchText, Chips = chips };
-			}),
-		FeatureReducer.Build(new UIState())
-			.On<UpdateTaskbarSlotOrderingBulkAction>((s, a) => s with { TaskbarSlots = new SlotReferences() { Refs = a.Slots } })
+			})
 	};
 }

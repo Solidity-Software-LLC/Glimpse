@@ -1,9 +1,9 @@
 using System.Collections.Immutable;
 using Glimpse.Common.Images;
 using Glimpse.Common.System.Collections;
-using Glimpse.Freedesktop;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Redux.Selectors;
+using Glimpse.Taskbar;
 using Glimpse.UI.State;
 using Glimpse.Xorg;
 using Glimpse.Xorg.State;
@@ -11,7 +11,7 @@ using static Glimpse.Redux.Selectors.SelectorFactory;
 
 namespace Glimpse.UI.Components.Taskbar;
 
-public static class TaskbarSelectors
+public static class TaskbarViewModelSelectors
 {
 	private static readonly ISelector<ImmutableList<WindowProperties>> s_windowPropertiesList = CreateSelector(
 		XorgSelectors.Windows,
@@ -20,7 +20,7 @@ public static class TaskbarSelectors
 	public static readonly ISelector<SlotReferences> Slots = CreateSelector(
 		DesktopFileSelectors.DesktopFiles,
 		s_windowPropertiesList.WithSequenceComparer((x, y) => x.WindowRef.Id == y.WindowRef.Id && x.ClassHintName == y.ClassHintName),
-		UISelectors.UserSortedSlots,
+		TaskbarStateSelectors.UserSortedSlots,
 		(desktopFiles, windows, userSortedSlotCollection) =>
 		{
 			var result = ImmutableList<SlotRef>.Empty.AddRange(userSortedSlotCollection.Refs);

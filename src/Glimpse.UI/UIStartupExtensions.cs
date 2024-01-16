@@ -7,6 +7,7 @@ using Glimpse.Common.System.Reactive;
 using Glimpse.Configuration;
 using Glimpse.Redux;
 using Glimpse.Redux.Effects;
+using Glimpse.Taskbar;
 using Glimpse.UI.Components;
 using Glimpse.UI.Components.NotificationsConfig;
 using Glimpse.UI.Components.SidePane;
@@ -30,18 +31,10 @@ public static class UIStartupExtensions
 {
 	public static Task UseGlimpseUI(this IHost host)
 	{
-		var store = host.Services.GetRequiredService<ReduxStore>();
-		var configurationService = host.Services.GetRequiredService<ConfigurationService>();
-
-		configurationService.ConfigurationUpdated.WithLatestFrom(store.Select(UISelectors.Root)).Subscribe(t =>
-		{
-			var (config, s) = t;
-			var slots = config.Taskbar.PinnedLaunchers.Select(l => new SlotRef() { PinnedDesktopFileId = l }).ToImmutableList();
-			store.Dispatch(new UpdateTaskbarSlotOrderingBulkAction() { Slots = slots });
-		});
-
+		host.UseTaskbar();
 		return Task.CompletedTask;
 	}
+
 	public static void AddGlimpseUI(this IHostApplicationBuilder builder)
 	{
 		builder.Services.AddHostedService<GlimpseGtkApplication>();
@@ -52,7 +45,6 @@ public static class UIStartupExtensions
 		containerBuilder.RegisterType<Panel>().WithAttributeFiltering();
 		containerBuilder.RegisterType<GlimpseGtkApplication>().SingleInstance();
 		containerBuilder.RegisterType<SystemTrayBox>();
-		containerBuilder.RegisterType<TaskbarView>();
 		containerBuilder.RegisterType<StartMenuLaunchIcon>();
 		containerBuilder.RegisterType<StartMenuWindow>().SingleInstance();
 		containerBuilder.RegisterType<CalendarWindow>().SingleInstance().WithAttributeFiltering();
@@ -63,6 +55,7 @@ public static class UIStartupExtensions
 		containerBuilder.RegisterInstance(UIReducers.AllReducers);
 		containerBuilder.RegisterType<UIEffects>().As<IEffectsFactory>();
 		containerBuilder.RegisterType<GlimpseGtkApplication>().SingleInstance();
+		containerBuilder.AddTaskbar();
 
 		containerBuilder
 			.Register(c =>
