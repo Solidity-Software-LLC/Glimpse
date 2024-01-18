@@ -22,7 +22,7 @@ public static class StartMenuSelectors
 		s_powerButtonCommand,
 		s_settingsButtonCommand,
 		s_userSettingsCommand,
-		FreedesktopSelectors.UserIconPath,
+		AccountSelectors.UserIconPath,
 		(powerButtonCommand, settingsButtonCommand, userSettingsCommand, userIconPath) => new ActionBarViewModel()
 		{
 			PowerButtonCommand = powerButtonCommand,

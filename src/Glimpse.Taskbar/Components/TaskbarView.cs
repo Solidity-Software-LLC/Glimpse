@@ -16,7 +16,7 @@ namespace Glimpse.UI.Components.Taskbar;
 
 public class TaskbarView : Box
 {
-	public TaskbarView(ReduxStore store, IDisplayServer displayServer, FreeDesktopService freeDesktopService)
+	public TaskbarView(ReduxStore store, IDisplayServer displayServer, AccountService accountService)
 	{
 		var viewModelSelector = store
 			.Select(TaskbarViewModelSelectors.ViewModel)

@@ -3,6 +3,7 @@ using Autofac;
 using Autofac.Features.AttributeFilters;
 using GLib;
 using Glimpse.Common.System.Reactive;
+using Glimpse.Freedesktop.Notifications;
 using Glimpse.StartMenu;
 using Glimpse.Taskbar;
 using Glimpse.UI.Components;
@@ -25,6 +26,7 @@ public static class UIStartupExtensions
 		await host.UseTaskbar();
 		await host.UseSystemTray();
 		await host.UseStartMenu();
+		await host.UseNotifications();
 	}
 
 	public static void AddGlimpseUI(this IHostApplicationBuilder builder)
@@ -42,6 +44,7 @@ public static class UIStartupExtensions
 		containerBuilder.AddTaskbar();
 		containerBuilder.AddSystemTray();
 		containerBuilder.AddStartMenu();
+		containerBuilder.AddNotifications();
 
 		containerBuilder
 			.Register(c =>

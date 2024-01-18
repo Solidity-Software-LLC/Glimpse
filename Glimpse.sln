@@ -4,11 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimpse", "src\Glimpse\Glim
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimpse.Redux", "src\Glimpse.Redux\Glimpse.Redux.csproj", "{4328EFD8-095C-4E80-88C8-E6113F64389F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimpse.Freedesktop", "src\Glimpse.Freedesktop\Glimpse.Freedesktop.csproj", "{F523A8B1-0E5C-457B-A11E-C14844A7721A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimpse.Common", "src\Glimpse.Common\Glimpse.Common.csproj", "{FAF6861C-CE9A-445A-A428-4256DA8B79FD}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimpse.Xorg", "src\Glimpse.Xorg\Glimpse.Xorg.csproj", "{2CC82572-8D5A-43A7-B4D9-328B8170FD95}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Glimpse.UI", "src\Glimpse.UI\Glimpse.UI.csproj", "{3939A68C-16A3-4782-A36C-D650E744B0E7}"
 EndProject
@@ -36,18 +32,10 @@ Global
 		{4328EFD8-095C-4E80-88C8-E6113F64389F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4328EFD8-095C-4E80-88C8-E6113F64389F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4328EFD8-095C-4E80-88C8-E6113F64389F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F523A8B1-0E5C-457B-A11E-C14844A7721A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F523A8B1-0E5C-457B-A11E-C14844A7721A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F523A8B1-0E5C-457B-A11E-C14844A7721A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F523A8B1-0E5C-457B-A11E-C14844A7721A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FAF6861C-CE9A-445A-A428-4256DA8B79FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FAF6861C-CE9A-445A-A428-4256DA8B79FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FAF6861C-CE9A-445A-A428-4256DA8B79FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FAF6861C-CE9A-445A-A428-4256DA8B79FD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2CC82572-8D5A-43A7-B4D9-328B8170FD95}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2CC82572-8D5A-43A7-B4D9-328B8170FD95}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2CC82572-8D5A-43A7-B4D9-328B8170FD95}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2CC82572-8D5A-43A7-B4D9-328B8170FD95}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3939A68C-16A3-4782-A36C-D650E744B0E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3939A68C-16A3-4782-A36C-D650E744B0E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3939A68C-16A3-4782-A36C-D650E744B0E7}.Release|Any CPU.ActiveCfg = Release|Any CPU

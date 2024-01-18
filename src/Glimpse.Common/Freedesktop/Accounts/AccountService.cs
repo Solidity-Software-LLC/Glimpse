@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Reactive.Linq;
 using Glimpse.Freedesktop.DBus;
 using Glimpse.Freedesktop.DBus.Interfaces;
@@ -7,10 +6,8 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Glimpse.Freedesktop.DesktopEntries;
 
-public class FreeDesktopService(ReduxStore store, OrgFreedesktopAccounts freedesktopAccounts)
+public class AccountService(ReduxStore store, OrgFreedesktopAccounts freedesktopAccounts)
 {
-	private ImmutableList<DesktopFile> _desktopFiles;
-
 	public async Task InitializeAsync(DBusConnections dBusConnections)
 	{
 		var userObjectPath = await freedesktopAccounts.FindUserByNameAsync(Environment.UserName);

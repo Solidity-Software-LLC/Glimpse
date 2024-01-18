@@ -3,7 +3,6 @@ using Glimpse.Freedesktop.DBus;
 using Glimpse.Freedesktop.DBus.Interfaces;
 using Glimpse.Freedesktop.DBus.Introspection;
 using Glimpse.Freedesktop.DesktopEntries;
-using Glimpse.Freedesktop.Notifications;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Tmds.DBus.Protocol;
@@ -18,16 +17,15 @@ public static class FreedesktopStartupExtensions
 		var dbusConnections = container.GetRequiredService<DBusConnections>();
 		await dbusConnections.Session.ConnectAsync();
 		await dbusConnections.System.ConnectAsync();
-		await container.GetRequiredService<FreeDesktopService>().InitializeAsync(dbusConnections);
+		await container.GetRequiredService<AccountService>().InitializeAsync(dbusConnections);
 		await container.GetRequiredService<XSessionManager>().Register(installationPath);
-		await host.UseNotifications();
 		await host.UseDesktopFiles();
 	}
 
 	public static void AddFreedesktop(this ContainerBuilder containerBuilder)
 	{
-		containerBuilder.RegisterInstance(Reducers.AllReducers);
-		containerBuilder.RegisterType<FreeDesktopService>().SingleInstance();
+		containerBuilder.RegisterInstance(AccountReducers.AllReducers);
+		containerBuilder.RegisterType<AccountService>().SingleInstance();
 		containerBuilder.RegisterType<IntrospectionService>();
 		containerBuilder.RegisterType<OrgFreedesktopAccounts>().SingleInstance();
 		containerBuilder.RegisterType<OrgKdeStatusNotifierWatcher>().SingleInstance();
@@ -37,6 +35,5 @@ public static class FreedesktopStartupExtensions
 		containerBuilder.Register(c => new OrgXfceSessionManager(c.Resolve<DBusConnections>().Session)).SingleInstance();
 		containerBuilder.RegisterInstance(new DBusConnections() { Session = new Connection(Address.Session!), System = new Connection(Address.System!), }).ExternallyOwned();
 		containerBuilder.AddDesktopFiles();
-		containerBuilder.AddNotifications();
 	}
 }

@@ -9,7 +9,7 @@ public record AccountState
 	public virtual bool Equals(AccountState other) => ReferenceEquals(this, other);
 }
 
-internal class Reducers
+internal class AccountReducers
 {
 	public static readonly FeatureReducerCollection AllReducers =
 	[

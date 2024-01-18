@@ -36,8 +36,6 @@
 		<ProjectReference Include="..\Glimpse.Configuration\Glimpse.Configuration.csproj" />
 		<ProjectReference Include="..\Glimpse.Redux\Glimpse.Redux.csproj"/>
 		<ProjectReference Include="..\Glimpse.UI\Glimpse.UI.csproj" />
-		<ProjectReference Include="..\Glimpse.Xorg\Glimpse.Xorg.csproj"/>
-		<ProjectReference Include="..\Glimpse.Freedesktop\Glimpse.Freedesktop.csproj"/>
 	</ItemGroup>
 
 	<ItemGroup>
