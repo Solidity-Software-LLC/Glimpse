@@ -2,7 +2,6 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\Glimpse.Redux\Glimpse.Redux.csproj" />
-		<ProjectReference Include="..\Glimpse.Interop\Glimpse.Interop.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

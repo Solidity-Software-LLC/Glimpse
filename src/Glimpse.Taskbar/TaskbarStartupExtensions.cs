@@ -30,6 +30,7 @@ public static class TaskbarStartupExtensions
 	public static void AddTaskbar(this ContainerBuilder containerBuilder)
 	{
 		containerBuilder.RegisterType<TaskbarView>();
+		containerBuilder.RegisterType<TaskbarService>().SingleInstance();
 		containerBuilder.RegisterInstance(TaskbarReducers.AllReducers);
 		containerBuilder.RegisterType<TaskbarEffects>().As<IEffectsFactory>();
 	}

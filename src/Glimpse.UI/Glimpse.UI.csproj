@@ -5,9 +5,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Glimpse.Interop\Glimpse.Interop.csproj" />
 		<ProjectReference Include="..\Glimpse.Redux\Glimpse.Redux.csproj"/>
 		<ProjectReference Include="..\Glimpse.Common\Glimpse.Common.csproj" />
+		<ProjectReference Include="..\Glimpse.StartMenu\Glimpse.StartMenu.csproj" />
 		<ProjectReference Include="..\Glimpse.SystemTray\Glimpse.SystemTray.csproj" />
 		<ProjectReference Include="..\Glimpse.Taskbar\Glimpse.Taskbar.csproj" />
 		<ProjectReference Include="..\Glimpse.Xorg\Glimpse.Xorg.csproj"/>

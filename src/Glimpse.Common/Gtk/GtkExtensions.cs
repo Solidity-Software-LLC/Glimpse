@@ -6,6 +6,7 @@ using Glimpse.UI.State;
 using Gtk;
 using ReactiveMarbles.ObservableEvents;
 using Monitor = Gdk.Monitor;
+using Rectangle = Gdk.Rectangle;
 using Window = Gtk.Window;
 
 namespace Glimpse.UI;
@@ -149,18 +150,15 @@ public static class GtkExtensions
 		window.Move(windowX, windowY);
 	}
 
-	public static void CenterOnScreenAboveWidget(this Window window, Widget widget)
+	public static void CenterOnScreenAtBottom(this Window window, Monitor monitor)
 	{
 		if (!window.Visible) return;
 
-		var monitor = window.Display.GetMonitorAtWindow(widget.Window);
-		var monitorDimensions = monitor.Geometry;
-
-		widget.Window.GetRootCoords(0, 0, out _, out var y);
-
-		var windowX = monitorDimensions.X + monitorDimensions.Width / 2 - window.Window.Width / 2;
-		var windowY = y - window.Window.Height - 16;
-
+		Property.Get(window.Display.DefaultScreen.RootWindow, Atom.Intern("_NET_WORKAREA", false), Atom.Intern("CARDINAL", false), 0, 4 * 4, false, out var workArea);
+		var fullWorkArea = new Rectangle(0, 0, workArea[2], workArea[3]);
+		fullWorkArea.Intersect(monitor.Geometry, out var monitorWorkArea);
+		var windowX = monitorWorkArea.Left + monitor.Geometry.Width / 2 - window.Allocation.Width / 2;
+		var windowY = monitorWorkArea.Height - window.Allocation.Height - 16;
 		window.Move(windowX, windowY);
 	}
 

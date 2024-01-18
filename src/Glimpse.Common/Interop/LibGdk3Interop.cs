@@ -8,6 +8,9 @@ public class LibGdk3Interop
 	private const string GioNativeDll = "libgio-2.0.so.0";
 
 	[DllImport(GdkNativeDll, CallingConvention = CallingConvention.Cdecl)]
+	public static extern void gdk_monitor_get_workarea(IntPtr monitor, IntPtr rect);
+
+	[DllImport(GdkNativeDll, CallingConvention = CallingConvention.Cdecl)]
 	public static extern ulong gdk_x11_window_get_xid(IntPtr windowHandle);
 
 	[DllImport(GioNativeDll, CallingConvention = CallingConvention.Cdecl)]

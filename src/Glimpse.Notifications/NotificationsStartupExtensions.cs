@@ -1,4 +1,6 @@
 using Autofac;
+using Glimpse.UI.Components.NotificationsConfig;
+using Glimpse.UI.Components.SidePane.NotificationHistory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -17,5 +19,8 @@ public static class NotificationsStartupExtensions
 		containerBuilder.RegisterInstance(NotificationsReducers.AllReducers);
 		containerBuilder.RegisterType<OrgFreedesktopNotifications>().SingleInstance();
 		containerBuilder.RegisterType<NotificationsService>().SingleInstance();
+		containerBuilder.RegisterType<NotificationHistoryWindow>().SingleInstance();
+		containerBuilder.RegisterType<NotificationsConfigWidget>().SingleInstance();
+		containerBuilder.RegisterType<NotificationsConfigWindow>().SingleInstance();
 	}
 }

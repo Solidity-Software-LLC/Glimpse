@@ -8,6 +8,7 @@
 
 	<ItemGroup>
 		<AdditionalFiles Include="..\..\.refrules" />
+		<EmbeddedResource Include="Assets/*" LogicalName="%(Filename)%(Extension)" />
 		<EmbeddedResource Include="**/*.css" LogicalName="%(Filename)%(Extension)" />
 	</ItemGroup>
 

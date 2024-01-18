@@ -17,7 +17,7 @@ public static class XorgStartupExtensions
 
 	public static void AddXorg(this ContainerBuilder containerBuilder)
 	{
-		containerBuilder.RegisterType<Effects>().As<IEffectsFactory>();
+		containerBuilder.RegisterType<XorgEffects>().As<IEffectsFactory>();
 		containerBuilder.RegisterType<XLibAdaptorService>().SingleInstance();
 		containerBuilder.RegisterType<X11DisplayServer>().As<X11DisplayServer>().As<IDisplayServer>().SingleInstance();
 		containerBuilder.RegisterInstance(XorgReducers.Reducers);

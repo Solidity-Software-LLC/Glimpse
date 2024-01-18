@@ -34,7 +34,6 @@ public class Panel : Window
 		TaskbarView taskbarView,
 		StartMenuLaunchIcon startMenuLaunchIcon,
 		ReduxStore store,
-		FreeDesktopService freeDesktopService,
 		Monitor monitor,
 		[KeyFilter(Timers.OneSecond)] IObservable<DateTime> oneSecondTimer,
 		SidePaneWindow sidePaneWindow) : base(WindowType.Toplevel)
@@ -156,6 +155,9 @@ public class Panel : Window
 
 	private void ReserveSpace()
 	{
+		var reservedSpace = new long[] { 0, 0, 0, AllocatedHeight }.SelectMany(BitConverter.GetBytes).ToArray();
+		Property.Change(Window, Atom.Intern("_NET_WM_STRUT", false), Atom.Intern("CARDINAL", false), 32, PropMode.Replace, reservedSpace, 4);
+
 		var reservedSpaceLong = new long[] { 0, 0, 0, AllocatedHeight, 0, 0, 0, 0, 0, 0, _monitor.Workarea.Left, _monitor.Workarea.Left + _monitor.Geometry.Width - 1 }.SelectMany(BitConverter.GetBytes).ToArray();
 		Property.Change(Window, Atom.Intern("_NET_WM_STRUT_PARTIAL", false), Atom.Intern("CARDINAL", false), 32, PropMode.Replace, reservedSpaceLong, 12);
 	}

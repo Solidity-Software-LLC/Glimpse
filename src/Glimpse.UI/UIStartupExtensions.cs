@@ -3,17 +3,12 @@ using Autofac;
 using Autofac.Features.AttributeFilters;
 using GLib;
 using Glimpse.Common.System.Reactive;
-using Glimpse.Redux.Effects;
+using Glimpse.StartMenu;
 using Glimpse.Taskbar;
 using Glimpse.UI.Components;
-using Glimpse.UI.Components.NotificationsConfig;
 using Glimpse.UI.Components.SidePane;
 using Glimpse.UI.Components.SidePane.Calendar;
-using Glimpse.UI.Components.SidePane.NotificationHistory;
-using Glimpse.UI.Components.StartMenu;
-using Glimpse.UI.Components.StartMenu.Window;
 using Glimpse.UI.Components.SystemTray;
-using Glimpse.UI.State;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Application = Gtk.Application;
@@ -29,6 +24,7 @@ public static class UIStartupExtensions
 	{
 		await host.UseTaskbar();
 		await host.UseSystemTray();
+		await host.UseStartMenu();
 	}
 
 	public static void AddGlimpseUI(this IHostApplicationBuilder builder)
@@ -40,18 +36,12 @@ public static class UIStartupExtensions
 	{
 		containerBuilder.RegisterType<Panel>().WithAttributeFiltering();
 		containerBuilder.RegisterType<GlimpseGtkApplication>().SingleInstance();
-		containerBuilder.RegisterType<StartMenuLaunchIcon>();
-		containerBuilder.RegisterType<StartMenuWindow>().SingleInstance();
+		containerBuilder.RegisterType<StartMenuDemands>().As<IStartMenuDemands>().SingleInstance();
 		containerBuilder.RegisterType<CalendarWindow>().SingleInstance().WithAttributeFiltering();
-		containerBuilder.RegisterType<NotificationHistoryWindow>().SingleInstance();
-		containerBuilder.RegisterType<NotificationsConfigWindow>().SingleInstance();
-		containerBuilder.RegisterType<NotificationsConfigWidget>().SingleInstance();
 		containerBuilder.RegisterType<SidePaneWindow>().SingleInstance().WithAttributeFiltering();
-		containerBuilder.RegisterInstance(UIReducers.AllReducers);
-		containerBuilder.RegisterType<UIEffects>().As<IEffectsFactory>();
-		containerBuilder.RegisterType<GlimpseGtkApplication>().SingleInstance();
 		containerBuilder.AddTaskbar();
 		containerBuilder.AddSystemTray();
+		containerBuilder.AddStartMenu();
 
 		containerBuilder
 			.Register(c =>

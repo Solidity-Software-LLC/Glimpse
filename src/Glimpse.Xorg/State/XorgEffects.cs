@@ -3,7 +3,7 @@ using static Glimpse.Redux.Effects.EffectsFactory;
 
 namespace Glimpse.Xorg.State;
 
-internal class Effects(IDisplayServer displayServer) : IEffectsFactory
+internal class XorgEffects(IDisplayServer displayServer) : IEffectsFactory
 {
 	public IEnumerable<Effect> Create() => new[]
 	{

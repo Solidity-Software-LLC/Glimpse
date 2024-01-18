@@ -7,7 +7,7 @@ using Glimpse.Common.System.Reactive;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Interop.Gdk;
 using Glimpse.Redux;
-using Glimpse.Taskbar;
+using Glimpse.StartMenu;
 using Glimpse.UI.State;
 using Glimpse.Xorg.State;
 using Gtk;
@@ -25,7 +25,7 @@ public class StartMenuWindow : Gtk.Window
 
 	public IObservable<Point> WindowMoved { get; }
 
-	public StartMenuWindow(FreeDesktopService freeDesktopService, ReduxStore store)
+	public StartMenuWindow(ReduxStore store, IStartMenuDemands startMenuDemands)
 		: base(WindowType.Toplevel)
 	{
 		SkipPagerHint = true;
@@ -65,7 +65,7 @@ public class StartMenuWindow : Gtk.Window
 		this.ObserveEvent(_startMenuContent.ChipActivated).Subscribe(c => store.Dispatch(new UpdateAppFilteringChip(c)));
 		this.ObserveEvent(_startMenuContent.AppOrderingChanged).Subscribe(t => store.Dispatch(new UpdateStartMenuPinnedAppOrderingAction(t)));
 		this.ObserveEvent(_startMenuContent.ToggleStartMenuPinning).Subscribe(f => store.Dispatch(new ToggleStartMenuPinningAction(f)));
-		this.ObserveEvent(_startMenuContent.ToggleTaskbarPinning).Subscribe(f => store.Dispatch(new ToggleTaskbarPinningAction(f)));
+		this.ObserveEvent(_startMenuContent.ToggleTaskbarPinning).Subscribe(startMenuDemands.ToggleDesktopFilePinning);
 		this.ObserveEvent(_startMenuContent.SearchTextUpdated).Subscribe(text => store.Dispatch(new UpdateStartMenuSearchTextAction(text)));
 		this.ObserveEvent(_startMenuContent.AppLaunch).Subscribe(desktopFile =>
 		{
@@ -102,7 +102,7 @@ public class StartMenuWindow : Gtk.Window
 		Display.GetPointer(out var x, out var y);
 		var eventMonitor = Display.GetMonitorAtPoint(x, y);
 
-		if (IsVisible && eventMonitor.Contains(Window))
+		if (IsVisible)
 		{
 			_revealer.RevealChild = false;
 			Observable.Timer(TimeSpan.FromMilliseconds(250)).ObserveOn(new GLibSynchronizationContext()).Subscribe(_ => Hide());
@@ -110,8 +110,7 @@ public class StartMenuWindow : Gtk.Window
 		else
 		{
 			Show();
-			var eventPanel = Application.Windows.OfType<Panel>().First(p => eventMonitor.Contains(p.Window));
-			this.CenterOnScreenAboveWidget(eventPanel);
+			this.CenterOnScreenAtBottom(eventMonitor);
 			_revealer.RevealChild = true;
 		}
 	}
