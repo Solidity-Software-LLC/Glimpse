@@ -1,7 +1,6 @@
 using System.Collections.Immutable;
 using System.Reactive.Linq;
 using System.Text;
-using Autofac;
 using Gdk;
 using GLib;
 using Glimpse.Common.System.Reactive;
@@ -13,6 +12,7 @@ using Glimpse.UI.Components.SidePane;
 using Glimpse.UI.Components.StartMenu.Window;
 using Glimpse.UI.State;
 using Gtk;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ReactiveMarbles.ObservableEvents;
 using Application = Gtk.Application;
@@ -21,7 +21,7 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Glimpse.UI;
 
-public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application application, ReduxStore store) : IHostedService
+public class GlimpseGtkApplication(IServiceProvider serviceProvider, Application application, ReduxStore store) : IHostedService
 {
 	private List<Panel> _panels = new();
 
@@ -60,8 +60,8 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 		action.Events().Activated.Subscribe(_ => LoadPanels(display));
 		screen.Events().SizeChanged.Subscribe(_ => LoadPanels(display));
 		screen.Events().MonitorsChanged.Subscribe(_ => LoadPanels(display));
-		application.AddWindow(serviceProvider.Resolve<StartMenuWindow>());
-		application.AddWindow(serviceProvider.Resolve<SidePaneWindow>());
+		application.AddWindow(serviceProvider.GetRequiredService<StartMenuWindow>());
+		application.AddWindow(serviceProvider.GetRequiredService<SidePaneWindow>());
 		LoadPanels(display);
 		Application.Run();
 	}
@@ -103,7 +103,7 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 	private void WatchNotifications()
 	{
 		var notificationsPerMonitor = new Dictionary<Monitor, ImmutableList<NotificationBubbleWindow>>();
-		var notificationsService = serviceProvider.Resolve<NotificationsService>();
+		var notificationsService = serviceProvider.GetRequiredService<NotificationsService>();
 
 		store
 			.Select(NotificationBubbleSelectors.ViewModel)
@@ -186,7 +186,7 @@ public class GlimpseGtkApplication(ILifetimeScope serviceProvider, Application a
 
 			newMonitors.ForEach(m =>
 			{
-				var newPanel = serviceProvider.Resolve<Panel>(new TypedParameter(typeof(Monitor), m));
+				var newPanel = ActivatorUtilities.CreateInstance<Panel>(serviceProvider, m);
 				application.AddWindow(newPanel);
 				newPanel.DockToBottom();
 				_panels.Add(newPanel);

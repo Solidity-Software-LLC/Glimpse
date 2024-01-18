@@ -1,10 +1,10 @@
 ﻿using System.CommandLine;
 using System.Reactive.Linq;
-using Autofac;
-using Autofac.Extensions.DependencyInjection;
+using System.Text;
 using Glimpse.Configuration;
 using Glimpse.Freedesktop;
 using Glimpse.Freedesktop.DBus;
+using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Redux;
 using Glimpse.Redux.Effects;
 using Glimpse.UI;
@@ -25,7 +25,6 @@ public static class Program
 			Installation.RunScript(Installation.InstallScriptResourceName);
 
 			var builder = Host.CreateApplicationBuilder(Array.Empty<string>());
-			builder.ConfigureContainer(new AutofacServiceProviderFactory(ConfigureContainer));
 			var host = builder.Build();
 
 			var connections = host.Services.GetRequiredService<DBusConnections>();
@@ -54,27 +53,23 @@ public static class Program
 		{
 			AppDomain.CurrentDomain.UnhandledException += (_, eventArgs) => Console.WriteLine(eventArgs.ExceptionObject);
 			var builder = Host.CreateApplicationBuilder(Array.Empty<string>());
-
-			builder.ConfigureContainer(new AutofacServiceProviderFactory(cb =>
-			{
-				ConfigureContainer(cb);
-				cb.AddGlimpseConfiguration();
-				cb.AddFreedesktop();
-				cb.AddXorg();
-				cb.AddGlimpseUI();
-			}));
-
+			builder.Services.AddSingleton<ReduxStore>();
+			builder.AddXorg();
+			builder.AddDesktopFiles();
+			builder.AddFreedesktop();
+			builder.AddGlimpseConfiguration();
 			builder.AddXorg();
 			builder.AddGlimpseUI();
 
 			var host = builder.Build();
+			await host.UseDesktopFiles();
+			await host.UseXorg();
 			await host.UseGlimpseConfiguration();
 			await host.UseFreedesktop(Installation.DefaultInstallPath);
-			await host.UseXorg();
 			await host.UseGlimpseUI();
 
 			var store = host.Services.GetRequiredService<ReduxStore>();
-			var effects = host.Services.GetRequiredService<IEffectsFactory[]>()
+			var effects = host.Services.GetServices<IEffectsFactory>().ToArray()
 				.SelectMany(e => e.Create())
 				.Select(oldEffect => new Effect()
 				{
@@ -93,10 +88,5 @@ public static class Program
 			Console.WriteLine(e);
 			return 1;
 		}
-	}
-
-	private static void ConfigureContainer(ContainerBuilder containerBuilder)
-	{
-		containerBuilder.RegisterType<ReduxStore>().SingleInstance();
 	}
 }

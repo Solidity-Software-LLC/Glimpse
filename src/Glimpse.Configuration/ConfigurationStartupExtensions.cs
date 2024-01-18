@@ -1,6 +1,6 @@
 using System.Reactive.Linq;
 using System.Text.Json;
-using Autofac;
+using Glimpse.Common.Microsoft.Extensions;
 using Glimpse.Redux;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,10 +9,10 @@ namespace Glimpse.Configuration;
 
 public static class ConfigurationStartupExtensions
 {
-	public static void AddGlimpseConfiguration(this ContainerBuilder containerBuilder)
+	public static void AddGlimpseConfiguration(this IHostApplicationBuilder builder)
 	{
-		containerBuilder.RegisterInstance(AllReducers.Reducers);
-		containerBuilder.RegisterType<ConfigurationService>().SingleInstance();
+		builder.Services.AddInstance(AllReducers.Reducers);
+		builder.Services.AddSingleton<ConfigurationService>();
 	}
 
 	public static Task UseGlimpseConfiguration(this IHost host)

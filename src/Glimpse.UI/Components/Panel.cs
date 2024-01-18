@@ -1,6 +1,5 @@
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using Autofac.Features.AttributeFilters;
 using Gdk;
 using GLib;
 using Glimpse.Configuration;
@@ -12,6 +11,7 @@ using Glimpse.UI.Components.SystemTray;
 using Glimpse.UI.Components.Taskbar;
 using Glimpse.UI.State;
 using Gtk;
+using Microsoft.Extensions.DependencyInjection;
 using ReactiveMarbles.ObservableEvents;
 using DateTime = System.DateTime;
 using Menu = Gtk.Menu;
@@ -35,7 +35,7 @@ public class Panel : Window
 		StartMenuLaunchIcon startMenuLaunchIcon,
 		ReduxStore store,
 		Monitor monitor,
-		[KeyFilter(Timers.OneSecond)] IObservable<DateTime> oneSecondTimer,
+		[FromKeyedServices(Timers.OneSecond)] IObservable<DateTime> oneSecondTimer,
 		SidePaneWindow sidePaneWindow) : base(WindowType.Toplevel)
 	{
 		_monitor = monitor;

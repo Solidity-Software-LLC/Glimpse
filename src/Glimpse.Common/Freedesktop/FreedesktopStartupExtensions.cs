@@ -1,4 +1,4 @@
-using Autofac;
+using Glimpse.Common.Microsoft.Extensions;
 using Glimpse.Freedesktop.DBus;
 using Glimpse.Freedesktop.DBus.Interfaces;
 using Glimpse.Freedesktop.DBus.Introspection;
@@ -19,21 +19,20 @@ public static class FreedesktopStartupExtensions
 		await dbusConnections.System.ConnectAsync();
 		await container.GetRequiredService<AccountService>().InitializeAsync(dbusConnections);
 		await container.GetRequiredService<XSessionManager>().Register(installationPath);
-		await host.UseDesktopFiles();
 	}
 
-	public static void AddFreedesktop(this ContainerBuilder containerBuilder)
+	public static void AddFreedesktop(this IHostApplicationBuilder builder)
 	{
-		containerBuilder.RegisterInstance(AccountReducers.AllReducers);
-		containerBuilder.RegisterType<AccountService>().SingleInstance();
-		containerBuilder.RegisterType<IntrospectionService>();
-		containerBuilder.RegisterType<OrgFreedesktopAccounts>().SingleInstance();
-		containerBuilder.RegisterType<OrgKdeStatusNotifierWatcher>().SingleInstance();
-		containerBuilder.RegisterType<XSessionManager>().SingleInstance();
-		containerBuilder.Register(c => new OrgXfceSessionClient(c.Resolve<DBusConnections>().Session, "org_glimpse")).SingleInstance();
-		containerBuilder.Register(c => new OrgFreedesktopDBus(c.Resolve<DBusConnections>().Session, Connection.DBusServiceName, Connection.DBusObjectPath)).SingleInstance();
-		containerBuilder.Register(c => new OrgXfceSessionManager(c.Resolve<DBusConnections>().Session)).SingleInstance();
-		containerBuilder.RegisterInstance(new DBusConnections() { Session = new Connection(Address.Session!), System = new Connection(Address.System!), }).ExternallyOwned();
-		containerBuilder.AddDesktopFiles();
+		var services = builder.Services;
+		services.AddInstance(AccountReducers.AllReducers);
+		services.AddSingleton<AccountService>();
+		services.AddSingleton<IntrospectionService>();
+		services.AddSingleton<OrgFreedesktopAccounts>();
+		services.AddSingleton<OrgKdeStatusNotifierWatcher>();
+		services.AddSingleton<XSessionManager>();
+		services.AddSingleton(c => new OrgXfceSessionClient(c.GetRequiredService<DBusConnections>().Session, "org_glimpse"));
+		services.AddSingleton(c => new OrgFreedesktopDBus(c.GetRequiredService<DBusConnections>().Session, Connection.DBusServiceName, Connection.DBusObjectPath));
+		services.AddSingleton(c => new OrgXfceSessionManager(c.GetRequiredService<DBusConnections>().Session));
+		services.AddSingleton(new DBusConnections() { Session = new Connection(Address.Session!), System = new Connection(Address.System!), });
 	}
 }

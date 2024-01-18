@@ -1,4 +1,4 @@
-using Autofac;
+using Glimpse.Common.Microsoft.Extensions;
 using Glimpse.Freedesktop;
 using Glimpse.Freedesktop.SystemTray;
 using Glimpse.Redux.Effects;
@@ -15,11 +15,11 @@ public static class SystemTrayStartupExtensions
 		await container.GetRequiredService<DBusSystemTrayService>().InitializeAsync();
 	}
 
-	public static void AddSystemTray(this ContainerBuilder containerBuilder)
+	public static void AddSystemTray(this IHostApplicationBuilder builder)
 	{
-		containerBuilder.RegisterInstance(SystemTrayItemStateReducers.Reducers);
-		containerBuilder.RegisterType<SystemTrayItemStateEffects>().As<IEffectsFactory>();
-		containerBuilder.RegisterType<DBusSystemTrayService>();
-		containerBuilder.RegisterType<SystemTrayBox>();
+		builder.Services.AddInstance(SystemTrayItemStateReducers.Reducers);
+		builder.Services.AddSingleton<IEffectsFactory, SystemTrayItemStateEffects>();
+		builder.Services.AddTransient<DBusSystemTrayService>();
+		builder.Services.AddTransient<SystemTrayBox>();
 	}
 }

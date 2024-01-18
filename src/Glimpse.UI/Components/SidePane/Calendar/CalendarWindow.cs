@@ -1,15 +1,15 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using Autofac.Features.AttributeFilters;
 using GLib;
 using Gtk;
+using Microsoft.Extensions.DependencyInjection;
 using DateTime = System.DateTime;
 
 namespace Glimpse.UI.Components.SidePane.Calendar;
 
 public class CalendarWindow : Bin
 {
-	public CalendarWindow([KeyFilter(Timers.OneSecond)] IObservable<DateTime> oneSecondTimer)
+	public CalendarWindow([FromKeyedServices(Timers.OneSecond)] IObservable<DateTime> oneSecondTimer)
 	{
 		Expand = false;
 

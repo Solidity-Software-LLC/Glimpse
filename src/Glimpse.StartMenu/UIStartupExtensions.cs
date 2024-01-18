@@ -1,8 +1,9 @@
-using Autofac;
+using Glimpse.Common.Microsoft.Extensions;
 using Glimpse.Redux.Effects;
 using Glimpse.UI.Components.StartMenu;
 using Glimpse.UI.Components.StartMenu.Window;
 using Glimpse.UI.State;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Task = System.Threading.Tasks.Task;
 
@@ -15,11 +16,11 @@ public static class StartMenuStartupExtensions
 		return Task.CompletedTask;
 	}
 
-	public static void AddStartMenu(this ContainerBuilder containerBuilder)
+	public static void AddStartMenu(this IHostApplicationBuilder builder)
 	{
-		containerBuilder.RegisterType<StartMenuLaunchIcon>();
-		containerBuilder.RegisterType<StartMenuWindow>().SingleInstance();
-		containerBuilder.RegisterInstance(UIReducers.AllReducers);
-		containerBuilder.RegisterType<UIEffects>().As<IEffectsFactory>();
+		builder.Services.AddTransient<StartMenuLaunchIcon>();
+		builder.Services.AddSingleton<StartMenuWindow>();
+		builder.Services.AddInstance(UIReducers.AllReducers);
+		builder.Services.AddSingleton<IEffectsFactory, UIEffects>();
 	}
 }

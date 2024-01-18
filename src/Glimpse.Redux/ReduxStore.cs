@@ -3,6 +3,7 @@ using System.Reactive.Subjects;
 using Glimpse.Redux.Effects;
 using Glimpse.Redux.Reducers;
 using Glimpse.Redux.Selectors;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Glimpse.Redux;
 
@@ -15,8 +16,10 @@ public sealed class ReduxStore
 	private readonly Queue<Tuple<TaskCompletionSource, object>> _actionQueue = new();
 	private readonly object _lock = new();
 
-	public ReduxStore(FeatureReducerCollection[] features, TaskScheduler dispatchedActionScheduler = null)
+	public ReduxStore(IServiceProvider serviceProvider, TaskScheduler dispatchedActionScheduler = null)
 	{
+		var features = serviceProvider.GetServices<FeatureReducerCollection>().ToList();
+
 		State = new StoreState();
 
 		foreach (var f in features.SelectMany(f => f))

@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
-using Autofac;
 using GLib;
+using Glimpse.Common.Microsoft.Extensions;
 using Glimpse.Common.System.Runtime.InteropServices;
 using Glimpse.Interop.Gdk;
 using Glimpse.Redux;
@@ -13,9 +13,9 @@ namespace Glimpse.Freedesktop.DesktopEntries;
 
 public static class DesktopFileStartupExtensions
 {
-	public static void AddDesktopFiles(this ContainerBuilder containerBuilder)
+	public static void AddDesktopFiles(this IHostApplicationBuilder builder)
 	{
-		containerBuilder.RegisterInstance(DesktopFileReducers.AllReducers);
+		builder.Services.AddInstance(DesktopFileReducers.AllReducers);
 	}
 
 	public static async Task UseDesktopFiles(this IHost host)

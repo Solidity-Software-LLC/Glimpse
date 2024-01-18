@@ -1,4 +1,4 @@
-using Autofac;
+using Glimpse.Common.Microsoft.Extensions;
 using Glimpse.Redux.Effects;
 using Glimpse.Xorg.State;
 using Glimpse.Xorg.X11;
@@ -15,16 +15,12 @@ public static class XorgStartupExtensions
 		return Task.CompletedTask;
 	}
 
-	public static void AddXorg(this ContainerBuilder containerBuilder)
-	{
-		containerBuilder.RegisterType<XorgEffects>().As<IEffectsFactory>();
-		containerBuilder.RegisterType<XLibAdaptorService>().SingleInstance();
-		containerBuilder.RegisterType<X11DisplayServer>().As<X11DisplayServer>().As<IDisplayServer>().SingleInstance();
-		containerBuilder.RegisterInstance(XorgReducers.Reducers);
-	}
-
 	public static void AddXorg(this IHostApplicationBuilder builder)
 	{
+		builder.Services.AddSingleton<IEffectsFactory, XorgEffects>();
+		builder.Services.AddSingleton<XLibAdaptorService>();
+		builder.Services.AddSingleton<IDisplayServer, X11DisplayServer>();
+		builder.Services.AddInstance(XorgReducers.Reducers);
 		builder.Services.AddHostedService<XorgHostedService>();
 	}
 }

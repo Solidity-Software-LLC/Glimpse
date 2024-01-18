@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using System.Reactive.Linq;
-using Autofac;
+using Glimpse.Common.Microsoft.Extensions;
 using Glimpse.Configuration;
 using Glimpse.Redux;
 using Glimpse.Redux.Effects;
@@ -27,11 +27,11 @@ public static class TaskbarStartupExtensions
 		return Task.CompletedTask;
 	}
 
-	public static void AddTaskbar(this ContainerBuilder containerBuilder)
+	public static void AddTaskbar(this IHostApplicationBuilder builder)
 	{
-		containerBuilder.RegisterType<TaskbarView>();
-		containerBuilder.RegisterType<TaskbarService>().SingleInstance();
-		containerBuilder.RegisterInstance(TaskbarReducers.AllReducers);
-		containerBuilder.RegisterType<TaskbarEffects>().As<IEffectsFactory>();
+		builder.Services.AddTransient<TaskbarView>();
+		builder.Services.AddSingleton<TaskbarService>();
+		builder.Services.AddInstance(TaskbarReducers.AllReducers);
+		builder.Services.AddSingleton<IEffectsFactory, TaskbarEffects>();
 	}
 }
