@@ -1,12 +1,12 @@
 ﻿using System.CommandLine;
 using System.Reactive.Linq;
-using System.Text;
 using Glimpse.Configuration;
 using Glimpse.Freedesktop;
 using Glimpse.Freedesktop.DBus;
 using Glimpse.Freedesktop.DesktopEntries;
 using Glimpse.Redux;
 using Glimpse.Redux.Effects;
+using Glimpse.Redux.Reducers;
 using Glimpse.UI;
 using Glimpse.Xorg;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,23 +62,25 @@ public static class Program
 			builder.AddGlimpseUI();
 
 			var host = builder.Build();
-			await host.UseDesktopFiles();
-			await host.UseXorg();
-			await host.UseGlimpseConfiguration();
-			await host.UseFreedesktop(Installation.DefaultInstallPath);
-			await host.UseGlimpseUI();
+
 
 			var store = host.Services.GetRequiredService<ReduxStore>();
-			var effects = host.Services.GetServices<IEffectsFactory>().ToArray()
+			store.RegisterReducers(host.Services.GetServices<FeatureReducerCollection>().ToArray());
+			store.RegisterEffects(host.Services.GetServices<IEffectsFactory>().ToArray()
 				.SelectMany(e => e.Create())
 				.Select(oldEffect => new Effect()
 				{
 					Run = _ => oldEffect.Run(store).Do(_ => { }, exception => Console.WriteLine(exception)),
 					Config = oldEffect.Config
 				})
-				.ToArray();
+				.ToArray());
 
-			store.RegisterEffects(effects);
+			await host.UseDesktopFiles();
+			await host.UseXorg();
+			await host.UseGlimpseConfiguration();
+			await host.UseFreedesktop(Installation.DefaultInstallPath);
+			await host.UseGlimpseUI();
+
 			await store.Dispatch(new InitializeStoreAction());
 			await host.RunAsync();
 			return 0;

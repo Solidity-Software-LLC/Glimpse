@@ -3,7 +3,6 @@ using System.Reactive.Subjects;
 using Glimpse.Redux.Effects;
 using Glimpse.Redux.Reducers;
 using Glimpse.Redux.Selectors;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Glimpse.Redux;
 
@@ -16,17 +15,9 @@ public sealed class ReduxStore
 	private readonly Queue<Tuple<TaskCompletionSource, object>> _actionQueue = new();
 	private readonly object _lock = new();
 
-	public ReduxStore(IServiceProvider serviceProvider, TaskScheduler dispatchedActionScheduler = null)
+	public ReduxStore(TaskScheduler dispatchedActionScheduler = null)
 	{
-		var features = serviceProvider.GetServices<FeatureReducerCollection>().ToList();
-
 		State = new StoreState();
-
-		foreach (var f in features.SelectMany(f => f))
-		{
-			RegisterReducers(f);
-		}
-
 		_stateSubject = new BehaviorSubject<StoreState>(State);
 		_actionTaskScheduler = dispatchedActionScheduler ?? new ConcurrentExclusiveSchedulerPair().ExclusiveScheduler;
 		Task.Run(ProcessActionQueue);
@@ -91,6 +82,17 @@ public sealed class ReduxStore
 			.Subscribe(a => Dispatch(a));
 	}
 
+	public void RegisterReducers(params FeatureReducerCollection[] reducerCollections)
+	{
+		foreach (var collection in reducerCollections)
+		{
+			foreach (var r in collection)
+			{
+				RegisterReducers(r);
+			}
+		}
+	}
+
 	public void RegisterReducers(params IFeatureReducer[] reducers)
 	{
 		foreach (var r in reducers)
@@ -98,6 +100,8 @@ public sealed class ReduxStore
 			State = r.InitializeStore(State);
 			_reducers.AddRange(r.ActionReducers);
 		}
+
+		_stateSubject.OnNext(State);
 	}
 
 	private StoreState Reduce(StoreState state, object action)
